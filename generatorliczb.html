@@ -5,6 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Generator Liczb Losowych</title>
     <style>
+        /* 13. DarkMode - Zmienne CSS do zarządzania kolorami */
+        :root {
+            --bg-color: #f4f4f9;
+            --container-bg: #ffffff;
+            --text-color: #333333;
+            --border-color: #cccccc;
+            --btn-bg: #007bff;
+            --btn-hover: #0056b3;
+            --btn-text: #ffffff;
+            --history-bg: #eeeeee;
+        }
+
+        body.dark-mode {
+            --bg-color: #121212;
+            --container-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --border-color: #444444;
+            --btn-bg: #bb86fc;
+            --btn-hover: #9965f4;
+            --btn-text: #121212;
+            --history-bg: #2c2c2c;
+        }
+
         body {
             font-family: Arial, sans-serif;
             display: flex;
@@ -13,101 +36,256 @@
             justify-content: center;
             min-height: 100vh;
             margin: 0;
-            background-color: #f4f4f9;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
         }
+
         .container {
-            background-color: #fff;
+            background-color: var(--container-bg);
             padding: 30px;
             border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             text-align: center;
+            max-width: 400px;
+            width: 100%;
+            transition: background-color 0.3s;
+            position: relative;
         }
+
+        .theme-toggle {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-top: 0;
+        }
+
         input[type="number"] {
             padding: 10px;
             margin: 5px;
-            border: 1px solid #ccc;
+            border: 1px solid var(--border-color);
             border-radius: 4px;
-            width: 100px;
+            width: 90px;
             text-align: center;
+            background-color: var(--container-bg);
+            color: var(--text-color);
         }
+
+        .options-group {
+            margin: 15px 0;
+            font-size: 14px;
+        }
+
         button {
             padding: 10px 20px;
             margin-top: 15px;
-            background-color: #007bff;
-            color: white;
+            background-color: var(--btn-bg);
+            color: var(--btn-text);
             border: none;
             border-radius: 4px;
             cursor: pointer;
             font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.2s;
         }
+
         button:hover {
-            background-color: #0056b3;
+            background-color: var(--btn-hover);
         }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
         #wynik {
             margin-top: 20px;
-            font-size: 2em;
+            font-size: 3em;
             font-weight: bold;
-            color: #333;
+            color: var(--text-color);
+            min-height: 60px;
+        }
+
+        .history-container {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .history-list {
+            list-style: none;
+            padding: 0;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            min-height: 28px;
+        }
+
+        .history-list li {
+            background-color: var(--history-bg);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 14px;
         }
     </style>
 </head>
 <body>
 
     <div class="container">
-        
+        <button class="theme-toggle" id="themeToggle">Tryb Ciemny</button>
+
         <h2>Wygenerowana liczba:</h2>
-        <div id="wynik">---</div>
-    </div>
-<br>
+        <div id="wynik" aria-live="polite">---</div>
         
+        <br>
         <p>Podaj zakres:</p>
         
-        <label for="minInput">Minimum:</label>
+        <label for="minInput">Min:</label>
         <input type="number" id="minInput" value="0">
+        
+        <label for="maxInput">Max:</label>
+        <input type="number" id="maxInput" value="100">
         <br>
-        <label for="maxInput">Maksimum:</label>
-        <input type="number" id="maxInput" value="999">
-       <br>
-<button onclick="generujLiczbe()">Generuj Liczbę</button>
+
+        <div class="options-group">
+            <input type="checkbox" id="noRepeat">
+            <label for="noRepeat">Bez powtórzeń z rzędu</label>
+        </div>
+
+        <button id="generateBtn">Generuj Liczbę</button>
+
+        <div class="history-container">
+            <p style="font-size: 14px; margin-bottom: 10px; margin-top: 0;">Ostatnie wyniki:</p>
+            <ul class="history-list" id="historia"></ul>
+        </div>
+    </div>
 
     <script>
-        /**
-         * Funkcja generująca losową liczbę całkowitą w podanym zakresie (włącznie z min i max).
-         */
-        function generujLiczbe() {
-            // Pobieranie wartości z pól input i konwersja na liczby całkowite
-            const minStr = document.getElementById('minInput').value;
-            const maxStr = document.getElementById('maxInput').value;
+        const btn = document.getElementById('generateBtn');
+        const minInput = document.getElementById('minInput');
+        const maxInput = document.getElementById('maxInput');
+        const noRepeatCheckbox = document.getElementById('noRepeat');
+        const output = document.getElementById('wynik');
+        const historyList = document.getElementById('historia');
+        const themeToggle = document.getElementById('themeToggle');
 
-            // Sprawdzanie, czy wartości są poprawnymi liczbami
+        let historyArr = [];
+        let isAnimating = false;
+        let lastResult = null;
+
+        // 13. Obsługa trybu ciemnego
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            if (document.body.classList.contains('dark-mode')) {
+                themeToggle.textContent = 'Tryb Jasny';
+            } else {
+                themeToggle.textContent = 'Tryb Ciemny';
+            }
+        });
+
+        // 3. Obsługa przycisku Enter w polach input
+        const triggerEnter = (e) => {
+            if (e.key === 'Enter') {
+                generujLiczbe();
+            }
+        };
+        minInput.addEventListener('keydown', triggerEnter);
+        maxInput.addEventListener('keydown', triggerEnter);
+
+        // Wywołanie losowania przez kliknięcie
+        btn.addEventListener('click', generujLiczbe);
+
+        function generujLiczbe() {
+            if (isAnimating) return; // Zapobiega wielokrotnemu klikaniu podczas animacji
+
+            const minStr = minInput.value;
+            const maxStr = maxInput.value;
+            const noRepeat = noRepeatCheckbox.checked;
+
+            // 7. Lepsza walidacja typów za pomocą Number() i Number.isInteger()
             if (minStr === "" || maxStr === "") {
-                document.getElementById('wynik').textContent = "Wprowadź wartości min i max!";
+                output.textContent = "Wypełnij pola!";
                 return;
             }
 
-            let min = parseInt(minStr);
-            let max = parseInt(maxStr);
+            let min = Number(minStr);
+            let max = Number(maxStr);
 
-            // Walidacja: upewnienie się, że min jest mniejsze lub równe max
-            if (min > max) {
-                // Zamiana wartości, jeśli użytkownik je pomylił
-                [min, max] = [max, min]; 
-                
-                // Opcjonalnie: zaktualizuj pola, aby pokazać poprawione wartości
-                document.getElementById('minInput').value = min;
-                document.getElementById('maxInput').value = max;
+            if (!Number.isInteger(min) || !Number.isInteger(max)) {
+                output.textContent = "Tylko całkowite!";
+                return;
             }
 
-            // Właściwe generowanie losowej liczby całkowitej:
-            // Math.random() daje liczbę [0, 1)
-            // (max - min + 1) to wielkość zakresu
-            // Math.floor zaokrągla w dół do najbliższej liczby całkowitej
-            const losowaLiczba = Math.floor(Math.random() * (max - min + 1)) + min;
+            if (min > max) {
+                [min, max] = [max, min]; 
+                minInput.value = min;
+                maxInput.value = max;
+            }
+
+            const rangeSize = max - min + 1;
+
+            // Logika blokująca dla "bez powtórzeń", gdy wpisano ten sam początek i koniec (np. od 5 do 5)
+            if (noRepeat && rangeSize <= 1 && lastResult === min) {
+                output.textContent = "Zmień zakres";
+                return;
+            }
+
+            // 9. Animacja losowania
+            isAnimating = true;
+            btn.disabled = true; // Wizualna blokada przycisku
+            const duration = 400; // Czas animacji w ms
+            const intervalTime = 40; // Szybkość "przeskakiwania" cyfr
+            let elapsed = 0;
+
+            const animationInterval = setInterval(() => {
+                output.textContent = Math.floor(Math.random() * rangeSize) + min;
+                elapsed += intervalTime;
+
+                if (elapsed >= duration) {
+                    clearInterval(animationInterval);
+                    dokonczLosowanie(min, rangeSize, noRepeat);
+                }
+            }, intervalTime);
+        }
+
+        function dokonczLosowanie(min, rangeSize, noRepeat) {
+            let finalNum;
             
-            // Wyświetlenie wyniku
-            document.getElementById('wynik').textContent = losowaLiczba;
+            // 6. Logika generująca nową liczbę, dopóki jest inna niż poprzednia
+            do {
+                finalNum = Math.floor(Math.random() * rangeSize) + min;
+            } while (noRepeat && finalNum === lastResult && rangeSize > 1);
+
+            output.textContent = finalNum;
+            lastResult = finalNum;
+            isAnimating = false;
+            btn.disabled = false;
+
+            aktualizujHistorie(finalNum);
+        }
+
+        // 5. Historia wyników ograniczona do 5 ostatnich elementów
+        function aktualizujHistorie(nowaLiczba) {
+            historyArr.unshift(nowaLiczba);
+            if (historyArr.length > 5) {
+                historyArr.pop();
+            }
+            renderHistoria();
+        }
+
+        function renderHistoria() {
+            historyList.innerHTML = historyArr
+                .map(num => `<li>${num}</li>`)
+                .join('');
         }
     </script>
-
 </body>
 </html>
