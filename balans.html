@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yin Yang Koi - Totalna Równowaga</title>
+    <title>Yin Yang Koi - Dominacja Koloru</title>
     <style>
         body {
             margin: 0;
             padding: 0;
             width: 100vw;
             height: 100vh;
-            /* Tło podzielone pionowo: góra biała, dół czarny */
             background: linear-gradient(to bottom, #ffffff 50%, #000000 50%);
             overflow: hidden;
             cursor: crosshair;
@@ -105,15 +104,13 @@
         const particlesContainer = document.getElementById('particles-container');
 
         let targetX = window.innerWidth / 2;
-        let targetY = window.innerHeight / 4;
-
+        let targetY = window.innerHeight / 2;
         let currentX = targetX;
         let currentY = targetY;
         let previousY = targetY; 
 
         let angle1 = 0;
         let angle2 = 0;
-
         let splitPercentage = 50;
 
         window.addEventListener('mousemove', (e) => {
@@ -131,25 +128,27 @@
             let dx = targetX - currentX;
             let dy = targetY - currentY;
 
-            currentX += dx * 0.012;
-            currentY += dy * 0.012;
+            // Ryby nadal płyną wolno (relaks)
+            currentX += dx * 0.015;
+            currentY += dy * 0.015;
 
-            // --- MECHANIKA TŁA ---
+            // --- ZAKTUALIZOWANA MECHANIKA TŁA ---
             let actualDy = currentY - previousY;
-            splitPercentage += actualDy * 0.03; 
+            
+            // Zwiększona czułość (0.1 zamiast 0.03) - tło reaguje wyraźniej
+            splitPercentage += actualDy * 0.1; 
 
-            // Grawitacja powoli przyciąga do środka (50%)
-            let pullToCenter = (50 - splitPercentage) * 0.005;
+            // Bardzo słabe przyciąganie do środka (0.002) - pozwala na dominację koloru
+            let pullToCenter = (50 - splitPercentage) * 0.002;
             splitPercentage += pullToCenter;
 
-            // Zmienione granice - teraz plansza może być w 100% biała lub czarna
+            // Blokada na twardych granicach
             if (splitPercentage > 100) splitPercentage = 100;
             if (splitPercentage < 0) splitPercentage = 0;
 
             document.body.style.background = `linear-gradient(to bottom, #ffffff ${splitPercentage}%, #000000 ${splitPercentage}%)`;
             
             previousY = currentY;
-            // ---------------------------------
 
             if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
                 angle1 = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
@@ -169,40 +168,26 @@
         function spawnParticle() {
             const particle = document.createElement('div');
             particle.className = 'particle particle-burst';
-
             const baseSize = 20 + Math.random() * 40;
             particle.style.width = `${baseSize}px`;
             particle.style.height = `${baseSize}px`;
-
             const startX = Math.random() * window.innerWidth;
             const startY = Math.random() * window.innerHeight;
             particle.style.left = `${startX - baseSize / 2}px`;
             particle.style.top = `${startY - baseSize / 2}px`;
-
             const borderStyles = ['dashed', 'solid', 'dotted'];
             const randomStyle = borderStyles[Math.floor(Math.random() * borderStyles.length)];
-            const randomWidth = 1 + Math.random() * 5; 
-            particle.style.border = `${randomWidth}px ${randomStyle} #ffffff`;
-
+            particle.style.border = `${1 + Math.random() * 5}px ${randomStyle} #ffffff`;
             particlesContainer.appendChild(particle);
-
-            setTimeout(() => {
-                particlesContainer.removeChild(particle);
-            }, 4000); 
+            setTimeout(() => { particlesContainer.removeChild(particle); }, 4000); 
         }
 
         function spawnNext() {
             spawnParticle();
-            const delay = 1500 + Math.random() * 2000; 
-            setTimeout(spawnNext, delay);
+            setTimeout(spawnNext, 1500 + Math.random() * 2000);
         }
 
         spawnNext();
-        
-        window.addEventListener('resize', () => {
-            if(targetX > window.innerWidth) targetX = window.innerWidth / 2;
-            if(targetY > window.innerHeight) targetY = window.innerHeight / 2;
-        });
     </script>
 </body>
 </html>
