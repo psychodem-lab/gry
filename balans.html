@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yin Yang Koi i Wybuchające Koła</title>
+    <title>Yin Yang Koi - Interaktywne Tło</title>
     <style>
         body {
             margin: 0;
             padding: 0;
             width: 100vw;
             height: 100vh;
-            /* Ekran podzielony idealnie na pół: lewa biała, prawa czarna */
+            /* Początkowe tło, nadpisywane później przez JavaScript */
             background: linear-gradient(to right, #ffffff 50%, #000000 50%);
             overflow: hidden;
             cursor: crosshair;
@@ -22,18 +22,15 @@
             height: 100px;
             top: 0;
             left: 0;
-            /* Ustawienie transform-origin na środek, aby ryba poprawnie się obracała */
             transform-origin: 25px 50px; 
-            pointer-events: none; /* Kliknięcia "przechodzą" przez rybę */
+            pointer-events: none; 
             
-            /* MAGIA: Różnica kolorów. Płynna zmiana koloru. */
+            /* Płynna zmiana koloru w zależności od tła pod rybą */
             mix-blend-mode: difference;
             fill: #ffffff;
         }
 
-        /* Naturalny ruch ogona */
         .tail {
-            /* Punkt obrotu ustawiony u nasady ogona */
             transform-origin: 50px 130px; 
             animation: wag 1.4s ease-in-out infinite;
         }
@@ -44,7 +41,6 @@
             100% { transform: rotate(-15deg); }
         }
 
-        /* Ozdobny środek */
         .center-portal {
             position: absolute;
             top: 50%;
@@ -57,49 +53,36 @@
             mix-blend-mode: difference;
             animation: spin 15s linear infinite;
             pointer-events: none;
-            z-index: 5; /* Zapewnia, że jest zawsze widoczny nad rybami */
+            z-index: 5; 
         }
 
         @keyframes spin {
             100% { transform: translate(-50%, -50%) rotate(360deg); }
         }
 
-        /* Pojawiające się i znikające koła (cząsteczki) */
         .particle {
             position: absolute;
             border-radius: 50%;
             pointer-events: none;
             mix-blend-mode: difference;
             opacity: 0;
-            /* Początkowa skala */
             transform: scale(0.1);
         }
 
-        /* Animacja wybuchu koła */
         .particle-burst {
             animation: particleFadeInScaleOut 2s ease-out forwards;
         }
 
         @keyframes particleFadeInScaleOut {
-            0% {
-                opacity: 0;
-                transform: scale(0.1);
-            }
-            10% {
-                opacity: 0.8;
-                transform: scale(1);
-            }
-            100% {
-                opacity: 0;
-                transform: scale(3);
-            }
+            0% { opacity: 0; transform: scale(0.1); }
+            10% { opacity: 0.8; transform: scale(1); }
+            100% { opacity: 0; transform: scale(3); }
         }
     </style>
 </head>
 <body>
 
     <div class="center-portal"></div>
-
     <div id="particles-container"></div>
 
     <svg class="fish" id="fish1" viewBox="0 0 100 200" xmlns="http://www.w3.org/2000/svg">
@@ -126,11 +109,14 @@
 
         let currentX = targetX;
         let currentY = targetY;
+        let previousX = targetX; // Do śledzenia faktycznego ruchu ryby
 
         let angle1 = 0;
         let angle2 = 0;
 
-        // Śledzenie myszy i dotyku
+        // Początkowy podział tła (50%)
+        let splitPercentage = 50;
+
         window.addEventListener('mousemove', (e) => {
             targetX = e.clientX;
             targetY = e.clientY;
@@ -142,20 +128,39 @@
             targetY = e.touches[0].clientY;
         }, { passive: false });
 
-        // Animacja ruchu i obrotu ryb
         function animate() {
             let dx = targetX - currentX;
             let dy = targetY - currentY;
 
-            // Relaksujące, wygładzone pływanie
+            // Relaksujące pływanie
             currentX += dx * 0.025;
             currentY += dy * 0.025;
+
+            // --- NOWA MECHANIKA TŁA ---
+            // Obliczamy rzeczywisty wektor ruchu ryby w tej klatce na osi X
+            let actualDx = currentX - previousX;
+            
+            // Jeśli płynie w prawo (actualDx > 0), podział idzie w prawo (białe rośnie).
+            // Mnożnik określa jak szybko tło reaguje. Mniejszy = wolniej.
+            splitPercentage += actualDx * 0.08; 
+
+            // Zabezpieczenie przed całkowitym zniknięciem jednej strony (min 10%, max 90%)
+            if (splitPercentage > 90) splitPercentage = 90;
+            if (splitPercentage < 10) splitPercentage = 10;
+
+            // Aktualizacja tła
+            document.body.style.background = `linear-gradient(to right, #ffffff ${splitPercentage}%, #000000 ${splitPercentage}%)`;
+            
+            // Zapisujemy pozycję na potrzeby kolejnej klatki
+            previousX = currentX;
+            // ---------------------------
 
             if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
                 angle1 = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
                 angle2 = Math.atan2(dy, -dx) * (180 / Math.PI) + 90;
             }
 
+            // Oś lustrzana pozostaje zawsze na środku ekranu
             let mirroredX = window.innerWidth - currentX;
 
             fish1.style.transform = `translate(${currentX - 25}px, ${currentY - 50}px) rotate(${angle1}deg)`;
@@ -166,48 +171,39 @@
 
         animate();
 
-        // Funkcja tworząca pojedynczy wybuchający element (cząsteczkę)
         function spawnParticle() {
             const particle = document.createElement('div');
             particle.className = 'particle particle-burst';
 
-            // Losowy rozmiar (od małego do średniego koła, np. 20-60px)
             const baseSize = 20 + Math.random() * 40;
             particle.style.width = `${baseSize}px`;
             particle.style.height = `${baseSize}px`;
 
-            // Losowa pozycja na całym ekranie
             const startX = Math.random() * window.innerWidth;
             const startY = Math.random() * window.innerHeight;
             particle.style.left = `${startX - baseSize / 2}px`;
             particle.style.top = `${startY - baseSize / 2}px`;
 
-            // Losowy styl obramowania i grubość (na wzór centralnego elementu)
             const borderStyles = ['dashed', 'solid', 'dotted'];
             const randomStyle = borderStyles[Math.floor(Math.random() * borderStyles.length)];
-            const randomWidth = 1 + Math.random() * 5; // od 1 do 6px
+            const randomWidth = 1 + Math.random() * 5; 
             particle.style.border = `${randomWidth}px ${randomStyle} #ffffff`;
 
             particlesContainer.appendChild(particle);
 
-            // Usuwamy cząsteczkę z DOM po zakończeniu jej animacji (2s)
             setTimeout(() => {
                 particlesContainer.removeChild(particle);
-            }, 3000); 
+            }, 2000); 
         }
 
-        // Pętla generująca nowe cząsteczki w losowych odstępach czasu
         function spawnNext() {
             spawnParticle();
-            // Losowe opóźnienie przed kolejnym wybuchem (0.5s - 1.5s)
-            const delay = 5000 + Math.random() * 10000; 
+            const delay = 500 + Math.random() * 1000; 
             setTimeout(spawnNext, delay);
         }
 
-        // Uruchamiamy generowanie cząsteczek
         spawnNext();
         
-        // Aktualizacja wymiarów przy zmianie rozmiaru okna
         window.addEventListener('resize', () => {
             if(targetX > window.innerWidth) targetX = window.innerWidth / 2;
             if(targetY > window.innerHeight) targetY = window.innerHeight / 2;
