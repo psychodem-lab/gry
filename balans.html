@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Balansująca Ryba (On/Uo Mobile Concept)</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #111;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            /* Zapobiega przewijaniu ekranu palcem na telefonach */
+            touch-action: none; 
+        }
+        canvas {
+            display: block;
+        }
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            pointer-events: none;
+            text-align: center;
+        }
+        #balance-container {
+            width: 100%;
+            height: 20px;
+            background: #333;
+            border: 2px solid #fff;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        #balance-bar {
+            height: 100%;
+            width: 50%;
+            background: #4CAF50;
+            transition: width 0.1s linear, background-color 0.2s;
+        }
+        #score-display {
+            margin-top: 10px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        #game-over {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        #game-over.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            margin-top: 20px;
+            background: #fff;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui">
+        <div id="balance-container">
+            <div id="balance-bar"></div>
+        </div>
+        <div id="score-display">Wynik: 0</div>
+    </div>
+
+    <div id="game-over">
+        <h1 id="go-reason">Koniec Gry!</h1>
+        <h2 id="go-score">Twój wynik: 0</h2>
+        <button onclick="startGame()">Zagraj ponownie</button>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const balanceBar = document.getElementById('balance-bar');
+        const scoreDisplay = document.getElementById('score-display');
+        const gameOverScreen = document.getElementById('game-over');
+        const goReason = document.getElementById('go-reason');
+        const goScore = document.getElementById('go-score');
+
+        let width, height;
+        let isPlaying = false;
+        let score = 0;
+        let frameCount = 0;
+        
+        // Stan balansu: 0 (lewa strona przegrywa) do 100 (prawa strona przegrywa). 50 to idealny środek.
+        let balance = 50; 
+        const balanceSpeed = 0.3; // Jak szybko balans się zmienia
+
+        const player = {
+            x: 0, y: 0,
+            targetX: 0, targetY: 0,
+            radius: 15,
+            color: '#00d2ff'
+        };
+
+        let obstacles = [];
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            if (!isPlaying) {
+                player.x = width / 2;
+                player.y = height - 100;
+                player.targetX = player.x;
+                player.targetY = player.y;
+            }
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Śledzenie palca / myszy
+        function updateTarget(e) {
+            if (!isPlaying) return;
+            let clientX, clientY;
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            player.targetX = clientX;
+            // Opcjonalny offset, żeby nie zasłaniać ryby palcem
+            player.targetY = clientY - 30; 
+        }
+
+        window.addEventListener('mousemove', updateTarget);
+        window.addEventListener('touchstart', updateTarget, {passive: false});
+        window.addEventListener('touchmove', updateTarget, {passive: false});
+
+        function startGame() {
+            isPlaying = true;
+            score = 0;
+            balance = 50;
+            frameCount = 0;
+            obstacles = [];
+            player.x = width / 2;
+            player.y = height - 100;
+            player.targetX = player.x;
+            player.targetY = player.y;
+            gameOverScreen.classList.remove('active');
+            requestAnimationFrame(gameLoop);
+        }
+
+        function endGame(reason) {
+            isPlaying = false;
+            goReason.innerText = reason;
+            goScore.innerText = `Twój wynik: ${Math.floor(score)}`;
+            gameOverScreen.classList.add('active');
+        }
+
+        function spawnObstacle() {
+            const size = Math.random() * 15 + 10;
+            obstacles.push({
+                x: Math.random() * width,
+                y: -size,
+                radius: size,
+                speed: Math.random() * 3 + 2 + (score * 0.005), // Przyspieszają z czasem
+                color: '#ff4757'
+            });
+        }
+
+        function gameLoop() {
+            if (!isPlaying) return;
+
+            // 1. Aktualizacja logiki
+            score += 1 / 60; // 1 punkt na sekundę
+            frameCount++;
+
+            // Płynne podążanie ryby (Interpolacja liniowa)
+            player.x += (player.targetX - player.x) * 0.15;
+            player.y += (player.targetY - player.y) * 0.15;
+
+            // Zabezpieczenie przed wyjściem za ekran
+            player.x = Math.max(player.radius, Math.min(width - player.radius, player.x));
+            player.y = Math.max(player.radius, Math.min(height - player.radius, player.y));
+
+            // Mechanika On/Uo (Balans)
+            if (player.x < width / 2) {
+                balance -= balanceSpeed; // Pobyt po lewej przechyla w lewo
+            } else {
+                balance += balanceSpeed; // Pobyt po prawej przechyla w prawo
+            }
+
+            // Aktualizacja paska balansu
+            balanceBar.style.width = balance + '%';
+            if (balance < 20 || balance > 80) {
+                balanceBar.style.backgroundColor = '#ff4757'; // Kolor ostrzegawczy
+            } else {
+                balanceBar.style.backgroundColor = '#4CAF50';
+            }
+
+            // Sprawdzenie warunku porażki (utrata balansu)
+            if (balance <= 0) {
+                endGame("Utraciłeś balans (Lewa strona przeważa)!");
+                return;
+            }
+            if (balance >= 100) {
+                endGame("Utraciłeś balans (Prawa strona przeważa)!");
+                return;
+            }
+
+            // Dodawanie przeszkód (bullet hell)
+            let spawnRate = Math.max(10, 40 - Math.floor(score / 5)); // Coraz szybciej
+            if (frameCount % spawnRate === 0) spawnObstacle();
+
+            // Aktualizacja przeszkód
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                let obs = obstacles[i];
+                obs.y += obs.speed;
+
+                // Detekcja kolizji (koło - koło)
+                let dx = player.x - obs.x;
+                let dy = player.y - obs.y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < player.radius + obs.radius) {
+                    endGame("Zderzenie z przeszkodą!");
+                    return;
+                }
+
+                // Usuwanie przeszkód poza ekranem
+                if (obs.y > height + obs.radius) {
+                    obstacles.splice(i, 1);
+                }
+            }
+
+            scoreDisplay.innerText = `Wynik: ${Math.floor(score)}`;
+
+            // 2. Rysowanie
+            // Tło (podzielone na dwie strefy)
+            ctx.fillStyle = '#1e272e'; // Ciemny lewy
+            ctx.fillRect(0, 0, width / 2, height);
+            ctx.fillStyle = '#2f3640'; // Jaśniejszy prawy
+            ctx.fillRect(width / 2, 0, width / 2, height);
+
+            // Rysowanie przeszkód
+            obstacles.forEach(obs => {
+                ctx.beginPath();
+                ctx.arc(obs.x, obs.y, obs.radius, 0, Math.PI * 2);
+                ctx.fillStyle = obs.color;
+                ctx.fill();
+                ctx.closePath();
+            });
+
+            // Rysowanie gracza (Ryba/Kulka)
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+            ctx.fillStyle = player.color;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = player.color;
+            ctx.fill();
+            ctx.shadowBlur = 0; // reset
+            ctx.closePath();
+
+            // Rysowanie rdzenia gracza (dla efektu estetycznego)
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.radius * 0.5, 0, Math.PI * 2);
+            ctx.fillStyle = '#fff';
+            ctx.fill();
+            ctx.closePath();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start inicjalny
+        endGame("Gotowy do pływania?");
+        goReason.innerText = "Balansująca Ryba";
+        goScore.innerText = "Zmieniaj strony ekranu aby przetrwać.";
+    </script>
+</body>
+</html>
