@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yin Yang Koi - Pełen Relaks</title>
+    <title>Yin Yang Koi - Poziom (Góra/Dół)</title>
     <style>
         body {
             margin: 0;
             padding: 0;
             width: 100vw;
             height: 100vh;
-            background: linear-gradient(to right, #ffffff 50%, #000000 50%);
+            /* Tło podzielone pionowo: góra biała, dół czarny */
+            background: linear-gradient(to bottom, #ffffff 50%, #000000 50%);
             overflow: hidden;
             cursor: crosshair;
         }
@@ -25,13 +26,11 @@
             pointer-events: none; 
             mix-blend-mode: difference;
             fill: #ffffff;
-            /* Dodatkowe wygładzenie dla przeglądarek */
             will-change: transform;
         }
 
         .tail {
             transform-origin: 50px 130px; 
-            /* Zwolniony ruch ogona dla pełnego relaksu */
             animation: wag 2.5s ease-in-out infinite;
         }
 
@@ -51,7 +50,6 @@
             border-radius: 50%;
             border: 10px dashed #ffffff;
             mix-blend-mode: difference;
-            /* Bardzo powolny obrót */
             animation: spin 30s linear infinite;
             pointer-events: none;
             z-index: 5; 
@@ -72,7 +70,6 @@
         }
 
         .particle-burst {
-            /* Wydłużona, leniwa animacja wybuchu (4 sekundy) */
             animation: particleFadeInScaleOut 4s ease-out forwards;
         }
 
@@ -107,12 +104,13 @@
         const fish2 = document.getElementById('fish2');
         const particlesContainer = document.getElementById('particles-container');
 
-        let targetX = window.innerWidth / 4;
-        let targetY = window.innerHeight / 2;
+        // Startujemy na środku w osi X i w górnej połowie w osi Y
+        let targetX = window.innerWidth / 2;
+        let targetY = window.innerHeight / 4;
 
         let currentX = targetX;
         let currentY = targetY;
-        let previousX = targetX; 
+        let previousY = targetY; // Zmieniono na śledzenie osi Y
 
         let angle1 = 0;
         let angle2 = 0;
@@ -134,36 +132,40 @@
             let dx = targetX - currentX;
             let dy = targetY - currentY;
 
-            // Bardziej wygładzone i wolniejsze pływanie (0.012 zamiast 0.025)
+            // Wygładzone pływanie
             currentX += dx * 0.012;
             currentY += dy * 0.012;
 
-            // Łagodniejsze reagowanie tła
-            let actualDx = currentX - previousX;
-            // Znacznie wolniejsze wypychanie tła
-            splitPercentage += actualDx * 0.03; 
+            // --- NOWA MECHANIKA TŁA (OŚ Y) ---
+            let actualDy = currentY - previousY;
+            // Wypychanie tła w pionie
+            splitPercentage += actualDy * 0.03; 
 
-            // Powrót do środka jest teraz wręcz usypiająco powolny
             let pullToCenter = (50 - splitPercentage) * 0.005;
             splitPercentage += pullToCenter;
 
             if (splitPercentage > 90) splitPercentage = 90;
             if (splitPercentage < 10) splitPercentage = 10;
 
-            document.body.style.background = `linear-gradient(to right, #ffffff ${splitPercentage}%, #000000 ${splitPercentage}%)`;
+            // Tło typu to bottom
+            document.body.style.background = `linear-gradient(to bottom, #ffffff ${splitPercentage}%, #000000 ${splitPercentage}%)`;
             
-            previousX = currentX;
+            previousY = currentY;
+            // ---------------------------------
 
-            // Unikanie przeskakiwania kąta przy minimalnych ruchach
             if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
+                // Kąt głównej ryby
                 angle1 = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
-                angle2 = Math.atan2(dy, -dx) * (180 / Math.PI) + 90;
+                
+                // Kąt odbitej ryby (odwracamy dy zamiast dx, ponieważ odbijamy w osi pionowej)
+                angle2 = Math.atan2(-dy, dx) * (180 / Math.PI) + 90;
             }
 
-            let mirroredX = window.innerWidth - currentX;
+            // Odbicie osi Y (góra-dół)
+            let mirroredY = window.innerHeight - currentY;
 
             fish1.style.transform = `translate(${currentX - 25}px, ${currentY - 50}px) rotate(${angle1}deg)`;
-            fish2.style.transform = `translate(${mirroredX - 25}px, ${currentY - 50}px) rotate(${angle2}deg)`;
+            fish2.style.transform = `translate(${currentX - 25}px, ${mirroredY - 50}px) rotate(${angle2}deg)`;
 
             requestAnimationFrame(animate);
         }
@@ -190,7 +192,6 @@
 
             particlesContainer.appendChild(particle);
 
-            // Usunięcie po 4 sekundach (zgodnie z czasem trwania nowej animacji CSS)
             setTimeout(() => {
                 particlesContainer.removeChild(particle);
             }, 4000); 
@@ -198,7 +199,6 @@
 
         function spawnNext() {
             spawnParticle();
-            // Wydłużony, bardziej relaksujący czas między pojawianiem się kolejnych cząsteczek
             const delay = 1500 + Math.random() * 2000; 
             setTimeout(spawnNext, delay);
         }
