@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yin Yang Koi - Poziom (Góra/Dół)</title>
+    <title>Yin Yang Koi - Totalna Równowaga</title>
     <style>
         body {
             margin: 0;
@@ -104,13 +104,12 @@
         const fish2 = document.getElementById('fish2');
         const particlesContainer = document.getElementById('particles-container');
 
-        // Startujemy na środku w osi X i w górnej połowie w osi Y
         let targetX = window.innerWidth / 2;
         let targetY = window.innerHeight / 4;
 
         let currentX = targetX;
         let currentY = targetY;
-        let previousY = targetY; // Zmieniono na śledzenie osi Y
+        let previousY = targetY; 
 
         let angle1 = 0;
         let angle2 = 0;
@@ -132,36 +131,31 @@
             let dx = targetX - currentX;
             let dy = targetY - currentY;
 
-            // Wygładzone pływanie
             currentX += dx * 0.012;
             currentY += dy * 0.012;
 
-            // --- NOWA MECHANIKA TŁA (OŚ Y) ---
+            // --- MECHANIKA TŁA ---
             let actualDy = currentY - previousY;
-            // Wypychanie tła w pionie
             splitPercentage += actualDy * 0.03; 
 
+            // Grawitacja powoli przyciąga do środka (50%)
             let pullToCenter = (50 - splitPercentage) * 0.005;
             splitPercentage += pullToCenter;
 
-            if (splitPercentage > 90) splitPercentage = 90;
-            if (splitPercentage < 10) splitPercentage = 10;
+            // Zmienione granice - teraz plansza może być w 100% biała lub czarna
+            if (splitPercentage > 100) splitPercentage = 100;
+            if (splitPercentage < 0) splitPercentage = 0;
 
-            // Tło typu to bottom
             document.body.style.background = `linear-gradient(to bottom, #ffffff ${splitPercentage}%, #000000 ${splitPercentage}%)`;
             
             previousY = currentY;
             // ---------------------------------
 
             if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
-                // Kąt głównej ryby
                 angle1 = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
-                
-                // Kąt odbitej ryby (odwracamy dy zamiast dx, ponieważ odbijamy w osi pionowej)
                 angle2 = Math.atan2(-dy, dx) * (180 / Math.PI) + 90;
             }
 
-            // Odbicie osi Y (góra-dół)
             let mirroredY = window.innerHeight - currentY;
 
             fish1.style.transform = `translate(${currentX - 25}px, ${currentY - 50}px) rotate(${angle1}deg)`;
