@@ -3,102 +3,131 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>On/Uo - Mirror Koi V2</title>
+    <title>On/Uo - Mirror Koi: Definitive Edition</title>
     <style>
-        body {
-            margin: 0; padding: 0; overflow: hidden;
-            background-color: #888; color: #fff;
-            font-family: sans-serif; touch-action: none; 
+        :root {
+            --bg-color: #777;
+            --white: #ffffff;
+            --black: #000000;
         }
-        canvas { display: block; background: #888; }
-        #ui {
-            position: absolute; top: 20px; left: 50%;
-            transform: translateX(-50%); width: 80%;
-            pointer-events: none; text-align: center; z-index: 10;
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; background-color: var(--bg-color);
+            font-family: 'Courier New', Courier, monospace;
+            touch-action: none;
         }
-        #balance-container {
-            width: 100%; height: 14px; background: #fff;
-            border: 2px solid #000; border-radius: 7px; overflow: hidden;
+        canvas { display: block; }
+
+        /* Interfejs użytkownika */
+        #ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 10;
+            display: flex; flex-direction: column; align-items: center;
+        }
+        #balance-wrapper {
+            margin-top: 30px; width: 70%; max-width: 400px;
+            height: 12px; background: transparent;
+            border: 2px solid var(--white); border-radius: 20px;
+            overflow: hidden; position: relative;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
         #balance-bar {
-            height: 100%; width: 50%; background: #000;
-            transition: width 0.1s linear;
+            height: 100%; width: 50%; background: var(--black);
+            transition: width 0.05s linear;
         }
-        #score-display {
-            margin-top: 10px; font-size: 28px; font-weight: bold;
-            color: #fff; text-shadow: 2px 2px 0 #000;
+        #score-text {
+            font-size: 40px; font-weight: bold; margin-top: 10px;
+            color: var(--white); text-shadow: 2px 2px var(--black);
         }
-        #game-over {
+
+        /* Ekrany stanu */
+        .overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85);
+            background: rgba(0,0,0,0.8); z-index: 20;
             display: flex; flex-direction: column; justify-content: center;
-            align-items: center; z-index: 20;
+            align-items: center; text-align: center; color: var(--white);
+            padding: 20px; box-sizing: border-box;
         }
         .hidden { display: none !important; }
+        
+        h1 { font-size: 3rem; margin: 0; letter-spacing: 10px; }
+        p { font-size: 1.2rem; max-width: 500px; line-height: 1.5; }
+        
         button {
-            padding: 20px 40px; font-size: 20px; font-weight: bold;
-            background: #fff; color: #000; border: none;
-            border-radius: 10px; cursor: pointer; text-transform: uppercase;
+            background: var(--white); color: var(--black);
+            border: none; padding: 20px 50px; font-size: 1.2rem;
+            font-weight: bold; cursor: pointer; margin-top: 30px;
+            text-transform: uppercase; letter-spacing: 2px;
+            transition: transform 0.1s; pointer-events: auto;
         }
-        h1 { margin-bottom: 5px; letter-spacing: 5px; }
-        p { margin-bottom: 20px; opacity: 0.8; }
+        button:active { transform: scale(0.95); }
     </style>
 </head>
 <body>
 
-    <div id="ui">
-        <div id="balance-container">
+    <div id="ui-layer">
+        <div id="balance-wrapper">
             <div id="balance-bar"></div>
         </div>
-        <div id="score-display">0</div>
+        <div id="score-text">000</div>
     </div>
 
-    <div id="game-over">
-        <h1 id="go-title">ON / UO</h1>
-        <p id="go-msg">Utrzymaj równowagę między stronami</p>
-        <button id="start-btn">Zacznij Grę</button>
+    <div id="screen-menu" class="overlay">
+        <h1 id="menu-title">ON / UO</h1>
+        <p id="menu-msg">Osiągnij harmonię w chaosie. Steruj obiema stronami jednocześnie. Nie pozwól, by jedna przeważyła drugą.</p>
+        <button id="btn-action">Rozpocznij</button>
     </div>
 
-    <canvas id="gameCanvas"></canvas>
+    <canvas id="game"></canvas>
 
     <script>
-        const canvas = document.getElementById('gameCanvas');
+        const canvas = document.getElementById('game');
         const ctx = canvas.getContext('2d');
         const balanceBar = document.getElementById('balance-bar');
-        const scoreDisplay = document.getElementById('score-display');
-        const gameOverScreen = document.getElementById('game-over');
-        const startBtn = document.getElementById('start-btn');
+        const scoreText = document.getElementById('score-text');
+        const screenMenu = document.getElementById('screen-menu');
+        const btnAction = document.getElementById('btn-action');
 
-        let width, height, isPlaying = false, score = 0, frameCount = 0;
+        let width, height, isPlaying = false;
+        let score = 0, frameCount = 0;
         let balance = 50; 
         let pointerX = 0, pointerY = 0;
         let obstacles = [];
 
-        const leftFish = { x: 0, y: 0, angle: 0 };
-        const rightFish = { x: 0, y: 0, angle: 0 };
+        const leftFish = { x: 0, y: 0, angle: 0, color: '#000' };
+        const rightFish = { x: 0, y: 0, angle: 0, color: '#fff' };
 
-        // --- AUDIO (V2: Bezpieczniejsza inicjalizacja) ---
+        // --- SYNTEZATOR DŹWIĘKU (Dynamic Audio) ---
         let audioCtx;
         function initAudio() {
-            try {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            } catch(e) { console.log("Audio not supported"); }
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
 
-        function playBeep(risk) {
-            if (!audioCtx) return;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = risk > 0.6 ? 'triangle' : 'sine';
-            osc.frequency.setValueAtTime(200 + (risk * 400), audioCtx.currentTime);
-            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.1);
+        function playDynamicTone() {
+            if (!audioCtx || !isPlaying) return;
+            
+            // Poziom ryzyka (od 0 do 1)
+            const risk = Math.abs(50 - balance) / 50;
+            const tempo = Math.max(100, 500 - (risk * 400)); // Przyspiesza przy krawędziach
+
+            if (frameCount % Math.floor(tempo / 16) === 0) {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.type = risk > 0.7 ? 'sawtooth' : 'sine';
+                osc.frequency.setValueAtTime(100 + (risk * 300), audioCtx.currentTime);
+                
+                gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.1);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.1);
+            }
         }
 
+        // --- GEOMETRIA I RYSOWANIE ---
         function resize() {
             width = window.innerWidth;
             height = window.innerHeight;
@@ -110,146 +139,163 @@
         window.addEventListener('resize', resize);
         resize();
 
-        // Obsługa sterowania (V2: Scalone zdarzenia)
-        function handleInput(e) {
-            if (e.touches && e.touches.length > 0) {
-                // e.preventDefault(); // Usunięte dla kompatybilności, touch-action: none w CSS wystarczy
-                pointerX = e.touches[0].clientX;
-                pointerY = e.touches[0].clientY;
-            } else {
-                pointerX = e.clientX;
-                pointerY = e.clientY;
-            }
-        }
-        window.addEventListener('mousemove', handleInput);
-        window.addEventListener('touchstart', handleInput);
-        window.addEventListener('touchmove', handleInput);
-
-        function drawKoi(x, y, angle, color) {
+        function drawKoi(fish, color) {
             ctx.save();
-            ctx.translate(x, y);
-            ctx.rotate(angle);
+            ctx.translate(fish.x, fish.y);
+            ctx.rotate(fish.angle);
             ctx.fillStyle = color;
-            // Korpus
+
+            // Korpus (bardziej wrzecionowaty)
             ctx.beginPath();
-            ctx.ellipse(0, 0, 10, 20, 0, 0, Math.PI * 2);
+            ctx.moveTo(0, -25);
+            ctx.bezierCurveTo(15, -15, 12, 10, 0, 25);
+            ctx.bezierCurveTo(-12, 10, -15, -15, 0, -25);
             ctx.fill();
-            // Płetwy
+
+            // Płetwy piersiowe
             ctx.beginPath();
-            ctx.moveTo(-8, -5); ctx.lineTo(-18, 5); ctx.lineTo(-10, 8); ctx.fill();
+            ctx.moveTo(8, -5); ctx.quadraticCurveTo(25, 0, 10, 15); ctx.fill();
             ctx.beginPath();
-            ctx.moveTo(8, -5); ctx.lineTo(18, 5); ctx.lineTo(10, 8); ctx.fill();
-            // Ogon
+            ctx.moveTo(-8, -5); ctx.quadraticCurveTo(-25, 0, -10, 15); ctx.fill();
+
+            // Długi, falujący ogon
+            const tailWiggle = Math.sin(frameCount * 0.1) * 5;
             ctx.beginPath();
-            ctx.moveTo(0, 15); ctx.lineTo(-10, 30); ctx.lineTo(10, 30); ctx.closePath();
+            ctx.moveTo(0, 22);
+            ctx.quadraticCurveTo(15 + tailWiggle, 40, 5, 55);
+            ctx.lineTo(0, 45);
+            ctx.lineTo(-5, 55);
+            ctx.quadraticCurveTo(-15 + tailWiggle, 40, 0, 22);
             ctx.fill();
+
             ctx.restore();
         }
 
+        // --- STEROWANIE ---
+        function updatePointer(e) {
+            const ev = e.touches ? e.touches[0] : e;
+            pointerX = ev.clientX;
+            pointerY = ev.clientY;
+        }
+        window.addEventListener('mousemove', updatePointer);
+        window.addEventListener('touchstart', (e) => { updatePointer(e); e.preventDefault(); }, {passive: false});
+        window.addEventListener('touchmove', (e) => { updatePointer(e); e.preventDefault(); }, {passive: false});
+
+        // --- LOGIKA GRY ---
         function startGame() {
             if (!audioCtx) initAudio();
-            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-            
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
             isPlaying = true;
             score = 0;
             balance = 50;
             obstacles = [];
             frameCount = 0;
-            gameOverScreen.classList.add('hidden');
             
-            // Pozycje startowe
+            // Reset pozycji
             leftFish.x = width * 0.25;
             rightFish.x = width * 0.75;
-            leftFish.y = rightFish.y = height * 0.8;
-            
+            leftFish.y = rightFish.y = height * 0.7;
+
+            screenMenu.classList.add('hidden');
             requestAnimationFrame(gameLoop);
         }
 
-        function endGame(msg) {
+        function gameOver(msg) {
             isPlaying = false;
-            gameOverScreen.classList.remove('hidden');
-            document.getElementById('go-title').innerText = "KONIEC";
-            document.getElementById('go-msg').innerText = msg + " Wynik: " + Math.floor(score);
-            startBtn.innerText = "Zagraj Ponownie";
+            document.getElementById('menu-title').innerText = "KONIEC";
+            document.getElementById('menu-msg').innerText = msg + "\nTwój wynik: " + Math.floor(score);
+            btnAction.innerText = "Spróbuj ponownie";
+            screenMenu.classList.remove('hidden');
         }
 
         function gameLoop() {
             if (!isPlaying) return;
 
             frameCount++;
-            score += 1/60;
+            score += 0.1;
 
-            // 1. Logika Balansu (Inercja)
-            let distFromCenter = (pointerX - width / 2) / (width / 2); // -1 do 1
-            let balanceShift = distFromCenter * 0.6; // Czułość balansu
-            balance += balanceShift;
+            // 1. Mechanika Inercji Balansu (Usprawnienie #1)
+            // Odległość palca od osi centralnej (-1 do 1)
+            const normalizedPos = (pointerX - (width / 2)) / (width / 2);
+            // Szybkość przesuwania balansu zależy od wychylenia
+            const balanceInertia = normalizedPos * 0.7; 
+            balance += balanceInertia;
 
+            // Aktualizacja wizualna paska
             balanceBar.style.width = balance + "%";
-            if (balance <= 0 || balance >= 100) return endGame("Straciłeś równowagę!");
+            balanceBar.style.backgroundColor = (balance < 20 || balance > 80) ? "#f00" : "#000";
 
-            // Dźwięk przy ryzyku
+            if (balance <= 0 || balance >= 100) return gameOver("Harmonia została zburzona!");
+
+            // 2. Mechanika Lustrzana (Mirroring)
+            // Lewa ryba zawsze na lewej połowie, prawa na prawej
+            let targetLX = pointerX < width / 2 ? pointerX : (width - pointerX);
+            let targetRX = pointerX >= width / 2 ? pointerX : (width - pointerX);
+
+            // Granice
+            targetLX = Math.max(30, Math.min(width/2 - 30, targetLX));
+            targetRX = Math.max(width/2 + 30, Math.min(width - 30, targetRX));
+
+            // Ruch ryb z opóźnieniem (płynność)
+            leftFish.x += (targetLX - leftFish.x) * 0.15;
+            rightFish.x += (targetRX - rightFish.x) * 0.15;
+            leftFish.y = rightFish.y += (pointerY - leftFish.y) * 0.15;
+
+            // Kąt (pływanie w stronę celu)
+            leftFish.angle = (targetLX - leftFish.x) * 0.04;
+            rightFish.angle = (targetRX - rightFish.x) * 0.04;
+
+            // 3. Przeszkody (Bullet Hell Lite)
             if (frameCount % 30 === 0) {
-                let risk = Math.abs(50 - balance) / 50;
-                if (risk > 0.5) playBeep(risk);
-            }
-
-            // 2. Logika Lustrzanych Ryb
-            let targetLX = pointerX < width / 2 ? pointerX : width - pointerX;
-            let targetRX = pointerX >= width / 2 ? pointerX : width - pointerX;
-            
-            // Wygładzanie ruchu
-            leftFish.x += (targetLX - leftFish.x) * 0.1;
-            rightFish.x += (targetRX - rightFish.x) * 0.1;
-            leftFish.y = rightFish.y += (pointerY - leftFish.y) * 0.1;
-
-            // Kąt obrotu
-            leftFish.angle = (targetLX - leftFish.x) * 0.05;
-            rightFish.angle = (targetRX - rightFish.x) * 0.05;
-
-            // 3. Przeszkody
-            if (frameCount % 40 === 0) {
+                const side = Math.random() > 0.5 ? 'left' : 'right';
                 obstacles.push({
                     x: Math.random() * width,
-                    y: -20,
-                    r: 15,
-                    s: 3 + Math.random() * 2
+                    y: -50,
+                    r: 12 + Math.random() * 10,
+                    speed: 4 + (score * 0.01),
+                    side: side
                 });
             }
 
-            // --- RENDERING ---
+            // 4. Audio
+            playDynamicTone();
+
+            // --- RENDEROWANIE ---
             ctx.clearRect(0, 0, width, height);
-            
-            // Tło podział
+
+            // Podział tła (Yin Yang Style)
             ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, width/2, height);
             ctx.fillStyle = "#000"; ctx.fillRect(width/2, 0, width/2, height);
 
-            // Rysowanie przeszkód
+            // Przeszkody i kolizje
             for (let i = obstacles.length - 1; i >= 0; i--) {
                 let o = obstacles[i];
-                o.y += o.s;
-                
-                // Kolor przeszkody zależny od strony
-                ctx.fillStyle = o.x < width/2 ? "#000" : "#fff";
-                ctx.beginPath(); ctx.arc(o.x, o.y, o.r, 0, Math.PI*2); ctx.fill();
+                o.y += o.speed;
+
+                // Styl przeszkody
+                ctx.fillStyle = o.x < width / 2 ? "#000" : "#fff";
+                ctx.beginPath();
+                ctx.arc(o.x, o.y, o.r, 0, Math.PI * 2);
+                ctx.fill();
 
                 // Kolizja
-                let f = o.x < width/2 ? leftFish : rightFish;
-                let dx = o.x - f.x, dy = o.y - f.y;
-                if (Math.sqrt(dx*dx + dy*dy) < o.r + 10) return endGame("Trafiłeś w przeszkodę!");
+                const targetFish = o.x < width / 2 ? leftFish : rightFish;
+                const dist = Math.hypot(o.x - targetFish.x, o.y - targetFish.y);
+                if (dist < o.r + 15) return gameOver("Uderzyłeś w chaos!");
 
-                if (o.y > height + 20) obstacles.splice(i, 1);
+                if (o.y > height + 50) obstacles.splice(i, 1);
             }
 
-            // Rysowanie ryb
-            drawKoi(leftFish.x, leftFish.y, leftFish.angle, "#000");
-            drawKoi(rightFish.x, rightFish.y, rightFish.angle, "#fff");
+            // Ryby
+            drawKoi(leftFish, "#000");
+            drawKoi(rightFish, "#fff");
 
-            scoreDisplay.innerText = Math.floor(score);
+            scoreText.innerText = Math.floor(score).toString().padStart(3, '0');
             requestAnimationFrame(gameLoop);
         }
 
-        startBtn.addEventListener('click', startGame);
-
+        btnAction.addEventListener('click', startGame);
     </script>
 </body>
 </html>
