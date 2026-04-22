@@ -3,83 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>On/Uo - Mirror Koi</title>
+    <title>On/Uo - Mirror Koi V2</title>
     <style>
         body {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            background-color: #888; /* Widoczne tylko przy ładowaniu */
-            color: #fff;
-            font-family: 'Segoe UI', sans-serif;
-            touch-action: none; 
+            margin: 0; padding: 0; overflow: hidden;
+            background-color: #888; color: #fff;
+            font-family: sans-serif; touch-action: none; 
         }
-        canvas {
-            display: block;
-        }
+        canvas { display: block; background: #888; }
         #ui {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 80%;
-            pointer-events: none;
-            text-align: center;
-            z-index: 10;
+            position: absolute; top: 20px; left: 50%;
+            transform: translateX(-50%); width: 80%;
+            pointer-events: none; text-align: center; z-index: 10;
         }
         #balance-container {
-            width: 100%;
-            height: 12px;
-            background: #fff;
-            border: 2px solid #888;
-            border-radius: 6px;
-            overflow: hidden;
-            position: relative;
+            width: 100%; height: 14px; background: #fff;
+            border: 2px solid #000; border-radius: 7px; overflow: hidden;
         }
-        /* Pasek balansu w odcieniach szarości, aby pasował do stylu */
         #balance-bar {
-            height: 100%;
-            width: 50%;
-            background: #000;
-            transition: width 0.1s linear, background-color 0.2s;
+            height: 100%; width: 50%; background: #000;
+            transition: width 0.1s linear;
         }
         #score-display {
-            margin-top: 10px;
-            font-size: 24px;
-            font-weight: bold;
-            color: #888;
-            text-shadow: 1px 1px 0 #000, -1px -1px 0 #fff;
+            margin-top: 10px; font-size: 28px; font-weight: bold;
+            color: #fff; text-shadow: 2px 2px 0 #000;
         }
         #game-over {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(128, 128, 128, 0.9);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s;
-            z-index: 20;
-            color: #000;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: flex; flex-direction: column; justify-content: center;
+            align-items: center; z-index: 20;
         }
-        #game-over.active {
-            opacity: 1;
-            pointer-events: all;
-        }
+        .hidden { display: none !important; }
         button {
-            padding: 15px 30px;
-            font-size: 18px;
-            font-weight: bold;
-            margin-top: 20px;
-            background: #000;
-            color: #fff;
-            border: 2px solid #fff;
-            border-radius: 5px;
-            cursor: pointer;
-            text-transform: uppercase;
+            padding: 20px 40px; font-size: 20px; font-weight: bold;
+            background: #fff; color: #000; border: none;
+            border-radius: 10px; cursor: pointer; text-transform: uppercase;
         }
+        h1 { margin-bottom: 5px; letter-spacing: 5px; }
+        p { margin-bottom: 20px; opacity: 0.8; }
     </style>
 </head>
 <body>
@@ -92,9 +54,9 @@
     </div>
 
     <div id="game-over">
-        <h1 id="go-reason">ON / UO</h1>
-        <h2 id="go-score">Symetria i Balans</h2>
-        <button onclick="startGame()">Rozpocznij (Włącz Dźwięk)</button>
+        <h1 id="go-title">ON / UO</h1>
+        <p id="go-msg">Utrzymaj równowagę między stronami</p>
+        <button id="start-btn">Zacznij Grę</button>
     </div>
 
     <canvas id="gameCanvas"></canvas>
@@ -105,320 +67,189 @@
         const balanceBar = document.getElementById('balance-bar');
         const scoreDisplay = document.getElementById('score-display');
         const gameOverScreen = document.getElementById('game-over');
-        const goReason = document.getElementById('go-reason');
-        const goScore = document.getElementById('go-score');
+        const startBtn = document.getElementById('start-btn');
 
-        let width, height;
-        let isPlaying = false;
-        let score = 0;
-        let frameCount = 0;
-        
+        let width, height, isPlaying = false, score = 0, frameCount = 0;
         let balance = 50; 
-        
-        // Zmienne do interakcji
-        let pointerX = 0;
-        let pointerY = 0;
-
-        // Ryby
-        const fishRadius = 12; // Używane do kolizji
-        const leftFish = { x: 0, y: 0, angle: 0, color: '#000' };
-        const rightFish = { x: 0, y: 0, angle: 0, color: '#fff' };
-
+        let pointerX = 0, pointerY = 0;
         let obstacles = [];
 
-        // --- AUDIO SYSTEM (Usprawnienie 21) ---
+        const leftFish = { x: 0, y: 0, angle: 0 };
+        const rightFish = { x: 0, y: 0, angle: 0 };
+
+        // --- AUDIO (V2: Bezpieczniejsza inicjalizacja) ---
         let audioCtx;
-        let nextNoteTime = 0;
-        let musicTimer;
-
         function initAudio() {
-            if (!audioCtx) {
+            try {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
+            } catch(e) { console.log("Audio not supported"); }
         }
 
-        function scheduleMusic() {
-            if (!isPlaying) return;
-
-            let currentTime = audioCtx.currentTime;
-            
-            // Obliczanie poziomu ryzyka z balansu (0 - bezpiecznie, 1 - krytycznie)
-            let risk = 0;
-            if (balance < 25) risk = (25 - balance) / 25;
-            if (balance > 75) risk = (balance - 75) / 25;
-
-            // Tempo przyspiesza wraz z ryzykiem (bazowo 600ms, krytycznie 150ms)
-            let interval = 0.6 - (risk * 0.45);
-            
-            if (currentTime >= nextNoteTime) {
-                playSynthBeep(risk);
-                nextNoteTime = currentTime + interval;
-            }
-
-            musicTimer = requestAnimationFrame(scheduleMusic);
-        }
-
-        function playSynthBeep(risk) {
+        function playBeep(risk) {
+            if (!audioCtx) return;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            
-            // Częstotliwość wyższa, gdy jest niebezpiecznie
-            osc.frequency.value = 220 + (risk * 440); 
-            // Ton staje się bardziej "agresywny" (piłokształtny) przy ryzyku
-            osc.type = risk > 0.5 ? 'sawtooth' : 'sine';
-            
+            osc.type = risk > 0.6 ? 'triangle' : 'sine';
+            osc.frequency.setValueAtTime(200 + (risk * 400), audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-            
             osc.start();
-            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
             osc.stop(audioCtx.currentTime + 0.1);
         }
-        // --------------------------------------
 
         function resize() {
             width = window.innerWidth;
             height = window.innerHeight;
             canvas.width = width;
             canvas.height = height;
-            if (!isPlaying) {
-                pointerX = width / 2;
-                pointerY = height - 150;
-            }
+            pointerX = width / 2;
+            pointerY = height / 2;
         }
         window.addEventListener('resize', resize);
         resize();
 
-        function updatePointer(e) {
+        // Obsługa sterowania (V2: Scalone zdarzenia)
+        function handleInput(e) {
             if (e.touches && e.touches.length > 0) {
+                // e.preventDefault(); // Usunięte dla kompatybilności, touch-action: none w CSS wystarczy
                 pointerX = e.touches[0].clientX;
-                pointerY = e.touches[0].clientY - 40; // Offset, by widzieć rybę
+                pointerY = e.touches[0].clientY;
             } else {
                 pointerX = e.clientX;
                 pointerY = e.clientY;
             }
         }
+        window.addEventListener('mousemove', handleInput);
+        window.addEventListener('touchstart', handleInput);
+        window.addEventListener('touchmove', handleInput);
 
-        window.addEventListener('mousemove', updatePointer);
-        window.addEventListener('touchstart', updatePointer, {passive: false});
-        window.addEventListener('touchmove', updatePointer, {passive: false});
-
-        function startGame() {
-            initAudio();
-            isPlaying = true;
-            score = 0;
-            balance = 50;
-            frameCount = 0;
-            obstacles = [];
-            pointerX = width / 2;
-            pointerY = height - 150;
-            
-            leftFish.x = width / 4; leftFish.y = pointerY; leftFish.angle = 0;
-            rightFish.x = width * 0.75; rightFish.y = pointerY; rightFish.angle = 0;
-
-            nextNoteTime = audioCtx.currentTime + 0.1;
-            scheduleMusic();
-
-            gameOverScreen.classList.remove('active');
-            requestAnimationFrame(gameLoop);
-        }
-
-        function endGame(reason) {
-            isPlaying = false;
-            cancelAnimationFrame(musicTimer);
-            goReason.innerText = reason;
-            goScore.innerText = `Wynik: ${Math.floor(score)}`;
-            gameOverScreen.classList.add('active');
-            
-            // Krótki dźwięk porażki
-            if (audioCtx) {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.5);
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start();
-                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-                gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
-                osc.stop(audioCtx.currentTime + 0.5);
-            }
-        }
-
-        function spawnObstacle() {
-            // Decyzja: lewa czy prawa strona
-            const isLeft = Math.random() < 0.5;
-            const size = Math.random() * 10 + 10;
-            const x = isLeft ? (Math.random() * (width / 2 - size*2) + size) : (width/2 + Math.random() * (width / 2 - size*2) + size);
-            
-            obstacles.push({
-                x: x,
-                y: -size,
-                radius: size,
-                speed: Math.random() * 2 + 2 + (score * 0.005),
-                side: isLeft ? 'left' : 'right'
-            });
-        }
-
-        // Rysowanie karpia koi
-        function drawFish(ctx, x, y, angle, color) {
+        function drawKoi(x, y, angle, color) {
             ctx.save();
             ctx.translate(x, y);
             ctx.rotate(angle);
             ctx.fillStyle = color;
-            
-            // Ciało
+            // Korpus
             ctx.beginPath();
-            ctx.moveTo(0, -20); // Nos
-            ctx.quadraticCurveTo(15, -10, 8, 15); // Prawy bok
-            ctx.quadraticCurveTo(0, 25, -8, 15);  // Ogon (wcięcie)
-            ctx.quadraticCurveTo(-15, -10, 0, -20); // Lewy bok
+            ctx.ellipse(0, 0, 10, 20, 0, 0, Math.PI * 2);
             ctx.fill();
-
-            // Płetwy boczne
+            // Płetwy
             ctx.beginPath();
-            ctx.moveTo(10, -5); ctx.lineTo(20, 5); ctx.lineTo(12, 10); ctx.fill();
+            ctx.moveTo(-8, -5); ctx.lineTo(-18, 5); ctx.lineTo(-10, 8); ctx.fill();
             ctx.beginPath();
-            ctx.moveTo(-10, -5); ctx.lineTo(-20, 5); ctx.lineTo(-12, 10); ctx.fill();
-
+            ctx.moveTo(8, -5); ctx.lineTo(18, 5); ctx.lineTo(10, 8); ctx.fill();
             // Ogon
             ctx.beginPath();
-            ctx.moveTo(4, 18); ctx.lineTo(10, 35); ctx.lineTo(0, 28); 
-            ctx.lineTo(-10, 35); ctx.lineTo(-4, 18); ctx.fill();
-
+            ctx.moveTo(0, 15); ctx.lineTo(-10, 30); ctx.lineTo(10, 30); ctx.closePath();
+            ctx.fill();
             ctx.restore();
         }
 
-        function drawObstacle(ctx, obs) {
-            const color = obs.side === 'left' ? '#000' : '#fff';
-            const bgColor = obs.side === 'left' ? '#fff' : '#000';
+        function startGame() {
+            if (!audioCtx) initAudio();
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
             
-            ctx.fillStyle = color;
-            ctx.beginPath();
-            ctx.arc(obs.x, obs.y, obs.radius, 0, Math.PI * 2);
-            ctx.fill();
+            isPlaying = true;
+            score = 0;
+            balance = 50;
+            obstacles = [];
+            frameCount = 0;
+            gameOverScreen.classList.add('hidden');
             
-            ctx.fillStyle = bgColor;
-            ctx.beginPath();
-            ctx.arc(obs.x, obs.y, obs.radius * 0.5, 0, Math.PI * 2);
-            ctx.fill();
+            // Pozycje startowe
+            leftFish.x = width * 0.25;
+            rightFish.x = width * 0.75;
+            leftFish.y = rightFish.y = height * 0.8;
+            
+            requestAnimationFrame(gameLoop);
         }
 
-        // Matematyka do płynnego obracania
-        function lerpAngle(a, b, t) {
-            let d = b - a;
-            while (d > Math.PI) d -= Math.PI * 2;
-            while (d < -Math.PI) d += Math.PI * 2;
-            return a + d * t;
+        function endGame(msg) {
+            isPlaying = false;
+            gameOverScreen.classList.remove('hidden');
+            document.getElementById('go-title').innerText = "KONIEC";
+            document.getElementById('go-msg').innerText = msg + " Wynik: " + Math.floor(score);
+            startBtn.innerText = "Zagraj Ponownie";
         }
 
         function gameLoop() {
             if (!isPlaying) return;
 
-            score += 1 / 60;
             frameCount++;
+            score += 1/60;
 
-            // Logika Odbicia Lustrzanego
-            let targetLeftX = pointerX < width / 2 ? pointerX : width - pointerX;
-            let targetRightX = pointerX >= width / 2 ? pointerX : width - pointerX;
-            let targetY = pointerY;
+            // 1. Logika Balansu (Inercja)
+            let distFromCenter = (pointerX - width / 2) / (width / 2); // -1 do 1
+            let balanceShift = distFromCenter * 0.6; // Czułość balansu
+            balance += balanceShift;
 
-            // Zabezpieczenia na krawędziach
-            targetLeftX = Math.max(15, Math.min(width/2 - 15, targetLeftX));
-            targetRightX = Math.max(width/2 + 15, Math.min(width - 15, targetRightX));
-            targetY = Math.max(20, Math.min(height - 30, targetY));
+            balanceBar.style.width = balance + "%";
+            if (balance <= 0 || balance >= 100) return endGame("Straciłeś równowagę!");
 
-            // Obliczanie kierunku i ruchu lewej ryby
-            let dxL = targetLeftX - leftFish.x;
-            let dyL = targetY - leftFish.y;
-            leftFish.x += dxL * 0.15;
-            leftFish.y += dyL * 0.15;
-            if (Math.abs(dxL) > 1 || Math.abs(dyL) > 1) {
-                let targetAngleL = Math.atan2(dyL, dxL) + Math.PI/2;
-                leftFish.angle = lerpAngle(leftFish.angle, targetAngleL, 0.15);
+            // Dźwięk przy ryzyku
+            if (frameCount % 30 === 0) {
+                let risk = Math.abs(50 - balance) / 50;
+                if (risk > 0.5) playBeep(risk);
             }
 
-            // Obliczanie kierunku i ruchu prawej ryby
-            let dxR = targetRightX - rightFish.x;
-            let dyR = targetY - rightFish.y;
-            rightFish.x += dxR * 0.15;
-            rightFish.y += dyR * 0.15;
-            if (Math.abs(dxR) > 1 || Math.abs(dyR) > 1) {
-                let targetAngleR = Math.atan2(dyR, dxR) + Math.PI/2;
-                rightFish.angle = lerpAngle(rightFish.angle, targetAngleR, 0.15);
-            }
-
-            // --- USPRAWNIENIE 1: STREFY INERCJI ---
-            // Obliczamy dystans aktywnego palca od środka ekranu (wartość od 0 do 1)
-            let distanceFromCenter = Math.abs((width / 2) - pointerX) / (width / 2);
+            // 2. Logika Lustrzanych Ryb
+            let targetLX = pointerX < width / 2 ? pointerX : width - pointerX;
+            let targetRX = pointerX >= width / 2 ? pointerX : width - pointerX;
             
-            // Szybkość balansu = Baza + (Dystans * Mnożnik)
-            let currentBalanceSpeed = 0.1 + (distanceFromCenter * 0.4);
+            // Wygładzanie ruchu
+            leftFish.x += (targetLX - leftFish.x) * 0.1;
+            rightFish.x += (targetRX - rightFish.x) * 0.1;
+            leftFish.y = rightFish.y += (pointerY - leftFish.y) * 0.1;
 
-            if (pointerX < width / 2) {
-                balance -= currentBalanceSpeed; // Palec po lewej -> waga leci w lewo
-            } else {
-                balance += currentBalanceSpeed; // Palec po prawej -> waga leci w prawo
+            // Kąt obrotu
+            leftFish.angle = (targetLX - leftFish.x) * 0.05;
+            rightFish.angle = (targetRX - rightFish.x) * 0.05;
+
+            // 3. Przeszkody
+            if (frameCount % 40 === 0) {
+                obstacles.push({
+                    x: Math.random() * width,
+                    y: -20,
+                    r: 15,
+                    s: 3 + Math.random() * 2
+                });
             }
 
-            // Aktualizacja UI
-            balanceBar.style.width = balance + '%';
-            if (balance < 25 || balance > 75) {
-                balanceBar.style.backgroundColor = '#f00'; // Czerwony alarmowy
-            } else {
-                balanceBar.style.backgroundColor = '#000';
-            }
-
-            if (balance <= 0) return endGame("Równowaga złamana (Lewa)");
-            if (balance >= 100) return endGame("Równowaga złamana (Prawa)");
-
-            // Przeszkody
-            let spawnRate = Math.max(15, 45 - Math.floor(score / 5));
-            if (frameCount % spawnRate === 0) spawnObstacle();
-
-            for (let i = obstacles.length - 1; i >= 0; i--) {
-                let obs = obstacles[i];
-                obs.y += obs.speed;
-
-                // Sprawdzanie kolizji tylko z rybą po tej samej stronie
-                let fishToCheck = obs.side === 'left' ? leftFish : rightFish;
-                let dx = fishToCheck.x - obs.x;
-                let dy = fishToCheck.y - obs.y;
-                let distance = Math.sqrt(dx * dx + dy * dy);
-                
-                if (distance < fishRadius + obs.radius) {
-                    return endGame("Zderzenie!");
-                }
-
-                if (obs.y > height + obs.radius) {
-                    obstacles.splice(i, 1);
-                }
-            }
-
-            scoreDisplay.innerText = Math.floor(score);
-
-            // --- RYSOWANIE ---
+            // --- RENDERING ---
+            ctx.clearRect(0, 0, width, height);
             
-            // Tło (Yin Yang / 1-bit)
-            ctx.fillStyle = '#fff';
-            ctx.fillRect(0, 0, width / 2, height); // Lewa biała
-            ctx.fillStyle = '#000';
-            ctx.fillRect(width / 2, 0, width / 2, height); // Prawa czarna
+            // Tło podział
+            ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, width/2, height);
+            ctx.fillStyle = "#000"; ctx.fillRect(width/2, 0, width/2, height);
 
             // Rysowanie przeszkód
-            obstacles.forEach(obs => drawObstacle(ctx, obs));
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                let o = obstacles[i];
+                o.y += o.s;
+                
+                // Kolor przeszkody zależny od strony
+                ctx.fillStyle = o.x < width/2 ? "#000" : "#fff";
+                ctx.beginPath(); ctx.arc(o.x, o.y, o.r, 0, Math.PI*2); ctx.fill();
+
+                // Kolizja
+                let f = o.x < width/2 ? leftFish : rightFish;
+                let dx = o.x - f.x, dy = o.y - f.y;
+                if (Math.sqrt(dx*dx + dy*dy) < o.r + 10) return endGame("Trafiłeś w przeszkodę!");
+
+                if (o.y > height + 20) obstacles.splice(i, 1);
+            }
 
             // Rysowanie ryb
-            drawFish(ctx, leftFish.x, leftFish.y, leftFish.angle, leftFish.color);
-            drawFish(ctx, rightFish.x, rightFish.y, rightFish.angle, rightFish.color);
+            drawKoi(leftFish.x, leftFish.y, leftFish.angle, "#000");
+            drawKoi(rightFish.x, rightFish.y, rightFish.angle, "#fff");
 
+            scoreDisplay.innerText = Math.floor(score);
             requestAnimationFrame(gameLoop);
         }
+
+        startBtn.addEventListener('click', startGame);
+
     </script>
 </body>
 </html>
