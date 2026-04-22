@@ -193,14 +193,14 @@
             // Usuwamy cząsteczkę z DOM po zakończeniu jej animacji (2s)
             setTimeout(() => {
                 particlesContainer.removeChild(particle);
-            }, 2000); 
+            }, 3000); 
         }
 
         // Pętla generująca nowe cząsteczki w losowych odstępach czasu
         function spawnNext() {
             spawnParticle();
             // Losowe opóźnienie przed kolejnym wybuchem (0.5s - 1.5s)
-            const delay = 500 + Math.random() * 1000; 
+            const delay = 5000 + Math.random() * 10000; 
             setTimeout(spawnNext, delay);
         }
 
