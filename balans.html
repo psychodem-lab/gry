@@ -142,11 +142,11 @@
             
             // Jeśli płynie w prawo (actualDx > 0), podział idzie w prawo (białe rośnie).
             // Mnożnik określa jak szybko tło reaguje. Mniejszy = wolniej.
-            splitPercentage += actualDx * 0.06; 
+            splitPercentage += actualDx * 0.03; 
 
             // Zabezpieczenie przed całkowitym zniknięciem jednej strony (min 10%, max 90%)
-            if (splitPercentage > 95) splitPercentage = 95;
-            if (splitPercentage < 5) splitPercentage = 5;
+            if (splitPercentage > 99) splitPercentage = 99;
+            if (splitPercentage < 0,1) splitPercentage = 0,1;
 
             // Aktualizacja tła
             document.body.style.background = `linear-gradient(to right, #ffffff ${splitPercentage}%, #000000 ${splitPercentage}%)`;
