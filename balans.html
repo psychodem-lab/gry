@@ -146,7 +146,7 @@
 
             // Zabezpieczenie przed całkowitym zniknięciem jednej strony (min 10%, max 90%)
             if (splitPercentage > 99) splitPercentage = 99;
-            if (splitPercentage < 0,1) splitPercentage = 0,1;
+            if (splitPercentage < 1) splitPercentage = 1;
 
             // Aktualizacja tła
             document.body.style.background = `linear-gradient(to right, #ffffff ${splitPercentage}%, #000000 ${splitPercentage}%)`;
