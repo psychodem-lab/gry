@@ -3,30 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yin Yang Koi - Totalna Równowaga</title>
+    <title>Yin Yang Koi - Art & Physics</title>
     <style>
         body {
             margin: 0;
             padding: 0;
             width: 100vw;
             height: 100vh;
-            /* Tło podzielone pionowo: góra biała, dół czarny */
             background: linear-gradient(to bottom, #ffffff 50%, #000000 50%);
             overflow: hidden;
             cursor: crosshair;
+        }
+
+        /* [27] Tekstura papieru ryżowego / szum */
+        .paper-texture {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 10;
+            opacity: 0.12; /* Subtelny efekt */
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
         }
 
         .fish {
             position: absolute;
             width: 50px;
             height: 100px;
-            top: 0;
-            left: 0;
+            top: 0; left: 0;
             transform-origin: 25px 50px; 
             pointer-events: none; 
             mix-blend-mode: difference;
-            fill: #ffffff;
-            will-change: transform;
+            will-change: transform, filter;
+            /* [4] Efekt rozmycia nakładany w JS */
         }
 
         .tail {
@@ -42,11 +50,9 @@
 
         .center-portal {
             position: absolute;
-            top: 50%;
-            left: 50%;
+            top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            width: 80px;
-            height: 80px;
+            width: 80px; height: 80px;
             border-radius: 50%;
             border: 10px dashed #ffffff;
             mix-blend-mode: difference;
@@ -59,13 +65,12 @@
             100% { transform: translate(-50%, -50%) rotate(360deg); }
         }
 
-        .particle {
+        /* Styl dla zwykłych cząsteczek i nowych śladów na wodzie */
+        .particle, .ripple {
             position: absolute;
             border-radius: 50%;
             pointer-events: none;
             mix-blend-mode: difference;
-            opacity: 0;
-            transform: scale(0.1);
             will-change: transform, opacity;
         }
 
@@ -78,21 +83,42 @@
             20% { opacity: 0.6; transform: scale(1); }
             100% { opacity: 0; transform: scale(3.5); }
         }
+
+        /* [1] & [13] & [29] Animacja śladów na wodzie (fal) */
+        .ripple-anim {
+            animation: rippleExpand 3s ease-out forwards;
+            border: 2px solid #ffffff;
+        }
+
+        @keyframes rippleExpand {
+            0% { opacity: 0.8; transform: scale(0.1); }
+            100% { opacity: 0; transform: scale(4); }
+        }
     </style>
 </head>
 <body>
 
+    <div class="paper-texture"></div>
+
     <div class="center-portal"></div>
     <div id="particles-container"></div>
+    <div id="ripples-container"></div> <svg width="0" height="0">
+        <defs>
+            <linearGradient id="fishGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#ffffff" />
+                <stop offset="100%" stop-color="#aaaaaa" />
+            </linearGradient>
+        </defs>
+    </svg>
 
-    <svg class="fish" id="fish1" viewBox="0 0 100 200" xmlns="http://www.w3.org/2000/svg">
+    <svg class="fish" id="fish1" viewBox="0 0 100 200" xmlns="http://www.w3.org/2000/svg" fill="url(#fishGradient)">
         <ellipse cx="50" cy="80" rx="25" ry="60" />
         <path class="tail" d="M 50 130 C 70 170, 80 190, 50 200 C 20 190, 30 170, 50 130 Z" />
         <path d="M 27 70 C 5 80, -5 110, 15 110 Z" />
         <path d="M 73 70 C 95 80, 105 110, 85 110 Z" />
     </svg>
 
-    <svg class="fish" id="fish2" viewBox="0 0 100 200" xmlns="http://www.w3.org/2000/svg">
+    <svg class="fish" id="fish2" viewBox="0 0 100 200" xmlns="http://www.w3.org/2000/svg" fill="url(#fishGradient)">
         <ellipse cx="50" cy="80" rx="25" ry="60" />
         <path class="tail" d="M 50 130 C 70 170, 80 190, 50 200 C 20 190, 30 170, 50 130 Z" />
         <path d="M 27 70 C 5 80, -5 110, 15 110 Z" />
@@ -103,18 +129,24 @@
         const fish1 = document.getElementById('fish1');
         const fish2 = document.getElementById('fish2');
         const particlesContainer = document.getElementById('particles-container');
+        const ripplesContainer = document.getElementById('ripples-container');
 
         let targetX = window.innerWidth / 2;
-        let targetY = window.innerHeight / 4;
-
+        let targetY = window.innerHeight / 2;
         let currentX = targetX;
         let currentY = targetY;
         let previousY = targetY; 
+        let previousX = targetX;
+
+        // Śledzenie aktywnych cząsteczek (do przyciągania)
+        let activeParticles = [];
 
         let angle1 = 0;
         let angle2 = 0;
-
         let splitPercentage = 50;
+        
+        let lastCollisionTime = 0;
+        let frameCount = 0;
 
         window.addEventListener('mousemove', (e) => {
             targetX = e.clientX;
@@ -127,77 +159,173 @@
             targetY = e.touches[0].clientY;
         }, { passive: false });
 
+        // [11] Funkcja do płynnej interpolacji kąta (inercja obrotu)
+        function lerpAngle(current, target, factor) {
+            let diff = target - current;
+            while (diff < -180) diff += 360;
+            while (diff > 180) diff -= 360;
+            return current + diff * factor;
+        }
+
+        // [1] Funkcja tworząca falę na wodzie
+        function createRipple(x, y, size, duration) {
+            const ripple = document.createElement('div');
+            ripple.className = 'ripple ripple-anim';
+            ripple.style.width = `${size}px`;
+            ripple.style.height = `${size}px`;
+            ripple.style.left = `${x - size / 2}px`;
+            ripple.style.top = `${y - size / 2}px`;
+            ripple.style.animationDuration = `${duration}s`;
+            
+            ripplesContainer.appendChild(ripple);
+            setTimeout(() => {
+                if (ripplesContainer.contains(ripple)) {
+                    ripplesContainer.removeChild(ripple);
+                }
+            }, duration * 1000);
+        }
+
         function animate() {
+            frameCount++;
             let dx = targetX - currentX;
             let dy = targetY - currentY;
 
-            currentX += dx * 0.012;
-            currentY += dy * 0.012;
+            // Wygładzony ruch
+            currentX += dx * 0.015;
+            currentY += dy * 0.015;
 
-            // --- MECHANIKA TŁA ---
+            // Obliczanie faktycznej prędkości ryby
+            let actualDx = currentX - previousX;
             let actualDy = currentY - previousY;
-            splitPercentage += actualDy * 0.03; 
+            let speed = Math.sqrt(actualDx * actualDx + actualDy * actualDy);
 
-            // Grawitacja powoli przyciąga do środka (50%)
-            let pullToCenter = (50 - splitPercentage) * 0.005;
+            // Mechanika tła
+            splitPercentage += actualDy * 0.1; 
+            let pullToCenter = (50 - splitPercentage) * 0.002;
             splitPercentage += pullToCenter;
 
-            // Zmienione granice - teraz plansza może być w 100% biała lub czarna
             if (splitPercentage > 100) splitPercentage = 100;
             if (splitPercentage < 0) splitPercentage = 0;
 
             document.body.style.background = `linear-gradient(to bottom, #ffffff ${splitPercentage}%, #000000 ${splitPercentage}%)`;
             
-            previousY = currentY;
-            // ---------------------------------
+            // --- NOWE MECHANIKI ---
 
-            if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
-                angle1 = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
-                angle2 = Math.atan2(-dy, dx) * (180 / Math.PI) + 90;
+            // [1] Ślady na wodzie: jeśli ryba płynie, co jakiś czas zostawia falę
+            if (speed > 0.5 && frameCount % 15 === 0) {
+                createRipple(currentX, currentY, 30, 2);
             }
 
+            // [4] Motion Blur (Rozmycie przy prędkości)
+            // Jeśli ryba przyspiesza, nakładamy lekki filtr blur
+            let blurAmount = Math.min(speed * 0.2, 3); // max 3px rozmycia
+            let filterString = blurAmount > 0.1 ? `blur(${blurAmount}px)` : 'none';
+            fish1.style.filter = filterString;
+            fish2.style.filter = filterString;
+
+            // [11] Inercja obrotu
+            if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
+                let targetAngle1 = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
+                let targetAngle2 = Math.atan2(-dy, dx) * (180 / Math.PI) + 90;
+                
+                // Płynne dążenie do kąta docelowego (im mniejsza liczba, tym większa inercja)
+                angle1 = lerpAngle(angle1, targetAngle1, 0.06);
+                angle2 = lerpAngle(angle2, targetAngle2, 0.06);
+            }
+
+            // Odbicie w osi Y
             let mirroredY = window.innerHeight - currentY;
 
+            // [13] Kolizje ryb
+            // Jeśli odległość między rybami w pionie jest mała, emitują wielką falę
+            if (Math.abs(currentY - mirroredY) < 60) {
+                let now = Date.now();
+                if (now - lastCollisionTime > 2000) { // Cooldown 2 sekundy
+                    // Zderzenie generuje ogromną, powolną falę pośrodku
+                    createRipple(currentX, window.innerHeight / 2, 150, 4);
+                    lastCollisionTime = now;
+                }
+            }
+
+            // [12] Przyciąganie cząsteczek
+            activeParticles.forEach(p => {
+                let pX = parseFloat(p.el.style.left) + p.size / 2;
+                let pY = parseFloat(p.el.style.top) + p.size / 2;
+                
+                // Odległość od głównej ryby
+                let distToFish = Math.hypot(currentX - pX, currentY - pY);
+                
+                // Jeśli cząsteczka jest blisko, ryba ją "zasysa"
+                if (distToFish < 150) {
+                    p.x += (currentX - pX) * 0.02; // siła przyciągania
+                    p.y += (currentY - pY) * 0.02;
+                    p.el.style.left = `${p.x - p.size / 2}px`;
+                    p.el.style.top = `${p.y - p.size / 2}px`;
+                }
+            });
+
+            // Aktualizacja pozycji CSS
             fish1.style.transform = `translate(${currentX - 25}px, ${currentY - 50}px) rotate(${angle1}deg)`;
             fish2.style.transform = `translate(${currentX - 25}px, ${mirroredY - 50}px) rotate(${angle2}deg)`;
+
+            previousX = currentX;
+            previousY = currentY;
 
             requestAnimationFrame(animate);
         }
 
         animate();
 
+        // Generowanie cząsteczek
         function spawnParticle() {
             const particle = document.createElement('div');
             particle.className = 'particle particle-burst';
-
             const baseSize = 20 + Math.random() * 40;
-            particle.style.width = `${baseSize}px`;
-            particle.style.height = `${baseSize}px`;
-
             const startX = Math.random() * window.innerWidth;
             const startY = Math.random() * window.innerHeight;
+            
+            particle.style.width = `${baseSize}px`;
+            particle.style.height = `${baseSize}px`;
             particle.style.left = `${startX - baseSize / 2}px`;
             particle.style.top = `${startY - baseSize / 2}px`;
-
+            
             const borderStyles = ['dashed', 'solid', 'dotted'];
             const randomStyle = borderStyles[Math.floor(Math.random() * borderStyles.length)];
-            const randomWidth = 1 + Math.random() * 5; 
-            particle.style.border = `${randomWidth}px ${randomStyle} #ffffff`;
-
+            particle.style.border = `${1 + Math.random() * 5}px ${randomStyle} #ffffff`;
+            
             particlesContainer.appendChild(particle);
 
-            setTimeout(() => {
-                particlesContainer.removeChild(particle);
+            // Zapis do tablicy obiektów, by móc nimi manipulować w JS
+            const pObj = { el: particle, x: startX, y: startY, size: baseSize };
+            activeParticles.push(pObj);
+
+            setTimeout(() => { 
+                if (particlesContainer.contains(particle)) {
+                    particlesContainer.removeChild(particle); 
+                }
+                // Usunięcie z tablicy
+                activeParticles = activeParticles.filter(p => p !== pObj);
             }, 4000); 
         }
 
         function spawnNext() {
             spawnParticle();
-            const delay = 1500 + Math.random() * 2000; 
-            setTimeout(spawnNext, delay);
+            setTimeout(spawnNext, 1500 + Math.random() * 2000);
         }
-
         spawnNext();
+
+        // [29] Zjawiska pogodowe - losowy "deszcz" tworzący małe fale gdzieś na ekranie
+        function spawnRaindrop() {
+            const rx = Math.random() * window.innerWidth;
+            const ry = Math.random() * window.innerHeight;
+            const size = 10 + Math.random() * 20; // małe fale
+            createRipple(rx, ry, size, 1.5);
+            
+            // Deszcz pada losowo i nieregularnie
+            setTimeout(spawnRaindrop, 500 + Math.random() * 3000);
+        }
+        spawnRaindrop(); // Start deszczu
+        spawnRaindrop(); // Dodatkowa kropla, by było ciekawiej
         
         window.addEventListener('resize', () => {
             if(targetX > window.innerWidth) targetX = window.innerWidth / 2;
