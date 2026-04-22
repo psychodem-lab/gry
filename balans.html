@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yin Yang Koi</title>
+    <title>Głęboki Relaks: Segmentowany Taniec Yin Yang Koi</title>
     <style>
         body, html {
             margin: 0;
@@ -16,94 +16,247 @@
         canvas {
             display: block;
         }
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            background: rgba(128, 128, 128, 0.4);
+            padding: 10px 20px;
+            border-radius: 20px;
+            backdrop-filter: blur(5px);
+            z-index: 10;
+        }
+        #controls label {
+            color: white;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+        #controls input {
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
+
+<div id="controls">
+    <label>Prędkość płynięcia: <input type="range" id="speedSlider" min="0.005" max="0.03" step="0.001" value="0.015"></label>
+    <label>Intensywność ogona: <input type="range" id="tailIntensitySlider" min="0" max="1" step="0.1" value="0.7"></label>
+</div>
 
 <canvas id="gameCanvas"></canvas>
 
 <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
+    const speedSlider = document.getElementById('speedSlider');
+    const tailSlider = document.getElementById('tailIntensitySlider');
 
     let width, height;
     let mouse = { x: 0, y: 0 };
-    
-    // Obiekt ryby
-    const fish = {
-        x: 0,
-        y: 0,
-        targetX: 0,
-        targetY: 0,
-        angle: 0,
-        speed: 0.05 // Prędkość podążania za wskaźnikiem
+    let time = 0; // Globalny czas dla animacji ogona
+
+    // --- Konfiguracja i Stan Ryb ---
+
+    const fishConfig = {
+        speed: parseFloat(speedSlider.value), // Prędkość podążania za wskaźnikiem
+        bodySegments: 10,  // Liczba segmentów ciała (dla fali)
+        segmentSpacing: 8,  // Odległość między segmentami ciała
+        bodySize: 12,      // Promień głowy/głównego segmentu
+        tailSegments: 12,   // Liczba segmentów ogona
+        tailWaveFreq: 0.1,  // Częstotliwość fali ogona (zależna od czasu)
+        tailWaveAmp: parseFloat(tailSlider.value) * 15, // Amplituda fali ogona
+        rotationEasing: 0.05, // Easing obrotu
+        movementEasing: 0.015, // Easing ruchu (klucz do relaksu)
     };
+
+    let fishState = {
+        x: 0, y: 0,
+        targetX: 0, targetY: 0,
+        baseAngle: 0,
+        currentAngle: 0,
+        segments: [], // Tablica przechowująca pozycje i kąty segmentów
+    };
+
+    // Inicjalizacja segmentów
+    function initFishSegments(count) {
+        fishState.segments = [];
+        for (let i = 0; i < count; i++) {
+            fishState.segments.push({
+                x: width / 4 - i * fishConfig.segmentSpacing,
+                y: height / 2,
+                angle: 0
+            });
+        }
+    }
 
     function resize() {
         width = canvas.width = window.innerWidth;
         height = canvas.height = window.innerHeight;
-        // Inicjalizacja pozycji startowej
-        if(fish.x === 0 && fish.y === 0) {
-            fish.x = width / 4;
-            fish.y = height / 2;
-            fish.targetX = width / 4;
-            fish.targetY = height / 2;
-            mouse.x = width / 4;
-            mouse.y = height / 2;
-        }
+        // Re-inicjalizacja pozycji po zmianie rozmiaru
+        fishState.x = fishState.targetX = mouse.x = width / 4;
+        fishState.y = fishState.targetY = mouse.y = height / 2;
+        initFishSegments(fishConfig.bodySegments + fishConfig.tailSegments);
     }
 
     window.addEventListener('resize', resize);
     resize();
 
-    // Śledzenie myszy
+    // --- Nasłuchiwanie Wejścia ---
+
+    function getPosition(e) {
+        if (e.touches && e.touches.length > 0) {
+            return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        } else if (e.clientX && e.clientY) {
+            return { x: e.clientX, y: e.clientY };
+        }
+        return mouse;
+    }
+
     window.addEventListener('mousemove', (e) => {
-        mouse.x = e.clientX;
-        mouse.y = e.clientY;
+        const pos = getPosition(e);
+        mouse.x = pos.x;
+        mouse.y = pos.y;
     });
 
-    // Śledzenie dotyku (dla urządzeń mobilnych)
     window.addEventListener('touchmove', (e) => {
-        mouse.x = e.touches[0].clientX;
-        mouse.y = e.touches[0].clientY;
+        const pos = getPosition(e);
+        mouse.x = pos.x;
+        mouse.y = pos.y;
     }, { passive: false });
 
-    // Funkcja rysująca kształt ryby (wzorowana na karpiu Koi)
-    function drawFish(x, y, angle, scale = 1) {
+    // Nasłuchiwanie zmian suwaków
+    speedSlider.addEventListener('input', (e) => {
+        fishConfig.speed = parseFloat(e.target.value);
+    });
+    tailSlider.addEventListener('input', (e) => {
+        fishConfig.tailWaveAmp = parseFloat(e.target.value) * 15;
+    });
+
+    // --- Matematyka i Funkcje Rysujące ---
+
+    // Funkcja obliczająca falę sinusoidalną (używana do ogona i ciała)
+    function getSinWave(phase, freq, amp) {
+        return Math.sin(phase * freq + time) * amp;
+    }
+
+    // Funkcja rysująca kształt ryby ze skomplikowaną budową
+    function drawDetailedKoi(fish, mode) {
         ctx.save();
-        ctx.translate(x, y);
-        ctx.rotate(angle);
-        ctx.scale(scale, scale);
-        
         ctx.fillStyle = 'white'; // Zawsze biały - magia dzieje się w trybie mieszania
 
+        // 1. Rysowanie Ciała i Fali Ciała
         ctx.beginPath();
-        // Ciało
-        ctx.moveTo(30, 0); // Nos
-        ctx.bezierCurveTo(20, 15, -10, 20, -30, 5); // Prawy bok i ogon
-        ctx.lineTo(-40, 15); // Płetwa ogonowa dolna
-        ctx.lineTo(-35, 0);  // Środek ogona
-        ctx.lineTo(-40, -15); // Płetwa ogonowa górna
-        ctx.bezierCurveTo(-10, -20, 20, -15, 30, 0); // Lewy bok
+        
+        const segments = fish.segments;
+        const totalSegs = segments.length;
+        const bodySegsCount = fishConfig.bodySegments;
+
+        // Pętla rysująca główne ciało z dynamiczną grubością i falą
+        for (let i = 0; i < bodySegsCount; i++) {
+            const seg = segments[i];
+            
+            // Progres wzdłuż ciała (0 przy głowie, 1 przy początku ogona)
+            const progress = i / (bodySegsCount - 1);
+
+            // Zmienna grubość ciała
+            const bodyThickness = Math.max(2, fishConfig.bodySize * (1 - progress * 0.5));
+            
+            // Faza fali ciała - im dalszy segment, tym większa faza
+            const bodyPhase = (totalSegs - i);
+            const bodyFila = getSinWave(bodyPhase, 0.5, bodyThickness * 0.3 * (1-progress)); // Fala mniejsza przy głowie
+
+            ctx.save();
+            ctx.translate(seg.x, seg.y);
+            ctx.rotate(seg.angle);
+            
+            // Rysowanie segmentu ciała (elipsa dla bardziej organicznego kształtu)
+            if (i === 0) {
+                // Głowa: Lekko szersza i dłuższa elipsa
+                ctx.ellipse(0, 0, bodyThickness * 1.3, bodyThickness, 0, 0, Math.PI * 2);
+            } else {
+                ctx.ellipse(0, 0, bodyThickness, bodyThickness * 0.8, 0, 0, Math.PI * 2);
+            }
+            ctx.restore();
+        }
         ctx.fill();
 
-        // Płetwy boczne
-        ctx.beginPath();
-        ctx.moveTo(5, 12);
-        ctx.lineTo(-10, 30);
-        ctx.lineTo(-15, 12);
-        ctx.fill();
+        // 2. Rysowanie Płetw Piersiowych (stały kształt)
+        const headSeg = segments[0];
+        const finSize = fishConfig.bodySize * 1.5;
+        const finAngleOffset = Math.PI / 4; // Kąt odchylenia płetwy
 
+        ctx.save();
+        ctx.translate(headSeg.x, headSeg.y);
+        ctx.rotate(headSeg.angle);
+        
+        // Prawa płetwa
         ctx.beginPath();
-        ctx.moveTo(5, -12);
-        ctx.lineTo(-10, -30);
-        ctx.lineTo(-15, -12);
+        ctx.moveTo(0, fishConfig.bodySize * 0.8);
+        ctx.bezierCurveTo(finSize, finSize * 0.5, finSize * 0.5, finSize, 0, finSize * 0.8);
+        ctx.fill();
+        
+        // Lewa płetwa
+        ctx.beginPath();
+        ctx.moveTo(0, -fishConfig.bodySize * 0.8);
+        ctx.bezierCurveTo(finSize, -finSize * 0.5, finSize * 0.5, -finSize, 0, -finSize * 0.8);
+        ctx.fill();
+        ctx.restore();
+
+        // 3. Rysowanie Ogon i Fali Ogona
+        ctx.beginPath();
+        
+        const tailSegsCount = fishConfig.tailSegments;
+        const tailStartIdx = bodySegsCount;
+
+        // Pętla rysująca ogon z falą sinusoidalną
+        for (let i = 0; i < tailSegsCount; i++) {
+            const seg = segments[tailStartIdx + i];
+            const tailPhase = (tailSegsCount - i);
+
+            // Grubość ogona (malejąca)
+            const tailThickness = Math.max(1, (totalSegs - (tailStartIdx + i)) / tailSegsCount * 8);
+
+            ctx.save();
+            ctx.translate(seg.x, seg.y);
+            
+            // Obliczenie fali ogona: Fala propaguje się od ciała
+            // Prędkość fali ogona jest niezależna od prędkości płynięcia
+            const tailAngleWave = getSinWave(tailPhase, fishConfig.tailWaveFreq, fishConfig.tailWaveAmp);
+            
+            // Obracamy segment o sumę kąta płynięcia i fali sinusoidalnej
+            ctx.rotate(seg.angle + tailAngleWave * Math.PI / 180);
+            
+            // Kształt płetwy ogonowej (bardziej wachlarzowaty niż segmenty ciała)
+            const fanWidth = 1 + i/tailSegsCount * tailThickness * 2;
+            ctx.ellipse(0, 0, tailThickness, tailThickness * fanWidth, 0, 0, Math.PI * 2);
+
+            // Rysowanie "promieni" płetwy na końcach ogona (więcej linii kodu, zgodnie z prośbą!)
+            if (i > tailSegsCount * 0.6) {
+                ctx.moveTo(0, tailThickness * fanWidth);
+                ctx.lineTo(tailThickness * 1.5, tailThickness * fanWidth * 1.2);
+                ctx.moveTo(0, -tailThickness * fanWidth);
+                ctx.lineTo(tailThickness * 1.5, -tailThickness * fanWidth * 1.2);
+                ctx.lineWidth = 0.5;
+                ctx.strokeStyle = 'white';
+                ctx.stroke();
+            }
+
+            ctx.restore();
+        }
         ctx.fill();
 
         ctx.restore();
     }
 
+    // --- Pętla Animacji (Główna Logika Gry) ---
+
     function animate() {
+        ctx.clearRect(0, 0, width, height); // Czyścimy cały ekran
+        time += 0.05; // Globalny czas dla fali ogona (wolno, relaksująco)
+
         // 1. Rysowanie tła (Lewa: Biała, Prawa: Czarna)
         ctx.globalCompositeOperation = 'source-over'; // Standardowy tryb rysowania
         ctx.fillStyle = 'white';
@@ -111,48 +264,87 @@
         ctx.fillStyle = 'black';
         ctx.fillRect(width / 2, 0, width / 2, height);
 
-        // 2. Aktualizacja pozycji i kąta głównej ryby
-        fish.targetX = mouse.x;
-        fish.targetY = mouse.y;
+        // 2. Aktualizacja pozycji i kąta głównej ryby (Easing dla relaksu!)
+        fishState.targetX = mouse.x;
+        fishState.targetY = mouse.y;
 
-        const dx = fish.targetX - fish.x;
-        const dy = fish.targetY - fish.y;
+        const dx = fishState.targetX - fishState.x;
+        const dy = fishState.targetY - fishState.y;
         
-        // Płynne podążanie (easing)
-        fish.x += dx * fish.speed;
-        fish.y += dy * fish.speed;
+        // Płynne podążanie (movementEasing - bardzo mała wartość dla powolności)
+        fishState.x += dx * fishConfig.movementEasing;
+        fishState.y += dy * fishConfig.movementEasing;
 
-        // Obliczanie kąta obrotu (tylko gdy ryba się porusza, aby nie skakała)
+        // Obliczanie bazowego kąta obrotu (tylko przy ruchu)
         if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
-            const targetAngle = Math.atan2(dy, dx);
-            // Płynny obrót ryby
-            let angleDiff = targetAngle - fish.angle;
-            // Normalizacja kąta aby unikać obrotów o 360 stopni wokół własnej osi
+            fishState.baseAngle = Math.atan2(dy, dx);
+            
+            // Płynny obrót (rotationEasing)
+            let angleDiff = fishState.baseAngle - fishState.currentAngle;
+            // Normalizacja kąta
             while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
             while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
-            fish.angle += angleDiff * 0.1;
+            fishState.currentAngle += angleDiff * fishConfig.rotationEasing;
         }
 
-        // 3. Obliczanie pozycji i kąta ryby odbitej (Lustrzane odbicie)
-        const mirrorX = width - fish.x;
-        const mirrorY = fish.y; // Odbijamy tylko w poziomie. Jeśli chcesz odbicia w obu osiach: height - fish.y
-        
-        // Kąt w odbiciu lustrzanym poziomo:
-        let mirrorAngle = Math.PI - fish.angle;
+        // 3. Logika "IK" (Inwersyjna Kinematyka) dla segmentów
+        // Każdy segment podąża za poprzednim, z zachowaniem odległości i kąta
 
-        // 4. Magia zmiany kolorów!
-        // Tryb 'difference' sprawia, że biała ryba na białym tle staje się czarna, 
-        // a na czarnym pozostaje biała. Dokładnie na granicy płynnie dzieli kolory.
+        // Głowa (pierwszy segment) przyjmuje stan ryby
+        fishState.segments[0].x = fishState.x;
+        fishState.segments[0].y = fishState.y;
+        fishState.segments[0].angle = fishState.currentAngle;
+
+        // Pętla od drugiego segmentu do końca (ciało + ogon)
+        for (let i = 1; i < fishState.segments.length; i++) {
+            const seg = fishState.segments[i];
+            const prevSeg = fishState.segments[i-1];
+            
+            const dx = prevSeg.x - seg.x;
+            const dy = prevSeg.y - seg.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            // Kąt segmentu podąża za poprzednim, ale lekko tłumiony dla fali
+            const targetAngle = Math.atan2(dy, dx);
+            seg.angle += (targetAngle - seg.angle) * 0.1; // Tłumienie kąta ciała
+
+            // Zachowanie stałej odległości (IK)
+            if (dist > 0) {
+                seg.x = prevSeg.x - dx / dist * fishConfig.segmentSpacing;
+                seg.y = prevSeg.y - dy / dist * fishConfig.segmentSpacing;
+            }
+        }
+
+        // 4. Obliczanie pozycji i stanu ryby odbitej (Lustrzane odbicie)
+        const mirrorFishState = {
+            ...fishState,
+            x: width - fishState.x,
+            y: fishState.y, // Odbijamy tylko w poziomie
+            currentAngle: Math.PI - fishState.currentAngle, // Lustrzany kąt
+            segments: [] // Tablica dla odbitych segmentów
+        };
+
+        // Odbijanie segmentów lustrzanej ryby
+        for (let i = 0; i < fishState.segments.length; i++) {
+            mirrorFishState.segments.push({
+                x: width - fishState.segments[i].x,
+                y: fishState.segments[i].y,
+                angle: Math.PI - fishState.segments[i].angle
+            });
+        }
+
+        // 5. Magia zmiany kolorów! (Yin Yang)
+        // Tryb 'difference' sprawia, że białe ryby na białym tle stają się czarne
         ctx.globalCompositeOperation = 'difference';
 
         // Rysowanie obu ryb
-        drawFish(fish.x, fish.y, fish.angle, 1.2); // Główna ryba
-        drawFish(mirrorX, mirrorY, mirrorAngle, 1.2); // Odbita ryba
+        drawDetailedKoi(fishState, 'main'); // Główna ryba
+        drawDetailedKoi(mirrorFishState, 'mirror'); // Odbita ryba
 
         requestAnimationFrame(animate);
     }
 
-    // Uruchomienie pętli gry
+    // --- Uruchomienie pętli gry ---
     animate();
 </script>
 
