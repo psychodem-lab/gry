@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yin Yang Koi - Harmonia Tła</title>
+    <title>Yin Yang Koi - Pełen Relaks</title>
     <style>
         body {
             margin: 0;
             padding: 0;
             width: 100vw;
             height: 100vh;
-            /* Początkowe tło, zarządzane przez JavaScript */
             background: linear-gradient(to right, #ffffff 50%, #000000 50%);
             overflow: hidden;
             cursor: crosshair;
@@ -24,15 +23,16 @@
             left: 0;
             transform-origin: 25px 50px; 
             pointer-events: none; 
-            
-            /* Płynna zmiana koloru przy przejściu przez tło */
             mix-blend-mode: difference;
             fill: #ffffff;
+            /* Dodatkowe wygładzenie dla przeglądarek */
+            will-change: transform;
         }
 
         .tail {
             transform-origin: 50px 130px; 
-            animation: wag 1.4s ease-in-out infinite;
+            /* Zwolniony ruch ogona dla pełnego relaksu */
+            animation: wag 2.5s ease-in-out infinite;
         }
 
         @keyframes wag {
@@ -51,7 +51,8 @@
             border-radius: 50%;
             border: 10px dashed #ffffff;
             mix-blend-mode: difference;
-            animation: spin 15s linear infinite;
+            /* Bardzo powolny obrót */
+            animation: spin 30s linear infinite;
             pointer-events: none;
             z-index: 5; 
         }
@@ -67,16 +68,18 @@
             mix-blend-mode: difference;
             opacity: 0;
             transform: scale(0.1);
+            will-change: transform, opacity;
         }
 
         .particle-burst {
-            animation: particleFadeInScaleOut 2s ease-out forwards;
+            /* Wydłużona, leniwa animacja wybuchu (4 sekundy) */
+            animation: particleFadeInScaleOut 4s ease-out forwards;
         }
 
         @keyframes particleFadeInScaleOut {
             0% { opacity: 0; transform: scale(0.1); }
-            10% { opacity: 0.8; transform: scale(1); }
-            100% { opacity: 0; transform: scale(3); }
+            20% { opacity: 0.6; transform: scale(1); }
+            100% { opacity: 0; transform: scale(3.5); }
         }
     </style>
 </head>
@@ -114,7 +117,6 @@
         let angle1 = 0;
         let angle2 = 0;
 
-        // Początkowy podział tła (50%)
         let splitPercentage = 50;
 
         window.addEventListener('mousemove', (e) => {
@@ -132,36 +134,32 @@
             let dx = targetX - currentX;
             let dy = targetY - currentY;
 
-            // Relaksujące pływanie
-            currentX += dx * 0.025;
-            currentY += dy * 0.025;
+            // Bardziej wygładzone i wolniejsze pływanie (0.012 zamiast 0.025)
+            currentX += dx * 0.012;
+            currentY += dy * 0.012;
 
-            // --- MECHANIKA TŁA Z POWROTEM DO RÓWNOWAGI ---
-            // 1. Ruch ryby wypycha tło
+            // Łagodniejsze reagowanie tła
             let actualDx = currentX - previousX;
-            splitPercentage += actualDx * 0.08; 
+            // Znacznie wolniejsze wypychanie tła
+            splitPercentage += actualDx * 0.03; 
 
-            // 2. Tło zawsze powoli dąży do powrotu na środek (50%)
-            // Im dalej od środka, tym mocniej ciągnie
-            let pullToCenter = (50 - splitPercentage) * 0.015;
+            // Powrót do środka jest teraz wręcz usypiająco powolny
+            let pullToCenter = (50 - splitPercentage) * 0.005;
             splitPercentage += pullToCenter;
 
-            // Zabezpieczenie przed całkowitym zniknięciem jednej strony (min 10%, max 90%)
             if (splitPercentage > 90) splitPercentage = 90;
             if (splitPercentage < 10) splitPercentage = 10;
 
-            // Aplikowanie nowego tła
             document.body.style.background = `linear-gradient(to right, #ffffff ${splitPercentage}%, #000000 ${splitPercentage}%)`;
             
             previousX = currentX;
-            // ---------------------------
 
-            if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+            // Unikanie przeskakiwania kąta przy minimalnych ruchach
+            if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
                 angle1 = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
                 angle2 = Math.atan2(dy, -dx) * (180 / Math.PI) + 90;
             }
 
-            // Oś lustrzana dla drugiej ryby zawsze zostaje na środku ekranu
             let mirroredX = window.innerWidth - currentX;
 
             fish1.style.transform = `translate(${currentX - 25}px, ${currentY - 50}px) rotate(${angle1}deg)`;
@@ -192,14 +190,16 @@
 
             particlesContainer.appendChild(particle);
 
+            // Usunięcie po 4 sekundach (zgodnie z czasem trwania nowej animacji CSS)
             setTimeout(() => {
                 particlesContainer.removeChild(particle);
-            }, 2000); 
+            }, 4000); 
         }
 
         function spawnNext() {
             spawnParticle();
-            const delay = 500 + Math.random() * 1000; 
+            // Wydłużony, bardziej relaksujący czas między pojawianiem się kolejnych cząsteczek
+            const delay = 1500 + Math.random() * 2000; 
             setTimeout(spawnNext, delay);
         }
 
