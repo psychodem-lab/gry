@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yin Yang Koi - Interaktywne Tło</title>
+    <title>Yin Yang Koi - Harmonia Tła</title>
     <style>
         body {
             margin: 0;
             padding: 0;
             width: 100vw;
             height: 100vh;
-            /* Początkowe tło, nadpisywane później przez JavaScript */
+            /* Początkowe tło, zarządzane przez JavaScript */
             background: linear-gradient(to right, #ffffff 50%, #000000 50%);
             overflow: hidden;
             cursor: crosshair;
@@ -25,7 +25,7 @@
             transform-origin: 25px 50px; 
             pointer-events: none; 
             
-            /* Płynna zmiana koloru w zależności od tła pod rybą */
+            /* Płynna zmiana koloru przy przejściu przez tło */
             mix-blend-mode: difference;
             fill: #ffffff;
         }
@@ -109,7 +109,7 @@
 
         let currentX = targetX;
         let currentY = targetY;
-        let previousX = targetX; // Do śledzenia faktycznego ruchu ryby
+        let previousX = targetX; 
 
         let angle1 = 0;
         let angle2 = 0;
@@ -136,22 +136,23 @@
             currentX += dx * 0.025;
             currentY += dy * 0.025;
 
-            // --- NOWA MECHANIKA TŁA ---
-            // Obliczamy rzeczywisty wektor ruchu ryby w tej klatce na osi X
+            // --- MECHANIKA TŁA Z POWROTEM DO RÓWNOWAGI ---
+            // 1. Ruch ryby wypycha tło
             let actualDx = currentX - previousX;
-            
-            // Jeśli płynie w prawo (actualDx > 0), podział idzie w prawo (białe rośnie).
-            // Mnożnik określa jak szybko tło reaguje. Mniejszy = wolniej.
-            splitPercentage += actualDx * 0.05; 
+            splitPercentage += actualDx * 0.08; 
+
+            // 2. Tło zawsze powoli dąży do powrotu na środek (50%)
+            // Im dalej od środka, tym mocniej ciągnie
+            let pullToCenter = (50 - splitPercentage) * 0.015;
+            splitPercentage += pullToCenter;
 
             // Zabezpieczenie przed całkowitym zniknięciem jednej strony (min 10%, max 90%)
-            if (splitPercentage > 99) splitPercentage = 99;
-            if (splitPercentage < 1) splitPercentage = 1;
+            if (splitPercentage > 90) splitPercentage = 90;
+            if (splitPercentage < 10) splitPercentage = 10;
 
-            // Aktualizacja tła
+            // Aplikowanie nowego tła
             document.body.style.background = `linear-gradient(to right, #ffffff ${splitPercentage}%, #000000 ${splitPercentage}%)`;
             
-            // Zapisujemy pozycję na potrzeby kolejnej klatki
             previousX = currentX;
             // ---------------------------
 
@@ -160,7 +161,7 @@
                 angle2 = Math.atan2(dy, -dx) * (180 / Math.PI) + 90;
             }
 
-            // Oś lustrzana pozostaje zawsze na środku ekranu
+            // Oś lustrzana dla drugiej ryby zawsze zostaje na środku ekranu
             let mirroredX = window.innerWidth - currentX;
 
             fish1.style.transform = `translate(${currentX - 25}px, ${currentY - 50}px) rotate(${angle1}deg)`;
@@ -198,7 +199,7 @@
 
         function spawnNext() {
             spawnParticle();
-            const delay = 10000 + Math.random() * 5000; 
+            const delay = 500 + Math.random() * 1000; 
             setTimeout(spawnNext, delay);
         }
 
