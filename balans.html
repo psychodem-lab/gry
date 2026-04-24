@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yin Yang Koi - Totalna Równowaga</title>
+    <title>Yin Yang Koi - Płynny Ruch</title>
     <style>
         body {
             margin: 0;
@@ -28,7 +28,7 @@
             height: 250px;
             top: 0;
             left: 0;
-            transform-origin: 50px 110px; 
+            transform-origin: 50px 50px; /* Obrót wokół głowy dla lepszego efektu śledzenia */
             pointer-events: none; 
             mix-blend-mode: difference;
             fill: #ffffff;
@@ -43,9 +43,9 @@
             width: 80px;
             height: 80px;
             border-radius: 50%;
-            border: 10px dashed #ffffff;
+            border: 6px dashed #ffffff;
             mix-blend-mode: difference;
-            animation: spin 30s linear infinite;
+            animation: spin 40s linear infinite;
             pointer-events: none;
             z-index: 5; 
         }
@@ -53,33 +53,12 @@
         @keyframes spin {
             100% { transform: translate(-50%, -50%) rotate(360deg); }
         }
-
-        .particle {
-            position: absolute;
-            border-radius: 50%;
-            pointer-events: none;
-            mix-blend-mode: difference;
-            opacity: 0;
-            transform: scale(0.1);
-            will-change: transform, opacity;
-        }
-
-        .particle-burst {
-            animation: particleFadeInScaleOut 4s ease-out forwards;
-        }
-
-        @keyframes particleFadeInScaleOut {
-            0% { opacity: 0; transform: scale(0.1); }
-            20% { opacity: 0.6; transform: scale(1); }
-            100% { opacity: 0; transform: scale(3.5); }
-        }
     </style>
 </head>
 <body>
 
     <div class="paper-texture"></div>
     <div class="center-portal"></div>
-    <div id="particles-container"></div>
 
     <svg class="fish" id="fish1" viewBox="0 0 100 250" xmlns="http://www.w3.org/2000/svg">
         <path id="f1-body" d="" />
@@ -98,7 +77,6 @@
         const f1Tail = document.getElementById('f1-tail');
         const f2Body = document.getElementById('f2-body');
         const f2Tail = document.getElementById('f2-tail');
-        const particlesContainer = document.getElementById('particles-container');
 
         let targetX = window.innerWidth / 2;
         let targetY = window.innerHeight / 4;
@@ -106,7 +84,6 @@
         let currentY = targetY;
         let previousY = targetY; 
 
-        // Zmienne do płynnej rotacji i falowania kręgosłupa
         let currentAngle1 = 0;
         let currentAngle2 = 0;
         let currentBend1 = 0;
@@ -114,50 +91,29 @@
         let wavePhase = 0;
         let splitPercentage = 50;
 
-        const keys = {
-            ArrowUp: false,
-            ArrowDown: false,
-            ArrowLeft: false,
-            ArrowRight: false
-        };
-        const keyboardSpeed = 15;
-
         window.addEventListener('mousemove', (e) => {
             targetX = e.clientX;
             targetY = e.clientY;
         });
 
-        window.addEventListener('touchmove', (e) => {
-            e.preventDefault(); 
-            targetX = e.touches[0].clientX;
-            targetY = e.touches[0].clientY;
-        }, { passive: false });
-
-        window.addEventListener('keydown', (e) => {
-            if (keys.hasOwnProperty(e.code)) {
-                keys[e.code] = true;
-                e.preventDefault();
-            }
-        });
-
-        window.addEventListener('keyup', (e) => {
-            if (keys.hasOwnProperty(e.code)) {
-                keys[e.code] = false;
-            }
-        });
-
-        // Funkcja obliczająca dynamiczne wygięcie tułowia i falę płynięcia
-        function getBentPath(turnBend, wavePhase) {
+        // Funkcja rysująca wygięte ciało
+        function getBentPath(bend, phase) {
+            // b(x, y) oblicza nową pozycję punktu X w zależności od jego wysokości Y
             const b = (x, y) => {
-                let t = (y - 80) / 70; // Mapowanie wysokości ryby (-1 głowa, 1 ogon)
-                let turnOffset = (1 - t * t) * turnBend; // Paraboliczne wygięcie ciała w zakręcie
+                // Im niżej (bliżej ogona), tym mocniejsze wygięcie od skrętu i fali
+                // y: 10 (głowa) do 150 (nasada ogona)
+                let progression = (y / 150); 
                 
-                // Amplituda fali rośnie im bliżej ogona (głowa rusza się lekko, ogon mocno)
-                let waveAmplitude = 1.5 + (y / 150) * 8; 
-                let waveOffset = Math.sin(wavePhase - (y / 30)) * waveAmplitude;
+                // Wygięcie tułowia (paraboliczne - środek i tył wyginają się najbardziej)
+                let turnOffset = Math.pow(progression, 2) * bend * 1.5;
+                
+                // Fala płynięcia (sinusoida) - zmniejszona amplituda dla spokoju
+                let waveAmp = progression * 6; 
+                let waveOffset = Math.sin(phase - (progression * 4)) * waveAmp;
                 
                 return `${(x + turnOffset + waveOffset).toFixed(1)} ${y}`;
             };
+
             const c = (x1, y1, x2, y2, x, y) => `C ${b(x1,y1)}, ${b(x2,y2)}, ${b(x,y)}`;
             
             return `M ${b(50, 10)} 
@@ -178,13 +134,12 @@
                     ${c(62,22, 58,12, 50,10)} Z`;
         }
 
-        // To samo, ale dla kształtu tylnej płetwy ogonowej
-        function getBentTail(turnBend, wavePhase) {
+        function getBentTail(bend, phase) {
             const b = (x, y) => {
-                let t = (y - 80) / 70;
-                let turnOffset = (1 - t * t) * turnBend; 
-                let waveAmplitude = 1.5 + (y / 150) * 8; 
-                let waveOffset = Math.sin(wavePhase - (y / 30)) * waveAmplitude;
+                let progression = (y / 250);
+                let turnOffset = Math.pow(progression, 2) * bend * 2; // Ogon wygina się jeszcze mocniej
+                let waveAmp = progression * 15;
+                let waveOffset = Math.sin(phase - (progression * 4)) * waveAmp;
                 return `${(x + turnOffset + waveOffset).toFixed(1)} ${y}`;
             };
             const c = (x1, y1, x2, y2, x, y) => `C ${b(x1,y1)}, ${b(x2,y2)}, ${b(x,y)}`;
@@ -196,122 +151,69 @@
                     ${c(90,185, 70,165, 55,145)} Z`;
         }
 
-        function smoothAngle(current, target, speed) {
-            let diff = target - current;
-            while (diff < -180) diff += 360;
-            while (diff > 180) diff -= 360;
-            return { angle: current + diff * speed, diff: diff };
-        }
-
         function animate() {
-            if (keys.ArrowUp) targetY -= keyboardSpeed;
-            if (keys.ArrowDown) targetY += keyboardSpeed;
-            if (keys.ArrowLeft) targetX -= keyboardSpeed;
-            if (keys.ArrowRight) targetX += keyboardSpeed;
-
-            targetX = Math.max(0, Math.min(targetX, window.innerWidth));
-            targetY = Math.max(0, Math.min(targetY, window.innerHeight));
-
+            // Jeszcze płynniejsze i wolniejsze dążenie do celu (0.008 zamiast 0.012)
             let dx = targetX - currentX;
             let dy = targetY - currentY;
             let dist = Math.sqrt(dx * dx + dy * dy);
 
-            currentX += dx * 0.012;
-            currentY += dy * 0.012;
+            currentX += dx * 0.008;
+            currentY += dy * 0.008;
 
-            // --- TŁO ---
+            // Logika tła
             let actualDy = currentY - previousY;
-            splitPercentage += actualDy * 0.03; 
-            let pullToCenter = (50 - splitPercentage) * 0.005;
-            splitPercentage += pullToCenter;
-            if (splitPercentage > 100) splitPercentage = 100;
-            if (splitPercentage < 0) splitPercentage = 0;
+            splitPercentage += actualDy * 0.02; 
+            splitPercentage += (50 - splitPercentage) * 0.005;
             document.body.style.background = `linear-gradient(to bottom, #ffffff ${splitPercentage}%, #000000 ${splitPercentage}%)`;
             previousY = currentY;
 
-            // --- OBLICZANIE KĄTÓW I WYGIĘCIA CIAŁA ---
+            // Kąt głowy
             let targetAngle1 = currentAngle1;
             let targetAngle2 = currentAngle2;
-
-            if (dist > 1) {
+            if (dist > 2) {
                 targetAngle1 = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
                 targetAngle2 = Math.atan2(-dy, dx) * (180 / Math.PI) + 90;
             }
 
-            let res1 = smoothAngle(currentAngle1, targetAngle1, 0.08);
-            currentAngle1 = res1.angle;
-            let turnRate1 = res1.diff; // Prędkość skręcania
+            // Płynny obrót
+            const smoothRotate = (curr, target) => {
+                let diff = target - curr;
+                while (diff < -180) diff += 360;
+                while (diff > 180) diff -= 360;
+                return { angle: curr + diff * 0.05, diff: diff };
+            };
 
-            let res2 = smoothAngle(currentAngle2, targetAngle2, 0.08);
-            currentAngle2 = res2.angle;
-            let turnRate2 = res2.diff;
+            let r1 = smoothRotate(currentAngle1, targetAngle1);
+            currentAngle1 = r1.angle;
+            let r2 = smoothRotate(currentAngle2, targetAngle2);
+            currentAngle2 = r2.angle;
 
-            // Przekładamy ostrość skrętu na siłę wygięcia kręgosłupa (bend)
-            let targetBend1 = turnRate1 * 0.5;
-            targetBend1 = Math.max(-25, Math.min(targetBend1, 25)); // Limity wygięcia
-            currentBend1 += (targetBend1 - currentBend1) * 0.1; // Płynne wejście w wygięcie
+            // OBLICZANIE WYGIĘCIA TUŁOWIA (BEND)
+            // Bend zależy od "ostrości" skrętu (różnicy kątów)
+            let targetBend1 = r1.diff * 0.8;
+            currentBend1 += (targetBend1 - currentBend1) * 0.03; // Bardzo powolne prostowanie tułowia
 
-            let targetBend2 = turnRate2 * 0.5;
-            targetBend2 = Math.max(-25, Math.min(targetBend2, 25));
-            currentBend2 += (targetBend2 - currentBend2) * 0.1;
+            let targetBend2 = r2.diff * 0.8;
+            currentBend2 += (targetBend2 - currentBend2) * 0.03;
 
-            // Przyspieszenie fali w zależności od prędkości płynięcia
-            let speed = Math.min(dist * 0.012, 10);
-            wavePhase += 0.15 + speed * 0.05;
+            // WOLNIEJSZA FALA (zmniejszony przyrost phase)
+            let speedFactor = Math.min(dist * 0.005, 5);
+            wavePhase += 0.04 + speedFactor * 0.02;
 
-            // --- AKTUALIZACJA SVG W CZASIE RZECZYWISTYM ---
+            // Aktualizacja geometrii ryb
             f1Body.setAttribute('d', getBentPath(currentBend1, wavePhase));
             f1Tail.setAttribute('d', getBentTail(currentBend1, wavePhase));
-
             f2Body.setAttribute('d', getBentPath(currentBend2, wavePhase));
             f2Tail.setAttribute('d', getBentTail(currentBend2, wavePhase));
 
             let mirroredY = window.innerHeight - currentY;
-            fish1.style.transform = `translate(${currentX - 50}px, ${currentY - 110}px) rotate(${currentAngle1}deg)`;
-            fish2.style.transform = `translate(${currentX - 50}px, ${mirroredY - 110}px) rotate(${currentAngle2}deg)`;
+            fish1.style.transform = `translate(${currentX - 50}px, ${currentY - 50}px) rotate(${currentAngle1}deg)`;
+            fish2.style.transform = `translate(${currentX - 50}px, ${mirroredY - 50}px) rotate(${currentAngle2}deg)`;
 
             requestAnimationFrame(animate);
         }
 
         animate();
-
-        function spawnParticle() {
-            const particle = document.createElement('div');
-            particle.className = 'particle particle-burst';
-
-            const baseSize = 20 + Math.random() * 40;
-            particle.style.width = `${baseSize}px`;
-            particle.style.height = `${baseSize}px`;
-
-            const startX = Math.random() * window.innerWidth;
-            const startY = Math.random() * window.innerHeight;
-            particle.style.left = `${startX - baseSize / 2}px`;
-            particle.style.top = `${startY - baseSize / 2}px`;
-
-            const borderStyles = ['dashed', 'solid', 'dotted'];
-            const randomStyle = borderStyles[Math.floor(Math.random() * borderStyles.length)];
-            const randomWidth = 1 + Math.random() * 5; 
-            particle.style.border = `${randomWidth}px ${randomStyle} #ffffff`;
-
-            particlesContainer.appendChild(particle);
-
-            setTimeout(() => {
-                particlesContainer.removeChild(particle);
-            }, 4000);
-        }
-
-        function spawnNext() {
-            spawnParticle();
-            const delay = 1500 + Math.random() * 2000; 
-            setTimeout(spawnNext, delay);
-        }
-
-        spawnNext();
-
-        window.addEventListener('resize', () => {
-            if(targetX > window.innerWidth) targetX = window.innerWidth / 2;
-            if(targetY > window.innerHeight) targetY = window.innerHeight / 2;
-        });
     </script>
 </body>
 </html>
