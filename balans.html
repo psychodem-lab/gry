@@ -106,13 +106,16 @@
         let currentY = targetY;
         let previousY = targetY; 
 
-        // Zmienne do płynnej rotacji i falowania kręgosłupa
+        // Zmienne do płynnej rotacji i historii kręgosłupa
         let currentAngle1 = 0;
         let currentAngle2 = 0;
-        let currentBend1 = 0;
-        let currentBend2 = 0;
         let wavePhase = 0;
         let splitPercentage = 50;
+
+        // Historia kątów - tworzy efekt podążania tułowia i ogona za głową
+        const HISTORY_LENGTH = 25; 
+        let angleHistory1 = new Array(HISTORY_LENGTH).fill(0);
+        let angleHistory2 = new Array(HISTORY_LENGTH).fill(0);
 
         const keys = {
             ArrowUp: false,
@@ -146,15 +149,32 @@
             }
         });
 
-        // Funkcja obliczająca dynamiczne wygięcie tułowia i falę płynięcia
-        function getBentPath(turnBend, wavePhase) {
+        // Funkcja obliczająca dynamiczne wygięcie na podstawie historii kątów
+        function getBentPath(angleHistory, wavePhase) {
+            let currentAngle = angleHistory[0];
+            
             const b = (x, y) => {
-                let t = (y - 80) / 70; // Mapowanie wysokości ryby (-1 głowa, 1 ogon)
-                let turnOffset = (1 - t * t) * turnBend; // Paraboliczne wygięcie ciała w zakręcie
+                // Mapowanie dystansu od głowy (0 to głowa, 1 to koniec ogona)
+                let t = Math.max(0, Math.min(1, y / 250)); 
                 
-                // Amplituda fali rośnie im bliżej ogona (głowa rusza się lekko, ogon mocno)
-                let waveAmplitude = 1.5 + (y / 150) * 8; 
-                let waveOffset = Math.sin(wavePhase - (y / 30)) * waveAmplitude;
+                // Im dalej na ciele (t), tym starszy kąt z historii bierzemy
+                let idx = Math.floor(t * (angleHistory.length - 1));
+                let pastAngle = angleHistory[idx];
+                
+                // Obliczamy różnicę między obecnym obrotem całej ryby, a tym sprzed ułamka sekundy
+                let diff = currentAngle - pastAngle;
+                while (diff < -180) diff += 360;
+                while (diff > 180) diff -= 360;
+                
+                // Ograniczamy ekstremalne wygięcia, by ryba nie "wyszła" poza viewBox
+                let clampedDiff = Math.max(-35, Math.min(diff, 35));
+                
+                // Opóźnienie ruchu: ogon mocniej kompensuje obrót głowy
+                let turnOffset = -clampedDiff * Math.pow(t, 1.5) * 1.5; 
+                
+                // Naturalna fala płynięcia
+                let waveAmplitude = 1.2 + Math.pow(t, 2) * 12; 
+                let waveOffset = Math.sin(wavePhase - t * 8) * waveAmplitude;
                 
                 return `${(x + turnOffset + waveOffset).toFixed(1)} ${y}`;
             };
@@ -178,13 +198,23 @@
                     ${c(62,22, 58,12, 50,10)} Z`;
         }
 
-        // To samo, ale dla kształtu tylnej płetwy ogonowej
-        function getBentTail(turnBend, wavePhase) {
+        function getBentTail(angleHistory, wavePhase) {
+            let currentAngle = angleHistory[0];
             const b = (x, y) => {
-                let t = (y - 80) / 70;
-                let turnOffset = (1 - t * t) * turnBend; 
-                let waveAmplitude = 1.5 + (y / 150) * 8; 
-                let waveOffset = Math.sin(wavePhase - (y / 30)) * waveAmplitude;
+                let t = Math.max(0, Math.min(1, y / 250));
+                let idx = Math.floor(t * (angleHistory.length - 1));
+                let pastAngle = angleHistory[idx];
+                
+                let diff = currentAngle - pastAngle;
+                while (diff < -180) diff += 360;
+                while (diff > 180) diff -= 360;
+                
+                let clampedDiff = Math.max(-35, Math.min(diff, 35));
+                let turnOffset = -clampedDiff * Math.pow(t, 1.5) * 1.5; 
+                
+                let waveAmplitude = 1.2 + Math.pow(t, 2) * 12; 
+                let waveOffset = Math.sin(wavePhase - t * 8) * waveAmplitude;
+                
                 return `${(x + turnOffset + waveOffset).toFixed(1)} ${y}`;
             };
             const c = (x1, y1, x2, y2, x, y) => `C ${b(x1,y1)}, ${b(x2,y2)}, ${b(x,y)}`;
@@ -200,7 +230,7 @@
             let diff = target - current;
             while (diff < -180) diff += 360;
             while (diff > 180) diff -= 360;
-            return { angle: current + diff * speed, diff: diff };
+            return current + diff * speed;
         }
 
         function animate() {
@@ -229,7 +259,7 @@
             document.body.style.background = `linear-gradient(to bottom, #ffffff ${splitPercentage}%, #000000 ${splitPercentage}%)`;
             previousY = currentY;
 
-            // --- OBLICZANIE KĄTÓW I WYGIĘCIA CIAŁA ---
+            // --- OBLICZANIE KĄTÓW I HISTORII ---
             let targetAngle1 = currentAngle1;
             let targetAngle2 = currentAngle2;
 
@@ -238,33 +268,27 @@
                 targetAngle2 = Math.atan2(-dy, dx) * (180 / Math.PI) + 90;
             }
 
-            let res1 = smoothAngle(currentAngle1, targetAngle1, 0.08);
-            currentAngle1 = res1.angle;
-            let turnRate1 = res1.diff; // Prędkość skręcania
+            // Gładkie przejścia kątów
+            currentAngle1 = smoothAngle(currentAngle1, targetAngle1, 0.08);
+            currentAngle2 = smoothAngle(currentAngle2, targetAngle2, 0.08);
 
-            let res2 = smoothAngle(currentAngle2, targetAngle2, 0.08);
-            currentAngle2 = res2.angle;
-            let turnRate2 = res2.diff;
+            // Zapisujemy kąty do historii (najnowszy na początku)
+            angleHistory1.unshift(currentAngle1);
+            if (angleHistory1.length > HISTORY_LENGTH) angleHistory1.pop();
 
-            // Przekładamy ostrość skrętu na siłę wygięcia kręgosłupa (bend)
-            let targetBend1 = turnRate1 * 0.5;
-            targetBend1 = Math.max(-25, Math.min(targetBend1, 25)); // Limity wygięcia
-            currentBend1 += (targetBend1 - currentBend1) * 0.1; // Płynne wejście w wygięcie
-
-            let targetBend2 = turnRate2 * 0.5;
-            targetBend2 = Math.max(-25, Math.min(targetBend2, 25));
-            currentBend2 += (targetBend2 - currentBend2) * 0.1;
+            angleHistory2.unshift(currentAngle2);
+            if (angleHistory2.length > HISTORY_LENGTH) angleHistory2.pop();
 
             // Przyspieszenie fali w zależności od prędkości płynięcia
             let speed = Math.min(dist * 0.012, 10);
             wavePhase += 0.15 + speed * 0.05;
 
             // --- AKTUALIZACJA SVG W CZASIE RZECZYWISTYM ---
-            f1Body.setAttribute('d', getBentPath(currentBend1, wavePhase));
-            f1Tail.setAttribute('d', getBentTail(currentBend1, wavePhase));
+            f1Body.setAttribute('d', getBentPath(angleHistory1, wavePhase));
+            f1Tail.setAttribute('d', getBentTail(angleHistory1, wavePhase));
 
-            f2Body.setAttribute('d', getBentPath(currentBend2, wavePhase));
-            f2Tail.setAttribute('d', getBentTail(currentBend2, wavePhase));
+            f2Body.setAttribute('d', getBentPath(angleHistory2, wavePhase));
+            f2Tail.setAttribute('d', getBentTail(angleHistory2, wavePhase));
 
             let mirroredY = window.innerHeight - currentY;
             fish1.style.transform = `translate(${currentX - 50}px, ${currentY - 110}px) rotate(${currentAngle1}deg)`;
