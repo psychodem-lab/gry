@@ -24,29 +24,15 @@
 
         .fish {
             position: absolute;
-            /* Zaktualizowane wymiary proporcjonalne do nowego kształtu */
             width: 100px;
             height: 250px;
             top: 0;
             left: 0;
-            /* Punkt obrotu przesunięty w środek ciała ryby */
             transform-origin: 50px 110px; 
             pointer-events: none; 
             mix-blend-mode: difference;
             fill: #ffffff;
             will-change: transform;
-        }
-
-        .tail {
-            /* Punkt obrotu idealnie u nasady ogona */
-            transform-origin: 50px 145px;
-            animation: wag 2.5s ease-in-out infinite;
-        }
-
-        @keyframes wag {
-            0% { transform: rotate(-14deg); }
-            50% { transform: rotate(14deg); }
-            100% { transform: rotate(-14deg); }
         }
 
         .center-portal {
@@ -96,58 +82,22 @@
     <div id="particles-container"></div>
 
     <svg class="fish" id="fish1" viewBox="0 0 100 250" xmlns="http://www.w3.org/2000/svg">
-        <path d="M50 10 
-                 C42 12, 38 22, 36 32 
-                 C22 35, 8 45, 5 60 
-                 C12 68, 25 60, 33 48 
-                 C32 60, 31 75, 34 85 
-                 C22 92, 18 105, 20 115 
-                 C25 115, 32 105, 36 95 
-                 C38 115, 42 135, 46 150 
-                 L54 150 
-                 C58 135, 62 115, 64 95 
-                 C68 105, 75 115, 80 115 
-                 C82 105, 78 92, 66 85 
-                 C69 75, 68 60, 67 48 
-                 C75 60, 88 68, 95 60 
-                 C92 45, 78 35, 64 32 
-                 C62 22, 58 12, 50 10 Z" />
-                 
-        <path class="tail" d="M45 145 
-                              C30 165, 10 185, 15 210 
-                              C25 215, 38 190, 50 180 
-                              C62 190, 75 215, 85 210 
-                              C90 185, 70 165, 55 145 Z" />
+        <path id="f1-body" d="" />
+        <path id="f1-tail" d="" />
     </svg>
 
     <svg class="fish" id="fish2" viewBox="0 0 100 250" xmlns="http://www.w3.org/2000/svg">
-        <path d="M50 10 
-                 C42 12, 38 22, 36 32 
-                 C22 35, 8 45, 5 60 
-                 C12 68, 25 60, 33 48 
-                 C32 60, 31 75, 34 85 
-                 C22 92, 18 105, 20 115 
-                 C25 115, 32 105, 36 95 
-                 C38 115, 42 135, 46 150 
-                 L54 150 
-                 C58 135, 62 115, 64 95 
-                 C68 105, 75 115, 80 115 
-                 C82 105, 78 92, 66 85 
-                 C69 75, 68 60, 67 48 
-                 C75 60, 88 68, 95 60 
-                 C92 45, 78 35, 64 32 
-                 C62 22, 58 12, 50 10 Z" />
-                 
-        <path class="tail" d="M45 145 
-                              C30 165, 10 185, 15 210 
-                              C25 215, 38 190, 50 180 
-                              C62 190, 75 215, 85 210 
-                              C90 185, 70 165, 55 145 Z" />
+        <path id="f2-body" d="" />
+        <path id="f2-tail" d="" />
     </svg>
 
     <script>
         const fish1 = document.getElementById('fish1');
         const fish2 = document.getElementById('fish2');
+        const f1Body = document.getElementById('f1-body');
+        const f1Tail = document.getElementById('f1-tail');
+        const f2Body = document.getElementById('f2-body');
+        const f2Tail = document.getElementById('f2-tail');
         const particlesContainer = document.getElementById('particles-container');
 
         let targetX = window.innerWidth / 2;
@@ -156,8 +106,12 @@
         let currentY = targetY;
         let previousY = targetY; 
 
-        let angle1 = 0;
-        let angle2 = 0;
+        // Zmienne do płynnej rotacji i falowania kręgosłupa
+        let currentAngle1 = 0;
+        let currentAngle2 = 0;
+        let currentBend1 = 0;
+        let currentBend2 = 0;
+        let wavePhase = 0;
         let splitPercentage = 50;
 
         const keys = {
@@ -192,6 +146,63 @@
             }
         });
 
+        // Funkcja obliczająca dynamiczne wygięcie tułowia i falę płynięcia
+        function getBentPath(turnBend, wavePhase) {
+            const b = (x, y) => {
+                let t = (y - 80) / 70; // Mapowanie wysokości ryby (-1 głowa, 1 ogon)
+                let turnOffset = (1 - t * t) * turnBend; // Paraboliczne wygięcie ciała w zakręcie
+                
+                // Amplituda fali rośnie im bliżej ogona (głowa rusza się lekko, ogon mocno)
+                let waveAmplitude = 1.5 + (y / 150) * 8; 
+                let waveOffset = Math.sin(wavePhase - (y / 30)) * waveAmplitude;
+                
+                return `${(x + turnOffset + waveOffset).toFixed(1)} ${y}`;
+            };
+            const c = (x1, y1, x2, y2, x, y) => `C ${b(x1,y1)}, ${b(x2,y2)}, ${b(x,y)}`;
+            
+            return `M ${b(50, 10)} 
+                    ${c(42,12, 38,22, 36,32)} 
+                    ${c(22,35, 8,45, 5,60)} 
+                    ${c(12,68, 25,60, 33,48)} 
+                    ${c(32,60, 31,75, 34,85)} 
+                    ${c(22,92, 18,105, 20,115)} 
+                    ${c(25,115, 32,105, 36,95)} 
+                    ${c(38,115, 42,135, 46,150)} 
+                    L ${b(54, 150)} 
+                    ${c(58,135, 62,115, 64,95)} 
+                    ${c(68,105, 75,115, 80,115)} 
+                    ${c(82,105, 78,92, 66,85)} 
+                    ${c(69,75, 68,60, 67,48)} 
+                    ${c(75,60, 88,68, 95,60)} 
+                    ${c(92,45, 78,35, 64,32)} 
+                    ${c(62,22, 58,12, 50,10)} Z`;
+        }
+
+        // To samo, ale dla kształtu tylnej płetwy ogonowej
+        function getBentTail(turnBend, wavePhase) {
+            const b = (x, y) => {
+                let t = (y - 80) / 70;
+                let turnOffset = (1 - t * t) * turnBend; 
+                let waveAmplitude = 1.5 + (y / 150) * 8; 
+                let waveOffset = Math.sin(wavePhase - (y / 30)) * waveAmplitude;
+                return `${(x + turnOffset + waveOffset).toFixed(1)} ${y}`;
+            };
+            const c = (x1, y1, x2, y2, x, y) => `C ${b(x1,y1)}, ${b(x2,y2)}, ${b(x,y)}`;
+            
+            return `M ${b(45, 145)} 
+                    ${c(30,165, 10,185, 15,210)} 
+                    ${c(25,215, 38,190, 50,180)} 
+                    ${c(62,190, 75,215, 85,210)} 
+                    ${c(90,185, 70,165, 55,145)} Z`;
+        }
+
+        function smoothAngle(current, target, speed) {
+            let diff = target - current;
+            while (diff < -180) diff += 360;
+            while (diff > 180) diff -= 360;
+            return { angle: current + diff * speed, diff: diff };
+        }
+
         function animate() {
             if (keys.ArrowUp) targetY -= keyboardSpeed;
             if (keys.ArrowDown) targetY += keyboardSpeed;
@@ -203,36 +214,61 @@
 
             let dx = targetX - currentX;
             let dy = targetY - currentY;
+            let dist = Math.sqrt(dx * dx + dy * dy);
 
             currentX += dx * 0.012;
             currentY += dy * 0.012;
 
+            // --- TŁO ---
             let actualDy = currentY - previousY;
             splitPercentage += actualDy * 0.03; 
-
             let pullToCenter = (50 - splitPercentage) * 0.005;
             splitPercentage += pullToCenter;
-
             if (splitPercentage > 100) splitPercentage = 100;
             if (splitPercentage < 0) splitPercentage = 0;
-
             document.body.style.background = `linear-gradient(to bottom, #ffffff ${splitPercentage}%, #000000 ${splitPercentage}%)`;
-            
             previousY = currentY;
 
-            if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
-                angle1 = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
-                angle2 = Math.atan2(-dy, dx) * (180 / Math.PI) + 90;
+            // --- OBLICZANIE KĄTÓW I WYGIĘCIA CIAŁA ---
+            let targetAngle1 = currentAngle1;
+            let targetAngle2 = currentAngle2;
+
+            if (dist > 1) {
+                targetAngle1 = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
+                targetAngle2 = Math.atan2(-dy, dx) * (180 / Math.PI) + 90;
             }
 
-            // Lekkie odchylenie ciała podczas szybkich zakrętów
-            const turnLean = dx * 0.04; 
+            let res1 = smoothAngle(currentAngle1, targetAngle1, 0.08);
+            currentAngle1 = res1.angle;
+            let turnRate1 = res1.diff; // Prędkość skręcania
+
+            let res2 = smoothAngle(currentAngle2, targetAngle2, 0.08);
+            currentAngle2 = res2.angle;
+            let turnRate2 = res2.diff;
+
+            // Przekładamy ostrość skrętu na siłę wygięcia kręgosłupa (bend)
+            let targetBend1 = turnRate1 * 0.5;
+            targetBend1 = Math.max(-25, Math.min(targetBend1, 25)); // Limity wygięcia
+            currentBend1 += (targetBend1 - currentBend1) * 0.1; // Płynne wejście w wygięcie
+
+            let targetBend2 = turnRate2 * 0.5;
+            targetBend2 = Math.max(-25, Math.min(targetBend2, 25));
+            currentBend2 += (targetBend2 - currentBend2) * 0.1;
+
+            // Przyspieszenie fali w zależności od prędkości płynięcia
+            let speed = Math.min(dist * 0.012, 10);
+            wavePhase += 0.15 + speed * 0.05;
+
+            // --- AKTUALIZACJA SVG W CZASIE RZECZYWISTYM ---
+            f1Body.setAttribute('d', getBentPath(currentBend1, wavePhase));
+            f1Tail.setAttribute('d', getBentTail(currentBend1, wavePhase));
+
+            f2Body.setAttribute('d', getBentPath(currentBend2, wavePhase));
+            f2Tail.setAttribute('d', getBentTail(currentBend2, wavePhase));
 
             let mirroredY = window.innerHeight - currentY;
-            
-            // Centrowanie względem kursora dla nowego rozmiaru SVG (50 i 110 to połowy osi dla transform-origin)
-            fish1.style.transform = `translate(${currentX - 50}px, ${currentY - 110}px) rotate(${angle1}deg) skewX(${turnLean}deg)`;
-            fish2.style.transform = `translate(${currentX - 50}px, ${mirroredY - 110}px) rotate(${angle2}deg) skewX(${turnLean}deg)`;
+            fish1.style.transform = `translate(${currentX - 50}px, ${currentY - 110}px) rotate(${currentAngle1}deg)`;
+            fish2.style.transform = `translate(${currentX - 50}px, ${mirroredY - 110}px) rotate(${currentAngle2}deg)`;
 
             requestAnimationFrame(animate);
         }
