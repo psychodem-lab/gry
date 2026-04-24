@@ -24,11 +24,11 @@
 
         .fish {
             position: absolute;
-            width: 50px;           /* Zmniejszono z 100px */
-            height: 125px;         /* Zmniejszono z 250px */
+            width: 50px;           
+            height: 125px;         
             top: 0;
             left: 0;
-            transform-origin: 25px 55px; /* Dopasowany środek rotacji do nowego rozmiaru */
+            transform-origin: 25px 55px; 
             pointer-events: none; 
             mix-blend-mode: difference;
             fill: #ffffff;
@@ -106,13 +106,11 @@
         let currentY = targetY;
         let previousY = targetY; 
 
-        // Zmienne do płynnej rotacji i historii kręgosłupa
         let currentAngle1 = 0;
         let currentAngle2 = 0;
         let wavePhase = 0;
         let splitPercentage = 50;
 
-        // Historia kątów - tworzy efekt podążania tułowia i ogona za głową
         const HISTORY_LENGTH = 25; 
         let angleHistory1 = new Array(HISTORY_LENGTH).fill(0);
         let angleHistory2 = new Array(HISTORY_LENGTH).fill(0);
@@ -149,7 +147,6 @@
             }
         });
 
-        // Funkcja obliczająca dynamiczne wygięcie
         function getBentPath(angleHistory, wavePhase) {
             let currentAngle = angleHistory[0];
             
@@ -172,11 +169,11 @@
             };
             const c = (x1, y1, x2, y2, x, y) => `C ${b(x1,y1)}, ${b(x2,y2)}, ${b(x,y)}`;
             
-            // Zmodyfikowane ścieżki - zmniejszone płetwy boczne
+            // Poprawiono - usunięto wtrącenia tekstowe psujące renderowanie SVG
             return `M ${b(50, 10)} 
                     ${c(42,12, 38,22, 36,32)} 
-                    ${c(25,35, 14,45, 12,58)} /* Zmniejszona lewa płetwa - ruch na zewnątrz */
-                    ${c(18,65, 27,58, 33,48)} /* Zmniejszona lewa płetwa - powrót */
+                    ${c(25,35, 14,45, 12,58)} 
+                    ${c(18,65, 27,58, 33,48)} 
                     ${c(32,60, 31,75, 34,85)} 
                     ${c(22,92, 18,105, 20,115)} 
                     ${c(25,115, 32,105, 36,95)} 
@@ -186,8 +183,8 @@
                     ${c(68,105, 75,115, 80,115)} 
                     ${c(82,105, 78,92, 66,85)} 
                     ${c(69,75, 68,60, 67,48)} 
-                    ${c(73,58, 82,65, 88,58)} /* Zmniejszona prawa płetwa - ruch na zewnątrz */
-                    ${c(86,45, 75,35, 64,32)} /* Zmniejszona prawa płetwa - powrót */
+                    ${c(73,58, 82,65, 88,58)} 
+                    ${c(86,45, 75,35, 64,32)} 
                     ${c(62,22, 58,12, 50,10)} Z`;
         }
 
@@ -242,7 +239,6 @@
             currentX += dx * 0.012;
             currentY += dy * 0.012;
 
-            // --- TŁO ---
             let actualDy = currentY - previousY;
             splitPercentage += actualDy * 0.03; 
             let pullToCenter = (50 - splitPercentage) * 0.005;
@@ -252,7 +248,6 @@
             document.body.style.background = `linear-gradient(to bottom, #ffffff ${splitPercentage}%, #000000 ${splitPercentage}%)`;
             previousY = currentY;
 
-            // --- OBLICZANIE KĄTÓW I HISTORII ---
             let targetAngle1 = currentAngle1;
             let targetAngle2 = currentAngle2;
 
@@ -261,22 +256,18 @@
                 targetAngle2 = Math.atan2(-dy, dx) * (180 / Math.PI) + 90;
             }
 
-            // Gładkie przejścia kątów
             currentAngle1 = smoothAngle(currentAngle1, targetAngle1, 0.08);
             currentAngle2 = smoothAngle(currentAngle2, targetAngle2, 0.08);
 
-            // Zapisujemy kąty do historii (najnowszy na początku)
             angleHistory1.unshift(currentAngle1);
             if (angleHistory1.length > HISTORY_LENGTH) angleHistory1.pop();
 
             angleHistory2.unshift(currentAngle2);
             if (angleHistory2.length > HISTORY_LENGTH) angleHistory2.pop();
 
-            // Przyspieszenie fali w zależności od prędkości płynięcia
             let speed = Math.min(dist * 0.012, 10);
             wavePhase += 0.15 + speed * 0.05;
 
-            // --- AKTUALIZACJA SVG W CZASIE RZECZYWISTYM ---
             f1Body.setAttribute('d', getBentPath(angleHistory1, wavePhase));
             f1Tail.setAttribute('d', getBentTail(angleHistory1, wavePhase));
 
@@ -285,7 +276,6 @@
 
             let mirroredY = window.innerHeight - currentY;
             
-            // Poprawione wartości offsetu: odjęcie 25px (połowa szerokości) i 55px (odpowiednik nowej wys. punktu origin)
             fish1.style.transform = `translate(${currentX - 25}px, ${currentY - 55}px) rotate(${currentAngle1}deg)`;
             fish2.style.transform = `translate(${currentX - 25}px, ${mirroredY - 55}px) rotate(${currentAngle2}deg)`;
 
