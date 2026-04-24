@@ -26,11 +26,13 @@
 
         .fish {
             position: absolute;
-            width: 50px;
-            height: 100px;
+            /* POPRAWKA: Zwiększony rozmiar ryb dla lepszych detali */
+            width: 80px;
+            height: 200px;
             top: 0;
             left: 0;
-            transform-origin: 25px 50px; 
+            /* POPRAWKA: Zaktualizowany środek rotacji dla większego SVG */
+            transform-origin: 40px 100px; 
             pointer-events: none; 
             mix-blend-mode: difference;
             fill: #ffffff;
@@ -38,14 +40,16 @@
         }
 
         .tail {
-            transform-origin: 50px 130px;
-            animation: wag 2.5s ease-in-out infinite;
+            /* POPRAWKA: Zaktualizowany środek rotacji dla nowej płetwy ogonowej */
+            transform-origin: 50px 170px;
+            /* POPRAWKA: Płynniejsza i bardziej złożona animacja machania */
+            animation: wag 3s ease-in-out infinite;
         }
 
         @keyframes wag {
-            0% { transform: rotate(-15deg); }
-            50% { transform: rotate(15deg); }
-            100% { transform: rotate(-15deg); }
+            0% { transform: rotate(-10deg) skewX(2deg); }
+            50% { transform: rotate(10deg) skewX(-2deg); }
+            100% { transform: rotate(-10deg) skewX(2deg); }
         }
 
         .center-portal {
@@ -94,18 +98,30 @@
     <div class="center-portal"></div>
     <div id="particles-container"></div>
 
-    <svg class="fish" id="fish1" viewBox="0 0 100 200" xmlns="http://www.w3.org/2000/svg">
-        <ellipse cx="50" cy="80" rx="25" ry="60" />
-        <path class="tail" d="M 50 130 C 70 170, 80 190, 50 200 C 20 190, 30 170, 50 130 Z" />
-        <path d="M 27 70 C 5 80, -5 110, 15 110 Z" />
-        <path d="M 73 70 C 95 80, 105 110, 85 110 Z" />
+    <svg class="fish" id="fish1" viewBox="0 0 100 250" xmlns="http://www.w3.org/2000/svg">
+        <path d="M50 20 C20 40, 20 100, 30 140 C40 180, 60 180, 70 140 C80 100, 80 40, 50 20 Z" />
+        
+        <path d="M15 80 C 0 90, 5 110, 25 105 Z" />
+        <path d="M85 80 C 100 90, 95 110, 75 105 Z" />
+
+        <path d="M48 60 Q 52 70, 52 100 Q 52 130, 48 140 Z" opacity="0.6"/>
+
+        <g class="tail">
+            <path d="M 50 170 Q 35 190, 20 230 Q 50 250, 80 230 Q 65 190, 50 170 Z" />
+        </g>
     </svg>
 
-    <svg class="fish" id="fish2" viewBox="0 0 100 200" xmlns="http://www.w3.org/2000/svg">
-        <ellipse cx="50" cy="80" rx="25" ry="60" />
-        <path class="tail" d="M 50 130 C 70 170, 80 190, 50 200 C 20 190, 30 170, 50 130 Z" />
-        <path d="M 27 70 C 5 80, -5 110, 15 110 Z" />
-        <path d="M 73 70 C 95 80, 105 110, 85 110 Z" />
+    <svg class="fish" id="fish2" viewBox="0 0 100 250" xmlns="http://www.w3.org/2000/svg">
+        <path d="M50 20 C20 40, 20 100, 30 140 C40 180, 60 180, 70 140 C80 100, 80 40, 50 20 Z" />
+        
+        <path d="M15 80 C 0 90, 5 110, 25 105 Z" />
+        <path d="M85 80 C 100 90, 95 110, 75 105 Z" />
+
+        <path d="M48 60 Q 52 70, 52 100 Q 52 130, 48 140 Z" opacity="0.6"/>
+
+        <g class="tail">
+            <path d="M 50 170 Q 35 190, 20 230 Q 50 250, 80 230 Q 65 190, 50 170 Z" />
+        </g>
     </svg>
 
     <script>
@@ -193,14 +209,22 @@
             previousY = currentY;
             // ---------------------------------
 
+            // POPRAWKA: Nowe obliczenia kąta i pochylenia ciała (Dynamic Lean)
             if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
                 angle1 = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
                 angle2 = Math.atan2(-dy, dx) * (180 / Math.PI) + 90;
             }
 
+            // POPRAWKA: Dodane pochylenie ciała w oparciu o kierunek skrętu (Dynamic Lean)
+            const turnLean = dx * 0.05; // Skalowanie pochylenia ciała
+
+            // POPRAWKA: Zaktualizowane pozycjonowanie dla nowej wielkości SVG
+            // offset-x: currentX - (width/2) -> currentX - 40
+            // offset-y: currentY - (transform-origin.y / 2)? Nie, transform-origin.y -> currentY - 100
+            
             let mirroredY = window.innerHeight - currentY;
-            fish1.style.transform = `translate(${currentX - 25}px, ${currentY - 50}px) rotate(${angle1}deg)`;
-            fish2.style.transform = `translate(${currentX - 25}px, ${mirroredY - 50}px) rotate(${angle2}deg)`;
+            fish1.style.transform = `translate(${currentX - 40}px, ${currentY - 100}px) rotate(${angle1}deg) skewX(${turnLean}deg)`;
+            fish2.style.transform = `translate(${currentX - 40}px, ${mirroredY - 100}px) rotate(${angle2}deg) skewX(${turnLean}deg)`;
 
             requestAnimationFrame(animate);
         }
