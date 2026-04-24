@@ -74,7 +74,6 @@
             100% { opacity: 0; transform: scale(3.5); }
         }
 
-        /* Nowe style dodane dla licznika i wybuchu */
         #timer {
             position: absolute;
             top: 20px;
@@ -197,6 +196,7 @@
                 keys[e.code] = false;
             }
         });
+
         function getBentPath(angleHistory, wavePhase) {
             let currentAngle = angleHistory[0];
             const b = (x, y) => {
@@ -280,7 +280,6 @@
                 p.style.left = `50%`;
                 p.style.top = `50%`;
                 
-                // Losowy kąt i odległość wybuchu
                 const angle = Math.random() * Math.PI * 2;
                 const distance = (Math.random() * 0.8 + 0.2) * (window.innerWidth / 1.5);
                 
@@ -328,13 +327,11 @@
             document.body.style.background = `linear-gradient(to bottom, #ffffff ${splitPercentage}%, #000000 ${splitPercentage}%)`;
             previousY = currentY;
 
-            // Obsługa licznika czasu
+            // Obsługa licznika czasu - zmieniona logika
             if (!gameWon) {
-                // Margines błędu 0.5%, żeby zaliczało idealną i prawie idealną równowagę
+                // Margines błędu 0.5%, dodaje czas tylko gdy jesteś w równowadze
                 if (Math.abs(splitPercentage - 50) <= 0.5) {
-                    balanceTimeMs += deltaTime;
-                } else {
-                    balanceTimeMs = 0; // Strata równowagi = reset
+                    balanceTimeMs += deltaTime; // Kumulacja czasu
                 }
 
                 let totalSeconds = Math.floor(balanceTimeMs / 1000);
@@ -342,7 +339,7 @@
                 let secs = totalSeconds % 60;
                 timerDiv.innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 
-                if (balanceTimeMs >= 300000) { // 300 000 ms to dokładnie 5 minut
+                if (balanceTimeMs >= 300000) { // 300 000 ms = 5 minut
                     gameWon = true;
                     triggerExplosion();
                 }
