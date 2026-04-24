@@ -10,7 +10,6 @@
             padding: 0;
             width: 100vw;
             height: 100vh;
-            /* Tło podzielone pionowo: góra biała, dół czarny */
             background: linear-gradient(to bottom, #ffffff 50%, #000000 50%);
             overflow: hidden;
             cursor: crosshair;
@@ -20,19 +19,18 @@
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
             pointer-events: none; z-index: 10; opacity: 0.12;
-            /* Subtelny efekt */
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
         }
 
         .fish {
             position: absolute;
-            /* POPRAWKA: Zwiększony rozmiar ryb dla lepszych detali */
-            width: 80px;
-            height: 200px;
+            /* Zaktualizowane wymiary proporcjonalne do nowego kształtu */
+            width: 100px;
+            height: 250px;
             top: 0;
             left: 0;
-            /* POPRAWKA: Zaktualizowany środek rotacji dla większego SVG */
-            transform-origin: 40px 100px; 
+            /* Punkt obrotu przesunięty w środek ciała ryby */
+            transform-origin: 50px 110px; 
             pointer-events: none; 
             mix-blend-mode: difference;
             fill: #ffffff;
@@ -40,16 +38,15 @@
         }
 
         .tail {
-            /* POPRAWKA: Zaktualizowany środek rotacji dla nowej płetwy ogonowej */
-            transform-origin: 50px 170px;
-            /* POPRAWKA: Płynniejsza i bardziej złożona animacja machania */
-            animation: wag 3s ease-in-out infinite;
+            /* Punkt obrotu idealnie u nasady ogona */
+            transform-origin: 50px 145px;
+            animation: wag 2.5s ease-in-out infinite;
         }
 
         @keyframes wag {
-            0% { transform: rotate(-10deg) skewX(2deg); }
-            50% { transform: rotate(10deg) skewX(-2deg); }
-            100% { transform: rotate(-10deg) skewX(2deg); }
+            0% { transform: rotate(-14deg); }
+            50% { transform: rotate(14deg); }
+            100% { transform: rotate(-14deg); }
         }
 
         .center-portal {
@@ -99,29 +96,53 @@
     <div id="particles-container"></div>
 
     <svg class="fish" id="fish1" viewBox="0 0 100 250" xmlns="http://www.w3.org/2000/svg">
-        <path d="M50 20 C20 40, 20 100, 30 140 C40 180, 60 180, 70 140 C80 100, 80 40, 50 20 Z" />
-        
-        <path d="M15 80 C 0 90, 5 110, 25 105 Z" />
-        <path d="M85 80 C 100 90, 95 110, 75 105 Z" />
-
-        <path d="M48 60 Q 52 70, 52 100 Q 52 130, 48 140 Z" opacity="0.6"/>
-
-        <g class="tail">
-            <path d="M 50 170 Q 35 190, 20 230 Q 50 250, 80 230 Q 65 190, 50 170 Z" />
-        </g>
+        <path d="M50 10 
+                 C42 12, 38 22, 36 32 
+                 C22 35, 8 45, 5 60 
+                 C12 68, 25 60, 33 48 
+                 C32 60, 31 75, 34 85 
+                 C22 92, 18 105, 20 115 
+                 C25 115, 32 105, 36 95 
+                 C38 115, 42 135, 46 150 
+                 L54 150 
+                 C58 135, 62 115, 64 95 
+                 C68 105, 75 115, 80 115 
+                 C82 105, 78 92, 66 85 
+                 C69 75, 68 60, 67 48 
+                 C75 60, 88 68, 95 60 
+                 C92 45, 78 35, 64 32 
+                 C62 22, 58 12, 50 10 Z" />
+                 
+        <path class="tail" d="M45 145 
+                              C30 165, 10 185, 15 210 
+                              C25 215, 38 190, 50 180 
+                              C62 190, 75 215, 85 210 
+                              C90 185, 70 165, 55 145 Z" />
     </svg>
 
     <svg class="fish" id="fish2" viewBox="0 0 100 250" xmlns="http://www.w3.org/2000/svg">
-        <path d="M50 20 C20 40, 20 100, 30 140 C40 180, 60 180, 70 140 C80 100, 80 40, 50 20 Z" />
-        
-        <path d="M15 80 C 0 90, 5 110, 25 105 Z" />
-        <path d="M85 80 C 100 90, 95 110, 75 105 Z" />
-
-        <path d="M48 60 Q 52 70, 52 100 Q 52 130, 48 140 Z" opacity="0.6"/>
-
-        <g class="tail">
-            <path d="M 50 170 Q 35 190, 20 230 Q 50 250, 80 230 Q 65 190, 50 170 Z" />
-        </g>
+        <path d="M50 10 
+                 C42 12, 38 22, 36 32 
+                 C22 35, 8 45, 5 60 
+                 C12 68, 25 60, 33 48 
+                 C32 60, 31 75, 34 85 
+                 C22 92, 18 105, 20 115 
+                 C25 115, 32 105, 36 95 
+                 C38 115, 42 135, 46 150 
+                 L54 150 
+                 C58 135, 62 115, 64 95 
+                 C68 105, 75 115, 80 115 
+                 C82 105, 78 92, 66 85 
+                 C69 75, 68 60, 67 48 
+                 C75 60, 88 68, 95 60 
+                 C92 45, 78 35, 64 32 
+                 C62 22, 58 12, 50 10 Z" />
+                 
+        <path class="tail" d="M45 145 
+                              C30 165, 10 185, 15 210 
+                              C25 215, 38 190, 50 180 
+                              C62 190, 75 215, 85 210 
+                              C90 185, 70 165, 55 145 Z" />
     </svg>
 
     <script>
@@ -139,33 +160,29 @@
         let angle2 = 0;
         let splitPercentage = 50;
 
-        // NOWE: Obiekt przechowujący stan klawiszy
         const keys = {
             ArrowUp: false,
             ArrowDown: false,
             ArrowLeft: false,
             ArrowRight: false
         };
-        const keyboardSpeed = 15; // Prędkość przesuwania celu przy pomocy strzałek
+        const keyboardSpeed = 15;
 
-        // Nasłuchiwanie myszki
         window.addEventListener('mousemove', (e) => {
             targetX = e.clientX;
             targetY = e.clientY;
         });
 
-        // Nasłuchiwanie dotyku
         window.addEventListener('touchmove', (e) => {
             e.preventDefault(); 
             targetX = e.touches[0].clientX;
             targetY = e.touches[0].clientY;
         }, { passive: false });
 
-        // NOWE: Nasłuchiwanie klawiatury
         window.addEventListener('keydown', (e) => {
             if (keys.hasOwnProperty(e.code)) {
                 keys[e.code] = true;
-                e.preventDefault(); // Zapobiega przesuwaniu się całej strony www
+                e.preventDefault();
             }
         });
 
@@ -176,13 +193,11 @@
         });
 
         function animate() {
-            // NOWE: Aktualizacja pozycji celu na podstawie wciśniętych klawiszy
             if (keys.ArrowUp) targetY -= keyboardSpeed;
             if (keys.ArrowDown) targetY += keyboardSpeed;
             if (keys.ArrowLeft) targetX -= keyboardSpeed;
             if (keys.ArrowRight) targetX += keyboardSpeed;
 
-            // NOWE: Zabezpieczenie przed ucieczką celu poza krawędzie ekranu przy sterowaniu klawiaturą
             targetX = Math.max(0, Math.min(targetX, window.innerWidth));
             targetY = Math.max(0, Math.min(targetY, window.innerHeight));
 
@@ -192,39 +207,32 @@
             currentX += dx * 0.012;
             currentY += dy * 0.012;
 
-            // --- MECHANIKA TŁA ---
             let actualDy = currentY - previousY;
             splitPercentage += actualDy * 0.03; 
 
-            // Grawitacja powoli przyciąga do środka (50%)
             let pullToCenter = (50 - splitPercentage) * 0.005;
             splitPercentage += pullToCenter;
 
-            // Zmienione granice - teraz plansza może być w 100% biała lub czarna
             if (splitPercentage > 100) splitPercentage = 100;
             if (splitPercentage < 0) splitPercentage = 0;
 
             document.body.style.background = `linear-gradient(to bottom, #ffffff ${splitPercentage}%, #000000 ${splitPercentage}%)`;
             
             previousY = currentY;
-            // ---------------------------------
 
-            // POPRAWKA: Nowe obliczenia kąta i pochylenia ciała (Dynamic Lean)
             if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
                 angle1 = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
                 angle2 = Math.atan2(-dy, dx) * (180 / Math.PI) + 90;
             }
 
-            // POPRAWKA: Dodane pochylenie ciała w oparciu o kierunek skrętu (Dynamic Lean)
-            const turnLean = dx * 0.05; // Skalowanie pochylenia ciała
+            // Lekkie odchylenie ciała podczas szybkich zakrętów
+            const turnLean = dx * 0.04; 
 
-            // POPRAWKA: Zaktualizowane pozycjonowanie dla nowej wielkości SVG
-            // offset-x: currentX - (width/2) -> currentX - 40
-            // offset-y: currentY - (transform-origin.y / 2)? Nie, transform-origin.y -> currentY - 100
-            
             let mirroredY = window.innerHeight - currentY;
-            fish1.style.transform = `translate(${currentX - 40}px, ${currentY - 100}px) rotate(${angle1}deg) skewX(${turnLean}deg)`;
-            fish2.style.transform = `translate(${currentX - 40}px, ${mirroredY - 100}px) rotate(${angle2}deg) skewX(${turnLean}deg)`;
+            
+            // Centrowanie względem kursora dla nowego rozmiaru SVG (50 i 110 to połowy osi dla transform-origin)
+            fish1.style.transform = `translate(${currentX - 50}px, ${currentY - 110}px) rotate(${angle1}deg) skewX(${turnLean}deg)`;
+            fish2.style.transform = `translate(${currentX - 50}px, ${mirroredY - 110}px) rotate(${angle2}deg) skewX(${turnLean}deg)`;
 
             requestAnimationFrame(animate);
         }
