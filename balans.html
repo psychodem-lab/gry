@@ -17,8 +17,10 @@
         }
         
         .paper-texture {
-            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            pointer-events: none; z-index: 10; opacity: 0.12; /* Subtelny efekt */
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none; z-index: 10; opacity: 0.12;
+            /* Subtelny efekt */
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
         }
 
@@ -36,7 +38,7 @@
         }
 
         .tail {
-            transform-origin: 50px 130px; 
+            transform-origin: 50px 130px;
             animation: wag 2.5s ease-in-out infinite;
         }
 
@@ -113,28 +115,61 @@
 
         let targetX = window.innerWidth / 2;
         let targetY = window.innerHeight / 4;
-
         let currentX = targetX;
         let currentY = targetY;
         let previousY = targetY; 
 
         let angle1 = 0;
         let angle2 = 0;
-
         let splitPercentage = 50;
 
+        // NOWE: Obiekt przechowujący stan klawiszy
+        const keys = {
+            ArrowUp: false,
+            ArrowDown: false,
+            ArrowLeft: false,
+            ArrowRight: false
+        };
+        const keyboardSpeed = 15; // Prędkość przesuwania celu przy pomocy strzałek
+
+        // Nasłuchiwanie myszki
         window.addEventListener('mousemove', (e) => {
             targetX = e.clientX;
             targetY = e.clientY;
         });
 
+        // Nasłuchiwanie dotyku
         window.addEventListener('touchmove', (e) => {
             e.preventDefault(); 
             targetX = e.touches[0].clientX;
             targetY = e.touches[0].clientY;
         }, { passive: false });
 
+        // NOWE: Nasłuchiwanie klawiatury
+        window.addEventListener('keydown', (e) => {
+            if (keys.hasOwnProperty(e.code)) {
+                keys[e.code] = true;
+                e.preventDefault(); // Zapobiega przesuwaniu się całej strony www
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (keys.hasOwnProperty(e.code)) {
+                keys[e.code] = false;
+            }
+        });
+
         function animate() {
+            // NOWE: Aktualizacja pozycji celu na podstawie wciśniętych klawiszy
+            if (keys.ArrowUp) targetY -= keyboardSpeed;
+            if (keys.ArrowDown) targetY += keyboardSpeed;
+            if (keys.ArrowLeft) targetX -= keyboardSpeed;
+            if (keys.ArrowRight) targetX += keyboardSpeed;
+
+            // NOWE: Zabezpieczenie przed ucieczką celu poza krawędzie ekranu przy sterowaniu klawiaturą
+            targetX = Math.max(0, Math.min(targetX, window.innerWidth));
+            targetY = Math.max(0, Math.min(targetY, window.innerHeight));
+
             let dx = targetX - currentX;
             let dy = targetY - currentY;
 
@@ -164,7 +199,6 @@
             }
 
             let mirroredY = window.innerHeight - currentY;
-
             fish1.style.transform = `translate(${currentX - 25}px, ${currentY - 50}px) rotate(${angle1}deg)`;
             fish2.style.transform = `translate(${currentX - 25}px, ${mirroredY - 50}px) rotate(${angle2}deg)`;
 
@@ -195,7 +229,7 @@
 
             setTimeout(() => {
                 particlesContainer.removeChild(particle);
-            }, 4000); 
+            }, 4000);
         }
 
         function spawnNext() {
@@ -205,7 +239,7 @@
         }
 
         spawnNext();
-        
+
         window.addEventListener('resize', () => {
             if(targetX > window.innerWidth) targetX = window.innerWidth / 2;
             if(targetY > window.innerHeight) targetY = window.innerHeight / 2;
