@@ -24,11 +24,11 @@
 
         .fish {
             position: absolute;
-            width: 100px;
-            height: 250px;
+            width: 50px;           /* Zmniejszono z 100px */
+            height: 125px;         /* Zmniejszono z 250px */
             top: 0;
             left: 0;
-            transform-origin: 50px 110px; 
+            transform-origin: 25px 55px; /* Dopasowany środek rotacji do nowego rozmiaru */
             pointer-events: none; 
             mix-blend-mode: difference;
             fill: #ffffff;
@@ -149,30 +149,22 @@
             }
         });
 
-        // Funkcja obliczająca dynamiczne wygięcie na podstawie historii kątów
+        // Funkcja obliczająca dynamiczne wygięcie
         function getBentPath(angleHistory, wavePhase) {
             let currentAngle = angleHistory[0];
             
             const b = (x, y) => {
-                // Mapowanie dystansu od głowy (0 to głowa, 1 to koniec ogona)
                 let t = Math.max(0, Math.min(1, y / 250)); 
-                
-                // Im dalej na ciele (t), tym starszy kąt z historii bierzemy
                 let idx = Math.floor(t * (angleHistory.length - 1));
                 let pastAngle = angleHistory[idx];
                 
-                // Obliczamy różnicę między obecnym obrotem całej ryby, a tym sprzed ułamka sekundy
                 let diff = currentAngle - pastAngle;
                 while (diff < -180) diff += 360;
                 while (diff > 180) diff -= 360;
                 
-                // Ograniczamy ekstremalne wygięcia, by ryba nie "wyszła" poza viewBox
                 let clampedDiff = Math.max(-35, Math.min(diff, 35));
-                
-                // Opóźnienie ruchu: ogon mocniej kompensuje obrót głowy
                 let turnOffset = -clampedDiff * Math.pow(t, 1.5) * 1.5; 
                 
-                // Naturalna fala płynięcia
                 let waveAmplitude = 1.2 + Math.pow(t, 2) * 12; 
                 let waveOffset = Math.sin(wavePhase - t * 8) * waveAmplitude;
                 
@@ -180,10 +172,11 @@
             };
             const c = (x1, y1, x2, y2, x, y) => `C ${b(x1,y1)}, ${b(x2,y2)}, ${b(x,y)}`;
             
+            // Zmodyfikowane ścieżki - zmniejszone płetwy boczne
             return `M ${b(50, 10)} 
                     ${c(42,12, 38,22, 36,32)} 
-                    ${c(22,35, 8,45, 5,60)} 
-                    ${c(12,68, 25,60, 33,48)} 
+                    ${c(25,35, 14,45, 12,58)} /* Zmniejszona lewa płetwa - ruch na zewnątrz */
+                    ${c(18,65, 27,58, 33,48)} /* Zmniejszona lewa płetwa - powrót */
                     ${c(32,60, 31,75, 34,85)} 
                     ${c(22,92, 18,105, 20,115)} 
                     ${c(25,115, 32,105, 36,95)} 
@@ -193,8 +186,8 @@
                     ${c(68,105, 75,115, 80,115)} 
                     ${c(82,105, 78,92, 66,85)} 
                     ${c(69,75, 68,60, 67,48)} 
-                    ${c(75,60, 88,68, 95,60)} 
-                    ${c(92,45, 78,35, 64,32)} 
+                    ${c(73,58, 82,65, 88,58)} /* Zmniejszona prawa płetwa - ruch na zewnątrz */
+                    ${c(86,45, 75,35, 64,32)} /* Zmniejszona prawa płetwa - powrót */
                     ${c(62,22, 58,12, 50,10)} Z`;
         }
 
@@ -291,8 +284,10 @@
             f2Tail.setAttribute('d', getBentTail(angleHistory2, wavePhase));
 
             let mirroredY = window.innerHeight - currentY;
-            fish1.style.transform = `translate(${currentX - 50}px, ${currentY - 110}px) rotate(${currentAngle1}deg)`;
-            fish2.style.transform = `translate(${currentX - 50}px, ${mirroredY - 110}px) rotate(${currentAngle2}deg)`;
+            
+            // Poprawione wartości offsetu: odjęcie 25px (połowa szerokości) i 55px (odpowiednik nowej wys. punktu origin)
+            fish1.style.transform = `translate(${currentX - 25}px, ${currentY - 55}px) rotate(${currentAngle1}deg)`;
+            fish2.style.transform = `translate(${currentX - 25}px, ${mirroredY - 55}px) rotate(${currentAngle2}deg)`;
 
             requestAnimationFrame(animate);
         }
