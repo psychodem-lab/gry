@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Totalna Równowaga - Joystick</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(to bottom, #ffffff 50%, #000000 50%);
+            overflow: hidden;
+            cursor: crosshair;
+            touch-action: none; /* Blokuje domyślne gesty przeglądarki */
+        }
+        
+        .paper-texture {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none; z-index: 10; opacity: 0.12;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        .fish {
+            position: absolute;
+            width: 120px;           
+            height: 125px;         
+            top: 0;
+            left: 0;
+            transform-origin: 60px 55px; 
+            pointer-events: none; 
+            mix-blend-mode: difference;
+            fill: #ffffff;
+            will-change: transform;
+        }
+
+        .center-portal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 10px dashed #ffffff;
+            mix-blend-mode: difference;
+            animation: spin 30s linear infinite;
+            pointer-events: none;
+            z-index: 5; 
+        }
+
+        @keyframes spin {
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        #timer {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: monospace;
+            font-size: 2.5rem;
+            color: white;
+            mix-blend-mode: difference;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        #congratulations {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: sans-serif;
+            font-size: 5rem;
+            font-weight: bold;
+            color: white;
+            mix-blend-mode: difference;
+            z-index: 30;
+            display: none;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        /* STYLIZACJA JOYSTICKA */
+        #joystick-container {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+            width: 120px;
+            height: 120px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid white;
+            border-radius: 50%;
+            mix-blend-mode: difference;
+            z-index: 100;
+            touch-action: none;
+        }
+
+        #joystick-stick {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+
+        .explosion-particle {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            mix-blend-mode: difference;
+            background: white;
+            will-change: transform, opacity;
+            animation: explode 2.5s ease-out forwards;
+        }
+
+        @keyframes explode {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+        }
+        
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            mix-blend-mode: difference;
+            opacity: 0;
+            transform: scale(0.1);
+            will-change: transform, opacity;
+        }
+
+        .particle-burst {
+            animation: particleFadeInScaleOut 4s ease-out forwards;
+        }
+
+        @keyframes particleFadeInScaleOut {
+            0% { opacity: 0; transform: scale(0.1); }
+            20% { opacity: 0.6; transform: scale(1); }
+            100% { opacity: 0; transform: scale(3.5); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="paper-texture"></div>
+    <div class="center-portal"></div>
+    <div id="particles-container"></div>
+    
+    <div id="timer">00:00</div>
+    <div id="congratulations">GRATULACJE!</div>
+
+    <!-- Kontroler joysticka -->
+    <div id="joystick-container">
+        <div id="joystick-stick"></div>
+    </div>
+
+    <svg class="fish" id="fish1" viewBox="-50 0 200 250" xmlns="http://www.w3.org/2000/svg">
+        <path id="f1-body" d="" />
+        <path id="f1-tail" d="" />
+    </svg>
+
+    <svg class="fish" id="fish2" viewBox="-50 0 200 250" xmlns="http://www.w3.org/2000/svg">
+        <path id="f2-body" d="" />
+        <path id="f2-tail" d="" />
+    </svg>
+
+    <script>
+        const fish1 = document.getElementById('fish1');
+        const fish2 = document.getElementById('fish2');
+        const f1Body = document.getElementById('f1-body');
+        const f1Tail = document.getElementById('f1-tail');
+        const f2Body = document.getElementById('f2-body');
+        const f2Tail = document.getElementById('f2-tail');
+        const particlesContainer = document.getElementById('particles-container');
+        const timerDiv = document.getElementById('timer');
+        const congratsDiv = document.getElementById('congratulations');
+        const joystickContainer = document.getElementById('joystick-container');
+        const joystickStick = document.getElementById('joystick-stick');
+
+        let targetX = window.innerWidth / 2;
+        let targetY = window.innerHeight / 2;
+        let currentX = targetX;
+        let currentY = targetY;
+        let previousY = targetY; 
+
+        let currentAngle1 = 0;
+        let currentAngle2 = 0;
+        let wavePhase = 0;
+        let splitPercentage = 50;
+
+        const HISTORY_LENGTH = 25; 
+        let angleHistory1 = new Array(HISTORY_LENGTH).fill(0);
+        let angleHistory2 = new Array(HISTORY_LENGTH).fill(0);
+        
+        // Zmienne joysticka
+        let isJoystickActive = false;
+        let joystickDeltaX = 0;
+        let joystickDeltaY = 0;
+        const joystickMaxDistance = 50;
+        const moveSensitivity = 12; // Prędkość ryb przy maksymalnym wychyleniu
+
+        // Zmienne do licznika czasu
+        let balanceTimeMs = 0;
+        let lastTimestamp = 0;
+        let gameWon = false;
+
+        // --- OBSŁUGA JOYSTICKA ---
+        joystickContainer.addEventListener('touchstart', (e) => {
+            isJoystickActive = true;
+            handleJoystick(e);
+        }, { passive: false });
+
+        window.addEventListener('touchmove', (e) => {
+            if (isJoystickActive) {
+                e.preventDefault();
+                handleJoystick(e);
+            }
+        }, { passive: false });
+
+        window.addEventListener('touchend', () => {
+            isJoystickActive = false;
+            joystickDeltaX = 0;
+            joystickDeltaY = 0;
+            joystickStick.style.transform = `translate(-50%, -50%)`;
+        });
+
+        function handleJoystick(e) {
+            const rect = joystickContainer.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const touch = e.touches[0];
+
+            let dx = touch.clientX - centerX;
+            let dy = touch.clientY - centerY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance > joystickMaxDistance) {
+                dx = (dx / distance) * joystickMaxDistance;
+                dy = (dy / distance) * joystickMaxDistance;
+            }
+
+            joystickStick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+            
+            // Normalizacja delty do zakresu -1 do 1
+            joystickDeltaX = dx / joystickMaxDistance;
+            joystickDeltaY = dy / joystickMaxDistance;
+        }
+
+        // Mousemove zachowujemy dla desktopa
+        window.addEventListener('mousemove', (e) => {
+            if (!isJoystickActive) {
+                targetX = e.clientX;
+                targetY = e.clientY;
+            }
+        });
+
+        // Funkcje pomocnicze do geometrii ryb (Twoje oryginalne)
+        function getBentPath(angleHistory, wavePhase) {
+            let currentAngle = angleHistory[0];
+            const b = (x, y) => {
+                let t = Math.max(0, Math.min(1, y / 250));
+                let idx = Math.floor(t * (angleHistory.length - 1));
+                let pastAngle = angleHistory[idx];
+                let diff = currentAngle - pastAngle;
+                while (diff < -180) diff += 360;
+                while (diff > 180) diff -= 360;
+                let clampedDiff = Math.max(-35, Math.min(diff, 35));
+                let turnOffset = -clampedDiff * Math.pow(t, 1.5) * 1.5; 
+                let waveAmplitude = 1.2 + Math.pow(t, 2) * 12;
+                let waveOffset = Math.sin(wavePhase - t * 8) * waveAmplitude;
+                return `${(x + turnOffset + waveOffset).toFixed(1)} ${y}`;
+            };
+            const c = (x1, y1, x2, y2, x, y) => `C ${b(x1,y1)}, ${b(x2,y2)}, ${b(x,y)}`;
+            return `M ${b(50, 10)} ${c(42,12, 38,22, 36,32)} ${c(25,35, 14,45, 12,58)} ${c(18,65, 27,58, 33,48)} ${c(32,60, 31,75, 34,85)} ${c(22,92, 18,105, 20,115)} ${c(25,115, 32,105, 36,95)} ${c(38,115, 42,135, 46,150)} L ${b(54, 150)} ${c(58,135, 62,115, 64,95)} ${c(68,105, 75,115, 80,115)} ${c(82,105, 78,92, 66,85)} ${c(69,75, 68,60, 67,48)} ${c(73,58, 82,65, 88,58)} ${c(86,45, 75,35, 64,32)} ${c(62,22, 58,12, 50,10)} Z`;
+        }
+
+        function getBentTail(angleHistory, wavePhase) {
+            let currentAngle = angleHistory[0];
+            const b = (x, y) => {
+                let t = Math.max(0, Math.min(1, y / 250));
+                let idx = Math.floor(t * (angleHistory.length - 1));
+                let pastAngle = angleHistory[idx];
+                let diff = currentAngle - pastAngle;
+                while (diff < -180) diff += 360;
+                while (diff > 180) diff -= 360;
+                let clampedDiff = Math.max(-35, Math.min(diff, 35));
+                let turnOffset = -clampedDiff * Math.pow(t, 1.5) * 1.5; 
+                let waveAmplitude = 1.2 + Math.pow(t, 2) * 12;
+                let waveOffset = Math.sin(wavePhase - t * 8) * waveAmplitude;
+                return `${(x + turnOffset + waveOffset).toFixed(1)} ${y}`;
+            };
+            const c = (x1, y1, x2, y2, x, y) => `C ${b(x1,y1)}, ${b(x2,y2)}, ${b(x,y)}`;
+            return `M ${b(45, 145)} ${c(30,165, 10,185, 15,210)} ${c(25,215, 38,190, 50,180)} ${c(62,190, 75,215, 85,210)} ${c(90,185, 70,165, 55,145)} Z`;
+        }
+
+        function smoothAngle(current, target, speed) {
+            let diff = target - current;
+            while (diff < -180) diff += 360;
+            while (diff > 180) diff -= 360;
+            return current + diff * speed;
+        }
+
+        function triggerExplosion() {
+            congratsDiv.style.display = 'block';
+            for(let i = 0; i < 200; i++) {
+                const p = document.createElement('div');
+                p.className = 'explosion-particle';
+                const size = Math.random() * 20 + 5;
+                p.style.width = `${size}px`; p.style.height = `${size}px`;
+                p.style.left = `50%`; p.style.top = `50%`;
+                const angle = Math.random() * Math.PI * 2;
+                const distance = (Math.random() * 0.8 + 0.2) * (window.innerWidth / 1.5);
+                p.style.setProperty('--tx', `${Math.cos(angle) * distance}px`);
+                p.style.setProperty('--ty', `${Math.sin(angle) * distance}px`);
+                particlesContainer.appendChild(p);
+                setTimeout(() => p.remove(), 2500);
+            }
+        }
+
+        function animate(timestamp) {
+            if (!timestamp) timestamp = performance.now();
+            if (!lastTimestamp) lastTimestamp = timestamp;
+            const deltaTime = timestamp - lastTimestamp;
+            lastTimestamp = timestamp;
+
+            // AKUALIZACJA TARGETU PRZEZ JOYSTICK
+            if (isJoystickActive) {
+                targetX += joystickDeltaX * moveSensitivity;
+                targetY += joystickDeltaY * moveSensitivity;
+            }
+
+            targetX = Math.max(0, Math.min(targetX, window.innerWidth));
+            targetY = Math.max(0, Math.min(targetY, window.innerHeight));
+
+            let dx = targetX - currentX;
+            let dy = targetY - currentY;
+            let dist = Math.sqrt(dx * dx + dy * dy);
+
+            currentX += dx * 0.015;
+            currentY += dy * 0.015;
+            
+            let actualDy = currentY - previousY;
+            splitPercentage += actualDy * 0.03; 
+            splitPercentage += (50 - splitPercentage) * 0.005;
+            splitPercentage = Math.max(0, Math.min(splitPercentage, 100));
+            
+            document.body.style.background = `linear-gradient(to bottom, #ffffff ${splitPercentage}%, #000000 ${splitPercentage}%)`;
+            previousY = currentY;
+
+            if (!gameWon) {
+                if (Math.abs(splitPercentage - 50) <= 0.5) {
+                    balanceTimeMs += deltaTime;
+                }
+                let totalSeconds = Math.floor(balanceTimeMs / 1000);
+                let mins = Math.floor(totalSeconds / 60);
+                let secs = totalSeconds % 60;
+                timerDiv.innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+                if (balanceTimeMs >= 300000) {
+                    gameWon = true;
+                    triggerExplosion();
+                }
+            }
+
+            let targetAngle1 = currentAngle1;
+            let targetAngle2 = currentAngle2;
+            if (dist > 1) {
+                targetAngle1 = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
+                targetAngle2 = Math.atan2(-dy, dx) * (180 / Math.PI) + 90;
+            }
+
+            currentAngle1 = smoothAngle(currentAngle1, targetAngle1, 0.08);
+            currentAngle2 = smoothAngle(currentAngle2, targetAngle2, 0.08);
+
+            angleHistory1.unshift(currentAngle1);
+            if (angleHistory1.length > HISTORY_LENGTH) angleHistory1.pop();
+            angleHistory2.unshift(currentAngle2);
+            if (angleHistory2.length > HISTORY_LENGTH) angleHistory2.pop();
+            
+            let speed = Math.min(dist * 0.012, 10);
+            wavePhase += 0.15 + speed * 0.05;
+
+            f1Body.setAttribute('d', getBentPath(angleHistory1, wavePhase));
+            f1Tail.setAttribute('d', getBentTail(angleHistory1, wavePhase));
+            f2Body.setAttribute('d', getBentPath(angleHistory2, wavePhase));
+            f2Tail.setAttribute('d', getBentTail(angleHistory2, wavePhase));
+
+            let mirroredY = window.innerHeight - currentY;
+            fish1.style.transform = `translate(${currentX - 25}px, ${currentY - 55}px) rotate(${currentAngle1}deg)`;
+            fish2.style.transform = `translate(${currentX - 25}px, ${mirroredY - 55}px) rotate(${currentAngle2}deg)`;
+
+            requestAnimationFrame(animate);
+        }
+
+        function spawnParticle() {
+            const particle = document.createElement('div');
+            particle.className = 'particle particle-burst';
+            const baseSize = 20 + Math.random() * 40;
+            particle.style.width = particle.style.height = `${baseSize}px`;
+            particle.style.left = `${Math.random() * window.innerWidth - baseSize/2}px`;
+            particle.style.top = `${Math.random() * window.innerHeight - baseSize/2}px`;
+            const borderStyles = ['dashed', 'solid', 'dotted'];
+            particle.style.border = `${1 + Math.random() * 5}px ${borderStyles[Math.floor(Math.random() * 3)]} #ffffff`;
+            particlesContainer.appendChild(particle);
+            setTimeout(() => particle.remove(), 4000);
+        }
+
+        function spawnNext() {
+            spawnParticle();
+            setTimeout(spawnNext, 1500 + Math.random() * 2000);
+        }
+
+        spawnNext();
+        requestAnimationFrame(animate);
+
+        window.addEventListener('resize', () => {
+            targetX = window.innerWidth / 2;
+            targetY = window.innerHeight / 2;
+        });
+    </script>
+</body>
+</html>
