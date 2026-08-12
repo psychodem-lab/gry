@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Lumi – Twój Relaksacyjny Stworek</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-top: #e0c3fc;
+      --bg-bottom: #8ec5fc;
+      --card-bg: rgba(255, 255, 255, 0.45);
+      --card-border: rgba(255, 255, 255, 0.6);
+      --text-color: #4a4e69;
+      --accent-color: #b5e2fa;
+      --btn-shadow: 0 8px 20px rgba(100, 110, 140, 0.15);
+      --font-family: 'Nunito', sans-serif;
+    }
+
+    body.night-mode {
+      --bg-top: #1f1c2c;
+      --bg-bottom: #928dab;
+      --card-bg: rgba(30, 30, 50, 0.5);
+      --card-border: rgba(255, 255, 255, 0.15);
+      --text-color: #f0f3f8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      font-family: var(--font-family);
+      background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+      transition: background 1.5s ease;
+      color: var(--text-color);
+    }
+
+    .app-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 100dvh;
+      padding: env(safe-area-inset-top, 16px) 16px env(safe-area-inset-bottom, 20px) 16px;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    /* Górna belka */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      box-shadow: var(--btn-shadow);
+      z-index: 10;
+    }
+
+    .pet-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .pet-name {
+      font-weight: 800;
+      font-size: 1.1rem;
+    }
+
+    .pet-status-text {
+      font-size: 0.8rem;
+      opacity: 0.8;
+    }
+
+    .top-controls button {
+      background: rgba(255, 255, 255, 0.3);
+      border: none;
+      font-size: 1.2rem;
+      padding: 8px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      color: var(--text-color);
+      transition: transform 0.2s ease;
+    }
+
+    .top-controls button:active {
+      transform: scale(0.9);
+    }
+
+    /* Obszar świata gry */
+    .game-viewport {
+      position: relative;
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 10px 0;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      max-height: 380px;
+      touch-action: none;
+    }
+
+    /* Paski potrzeb */
+    .stats-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 14px 18px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 16px;
+      box-shadow: var(--btn-shadow);
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .stat-bar-bg {
+      width: 100%;
+      height: 10px;
+      background: rgba(0, 0, 0, 0.08);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .stat-bar-fill {
+      height: 100%;
+      width: 80%;
+      border-radius: 10px;
+      transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .fill-hunger { background: linear-gradient(90deg, #ff9a9e, #fecfef); }
+    .fill-energy { background: linear-gradient(90deg, #a1c4fd, #c2e9fb); }
+    .fill-happiness { background: linear-gradient(90deg, #fbc2eb, #a6c1ee); }
+    .fill-clean { background: linear-gradient(90deg, #84fab0, #8fd3f4); }
+
+    /* Panel Akcji */
+    .actions-deck {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .action-btn {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 12px 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      box-shadow: var(--btn-shadow);
+      transition: transform 0.15s ease, background 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .action-btn:active {
+      transform: scale(0.92);
+      background: rgba(255, 255, 255, 0.6);
+    }
+
+    .action-btn .icon {
+      font-size: 1.5rem;
+    }
+
+    .action-btn .label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-color);
+    }
+
+    /* Modal oddechowy */
+    .breath-modal {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(8px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+      border-radius: 24px;
+      padding: 20px;
+      text-align: center;
+      color: #fff;
+    }
+
+    .breath-modal.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .breath-circle {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      border: 3px solid rgba(255, 255, 255, 0.8);
+      margin: 24px 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.1rem;
+      font-weight: 800;
+      box-shadow: 0 0 30px rgba(255, 255, 255, 0.4);
+    }
+
+    .breath-circle.anim-inhale {
+      animation: inhale 4s ease-in-out forwards;
+    }
+    .breath-circle.anim-hold {
+      animation: hold 4s ease-in-out forwards;
+    }
+    .breath-circle.anim-exhale {
+      animation: exhale 4s ease-in-out forwards;
+    }
+
+    @keyframes inhale {
+      from { transform: scale(1); background: rgba(255, 255, 255, 0.2); }
+      to { transform: scale(1.6); background: rgba(255, 255, 255, 0.6); }
+    }
+    @keyframes hold {
+      transform: scale(1.6);
+    }
+    @keyframes exhale {
+      from { transform: scale(1.6); background: rgba(255, 255, 255, 0.6); }
+      to { transform: scale(1); background: rgba(255, 255, 255, 0.2); }
+    }
+
+    .close-breath-btn {
+      margin-top: 10px;
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      color: white;
+      padding: 8px 20px;
+      border-radius: 16px;
+      font-family: inherit;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- Górny panel -->
+    <header class="header">
+      <div class="pet-info">
+        <span class="pet-name">Lumi</span>
+        <span class="pet-status-text" id="status-text">Czuje się odprężony...</span>
+      </div>
+      <div class="top-controls">
+        <button id="sound-toggle-btn" title="Muzyka relaksacyjna">🎵</button>
+      </div>
+    </header>
+
+    <!-- Obszar interakcji ze stworkiem -->
+    <main class="game-viewport">
+      <canvas id="petCanvas"></canvas>
+
+      <!-- Modal Ćwiczenia Oddechowego -->
+      <div class="breath-modal" id="breathModal">
+        <h2>Spokojny Oddech</h2>
+        <p style="font-size: 0.9rem; opacity: 0.9; margin-top: 6px;">Oddychaj razem z Lumi</p>
+        <div class="breath-circle" id="breathCircle">Wdech</div>
+        <button class="close-breath-btn" id="closeBreathBtn">Zakończ</button>
+      </div>
+    </main>
+
+    <!-- Wskaźniki statystyk -->
+    <section class="stats-card">
+      <div class="stat-item">
+        <div class="stat-label"><span>Najedzenie</span><span id="val-hunger">80%</span></div>
+        <div class="stat-bar-bg"><div class="stat-bar-fill fill-hunger" id="bar-hunger"></div></div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label"><span>Energia</span><span id="val-energy">90%</span></div>
+        <div class="stat-bar-bg"><div class="stat-bar-fill fill-energy" id="bar-energy"></div></div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label"><span>Szczęście</span><span id="val-happiness">85%</span></div>
+        <div class="stat-bar-bg"><div class="stat-bar-fill fill-happiness" id="bar-happiness"></div></div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label"><span>Czystość</span><span id="val-clean">95%</span></div>
+        <div class="stat-bar-bg"><div class="stat-bar-fill fill-clean" id="bar-clean"></div></div>
+      </div>
+    </section>
+
+    <!-- Dół: Przyciski akcji -->
+    <nav class="actions-deck">
+      <button class="action-btn" id="btn-feed">
+        <span class="icon">🍎</span>
+        <span class="label">Karm</span>
+      </button>
+      <button class="action-btn" id="btn-sleep">
+        <span class="icon">🌙</span>
+        <span class="label" id="label-sleep">Sen</span>
+      </button>
+      <button class="action-btn" id="btn-clean">
+        <span class="icon">✨</span>
+        <span class="label">Czyść</span>
+      </button>
+      <button class="action-btn" id="btn-breathe">
+        <span class="icon">🧘</span>
+        <span class="label">Oddech</span>
+      </button>
+    </nav>
+  </div>
+
+  <script>
+    /* --- SYSTEM AUDIO (SYNTEZATOR RELAKSACYJNY WEB AUDIO) --- */
+    class RelaxAudio {
+      constructor() {
+        this.ctx = null;
+        this.isMuted = true;
+        this.ambientOsc = null;
+        this.gainNode = null;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioCtx();
+        }
+      }
+
+      toggleAmbient() {
+        this.init();
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+
+        if (this.isMuted) {
+          this.startAmbient();
+          this.isMuted = false;
+        } else {
+          this.stopAmbient();
+          this.isMuted = true;
+        }
+        return !this.isMuted;
+      }
+
+      startAmbient() {
+        // Generowanie ciepłego, ewolucyjnego tła synth (drone)
+        this.ambientOsc = this.ctx.createOscillator();
+        const osc2 = this.ctx.createOscillator();
+        this.gainNode = this.ctx.createGain();
+        const filter = this.ctx.createBiquadFilter();
+
+        this.ambientOsc.type = 'sine';
+        this.ambientOsc.frequency.setValueAtTime(130.81, this.ctx.currentTime); // C3
+
+        osc2.type = 'triangle';
+        osc2.frequency.setValueAtTime(196.00, this.ctx.currentTime); // G3
+
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(350, this.ctx.currentTime);
+
+        this.gainNode.gain.setValueAtTime(0.01, this.ctx.currentTime);
+        this.gainNode.gain.exponentialRampToValueAtTime(0.12, this.ctx.currentTime + 3);
+
+        this.ambientOsc.connect(filter);
+        osc2.connect(filter);
+        filter.connect(this.gainNode);
+        this.gainNode.connect(this.ctx.destination);
+
+        this.ambientOsc.start();
+        osc2.start();
+      }
+
+      stopAmbient() {
+        if (this.gainNode) {
+          this.gainNode.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 1);
+          setTimeout(() => {
+            if (this.ambientOsc) this.ambientOsc.stop();
+          }, 1000);
+        }
+      }
+
+      playTone(freq, type = 'sine', duration = 0.5) {
+        if (this.isMuted || !this.ctx) return;
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+          
+          gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start();
+          osc.stop(this.ctx.currentTime + duration);
+        } catch(e){}
+      }
+
+      playHappyChime() {
+        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+        notes.forEach((freq, idx) => {
+          setTimeout(() => this.playTone(freq, 'sine', 0.4), idx * 90);
+        });
+      }
+    }
+
+    /* --- STAN GRY & LOGIKA STWORKA --- */
+    const defaultState = {
+      hunger: 85,
+      energy: 90,
+      happiness: 80,
+      cleanliness: 95,
+      isSleeping: false,
+      lastUpdate: Date.now()
+    };
+
+    let gameState = { ...defaultState };
+
+    function loadGame() {
+      const saved = localStorage.getItem('lumi_pet_save');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          const now = Date.now();
+          const elapsedMinutes = (now - parsed.lastUpdate) / (1000 * 60);
+
+          // Powolny, łagodny decay podczas nieobecności (max do 20%, brak ryzyka śmierci)
+          gameState.hunger = Math.max(20, parsed.hunger - elapsedMinutes * 0.15);
+          gameState.energy = parsed.isSleeping 
+            ? Math.min(100, parsed.energy + elapsedMinutes * 0.4) 
+            : Math.max(20, parsed.energy - elapsedMinutes * 0.1);
+          gameState.happiness = Math.max(20, parsed.happiness - elapsedMinutes * 0.12);
+          gameState.cleanliness = Math.max(20, parsed.cleanliness - elapsedMinutes * 0.08);
+          gameState.isSleeping = parsed.isSleeping;
+          gameState.lastUpdate = now;
+        } catch(e) {
+          gameState = { ...defaultState };
+        }
+      }
+    }
+
+    function saveGame() {
+      gameState.lastUpdate = Date.now();
+      localStorage.setItem('lumi_pet_save', JSON.stringify(gameState));
+    }
+
+    /* --- RENDERING GRAPHICS (CANVAS 2D) --- */
+    const canvas = document.getElementById('petCanvas');
+    const ctx = canvas.getContext('2d');
+    const audio = new RelaxAudio();
+
+    let particles = [];
+    let petScaleY = 1;
+    let petWobble = 0;
+    let breathProgress = 0;
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Cząsteczki (serduszka, iskierki)
+    function spawnParticles(x, y, symbol) {
+      for (let i = 0; i < 6; i++) {
+        particles.push({
+          x: x + (Math.random() - 0.5) * 40,
+          y: y + (Math.random() - 0.5) * 40,
+          vx: (Math.random() - 0.5) * 1.5,
+          vy: -1.5 - Math.random(),
+          alpha: 1,
+          size: 16 + Math.random() * 8,
+          symbol: symbol
+        });
+      }
+    }
+
+    /* Rysowanie Stworka Lumi */
+    function drawPet() {
+      const width = canvas.offsetWidth;
+      const height = canvas.offsetHeight;
+      const centerX = width / 2;
+      const centerY = height / 2 + 10;
+
+      ctx.clearRect(0, 0, width, height);
+
+      // Cień pod stworkiem
+      ctx.beginPath();
+      ctx.ellipse(centerX, centerY + 75, 65 * (2 - petScaleY * 0.8), 12, 0, 0, Math.PI * 2);
+      ctx.fillStyle = gameState.isSleeping ? 'rgba(0,0,0,0.08)' : 'rgba(0,0,0,0.12)';
+      ctx.fill();
+
+      // Oddychanie i falowanie
+      breathProgress += 0.03;
+      const floatOffsetY = Math.sin(breathProgress) * 6;
+      const currentScaleY = petScaleY + Math.sin(breathProgress * 1.5) * 0.02;
+
+      ctx.save();
+      ctx.translate(centerX, centerY + floatOffsetY);
+      ctx.scale(1, currentScaleY);
+
+      // Ciało stworka (Miękki pastelowy "Blob")
+      const radius = 70;
+      ctx.beginPath();
+      ctx.arc(0, 0, radius, 0, Math.PI * 2);
+      
+      const gradient = ctx.createLinearGradient(-radius, -radius, radius, radius);
+      if (gameState.isSleeping) {
+        gradient.addColorStop(0, '#d4fc79');
+        gradient.addColorStop(1, '#96e6a1');
+      } else {
+        gradient.addColorStop(0, '#ffffff');
+        gradient.addColorStop(0.5, '#fce4ec');
+        gradient.addColorStop(1, '#f8bbd0');
+      }
+      
+      ctx.fillStyle = gradient;
+      ctx.shadowColor = 'rgba(255, 182, 193, 0.4)';
+      ctx.shadowBlur = 20;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Uszka / Rogi
+      ctx.fillStyle = '#f8bbd0';
+      ctx.beginPath();
+      ctx.arc(-40, -55, 18, 0, Math.PI * 2);
+      ctx.arc(40, -55, 18, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Rumieńce
+      ctx.fillStyle = 'rgba(255, 105, 180, 0.3)';
+      ctx.beginPath();
+      ctx.arc(-38, 12, 12, 0, Math.PI * 2);
+      ctx.arc(38, 12, 12, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Oczy
+      ctx.fillStyle = '#4a4e69';
+      if (gameState.isSleeping) {
+        // Śpiące oczy (łuki)
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#4a4e69';
+        ctx.beginPath();
+        ctx.arc(-22, 0, 8, 0.1 * Math.PI, 0.9 * Math.PI);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(22, 0, 8, 0.1 * Math.PI, 0.9 * Math.PI);
+        ctx.stroke();
+      } else {
+        // Otwarte, błyszczące oczy
+        ctx.beginPath();
+        ctx.arc(-22, -2, 8, 0, Math.PI * 2);
+        ctx.arc(22, -2, 8, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Błysk w oku
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(-24, -5, 3, 0, Math.PI * 2);
+        ctx.arc(20, -5, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Uśmiech
+      ctx.beginPath();
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = '#4a4e69';
+      if (gameState.happiness > 50) {
+        ctx.arc(0, 10, 7, 0.1 * Math.PI, 0.9 * Math.PI);
+      } else {
+        ctx.arc(0, 16, 6, 1.1 * Math.PI, 1.9 * Math.PI);
+      }
+      ctx.stroke();
+
+      ctx.restore();
+
+      // Rysowanie i aktualizacja cząsteczek
+      for (let i = particles.length - 1; i >= 0; i--) {
+        let p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.alpha -= 0.02;
+
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.alpha);
+        ctx.font = `${p.size}px sans-serif`;
+        ctx.fillText(p.symbol, p.x, p.y);
+        ctx.restore();
+
+        if (p.alpha <= 0) particles.splice(i, 1);
+      }
+    }
+
+    function gameLoop() {
+      drawPet();
+      requestAnimationFrame(gameLoop);
+    }
+
+    /* --- UPDATE UI & LOGIKA POTRZEB --- */
+    function updateUI() {
+      document.getElementById('val-hunger').textContent = `${Math.round(gameState.hunger)}%`;
+      document.getElementById('bar-hunger').style.width = `${gameState.hunger}%`;
+
+      document.getElementById('val-energy').textContent = `${Math.round(gameState.energy)}%`;
+      document.getElementById('bar-energy').style.width = `${gameState.energy}%`;
+
+      document.getElementById('val-happiness').textContent = `${Math.round(gameState.happiness)}%`;
+      document.getElementById('bar-happiness').style.width = `${gameState.happiness}%`;
+
+      document.getElementById('val-clean').textContent = `${Math.round(gameState.cleanliness)}%`;
+      document.getElementById('bar-clean').style.width = `${gameState.cleanliness}%`;
+
+      const statusElem = document.getElementById('status-text');
+      if (gameState.isSleeping) {
+        statusElem.textContent = "Lumi smacznie śpi... (Zzz)";
+      } else if (gameState.hunger < 30) {
+        statusElem.textContent = "Lumi robi się głodny...";
+      } else if (gameState.happiness > 80) {
+        statusElem.textContent = "Lumi jest bardzo szczęśliwy!";
+      } else {
+        statusElem.textContent = "Lumi czuje się odprężony.";
+      }
+
+      document.getElementById('label-sleep').textContent = gameState.isSleeping ? 'Wstań' : 'Sen';
+      document.body.classList.toggle('night-mode', gameState.isSleeping);
+    }
+
+    // Pętla spadku statystyk w czasie rzeczywistym
+    setInterval(() => {
+      if (gameState.isSleeping) {
+        gameState.energy = Math.min(100, gameState.energy + 1.2);
+        gameState.hunger = Math.max(0, gameState.hunger - 0.15);
+      } else {
+        gameState.hunger = Math.max(0, gameState.hunger - 0.3);
+        gameState.energy = Math.max(0, gameState.energy - 0.2);
+        gameState.happiness = Math.max(0, gameState.happiness - 0.25);
+        gameState.cleanliness = Math.max(0, gameState.cleanliness - 0.1);
+      }
+      updateUI();
+      saveGame();
+    }, 3000);
+
+    /* --- OBSŁUGA INTERAKCJI / AKCJI --- */
+    // Głaskanie na kranie/kliknięciu w Canvas
+    canvas.addEventListener('pointerdown', (e) => {
+      if (gameState.isSleeping) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const clickY = e.clientY - rect.top;
+
+      gameState.happiness = Math.min(100, gameState.happiness + 5);
+      
+      // Animacja skoku
+      petScaleY = 0.85;
+      setTimeout(() => petScaleY = 1.1, 100);
+      setTimeout(() => petScaleY = 1, 250);
+
+      spawnParticles(clickX, clickY, '💖');
+      audio.playTone(600, 'sine', 0.2);
+      
+      if (navigator.vibrate) navigator.vibrate(20);
+      updateUI();
+    });
+
+    document.getElementById('btn-feed').addEventListener('click', () => {
+      if (gameState.isSleeping) return;
+      gameState.hunger = Math.min(100, gameState.hunger + 25);
+      audio.playHappyChime();
+      spawnParticles(canvas.offsetWidth / 2, canvas.offsetHeight / 2, '🍎');
+      updateUI();
+    });
+
+    document.getElementById('btn-sleep').addEventListener('click', () => {
+      gameState.isSleeping = !gameState.isSleeping;
+      audio.playTone(300, 'sine', 0.5);
+      if (gameState.isSleeping) {
+        spawnParticles(canvas.offsetWidth / 2, canvas.offsetHeight / 2, '✨');
+      }
+      updateUI();
+    });
+
+    document.getElementById('btn-clean').addEventListener('click', () => {
+      if (gameState.isSleeping) return;
+      gameState.cleanliness = 100;
+      audio.playTone(880, 'sine', 0.3);
+      spawnParticles(canvas.offsetWidth / 2, canvas.offsetHeight / 2, '🫧');
+      updateUI();
+    });
+
+    // Przycisk Audio
+    document.getElementById('sound-toggle-btn').addEventListener('click', (e) => {
+      const active = audio.toggleAmbient();
+      e.target.style.opacity = active ? '1' : '0.5';
+    });
+
+    /* --- MINIGRA / CWICZENIE ODDECHOWE --- */
+    const breathModal = document.getElementById('breathModal');
+    const breathCircle = document.getElementById('breathCircle');
+    let breathInterval = null;
+
+    document.getElementById('btn-breathe').addEventListener('click', () => {
+      breathModal.classList.add('active');
+      runBreathingCycle();
+    });
+
+    document.getElementById('closeBreathBtn').addEventListener('click', () => {
+      breathModal.classList.remove('active');
+      clearTimeout(breathInterval);
+    });
+
+    function runBreathingCycle() {
+      if (!breathModal.classList.contains('active')) return;
+
+      // Wdech (4s)
+      breathCircle.className = 'breath-circle anim-inhale';
+      breathCircle.textContent = 'Wdech...';
+      audio.playTone(220, 'sine', 3.8);
+
+      breathInterval = setTimeout(() => {
+        // Wstrzymanie (4s)
+        breathCircle.className = 'breath-circle anim-hold';
+        breathCircle.textContent = 'Zatrzymaj';
+
+        breathInterval = setTimeout(() => {
+          // Wydech (4s)
+          breathCircle.className = 'breath-circle anim-exhale';
+          breathCircle.textContent = 'Wydech...';
+          audio.playTone(174, 'sine', 3.8);
+
+          gameState.happiness = Math.min(100, gameState.happiness + 10);
+          updateUI();
+
+          breathInterval = setTimeout(runBreathingCycle, 4000);
+        }, 4000);
+      }, 4000);
+    }
+
+    // Inicjalizacja
+    loadGame();
+    updateUI();
+    gameLoop();
+  </script>
+</body>
+</html>
