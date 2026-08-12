@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Wirtualny Stworek – Ewolucja 2.0</title>
+  <title>Wirtualny Stworek – Ewolucja Ultimate</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
@@ -149,13 +149,13 @@
       <p class="modal-subtitle">Każdy stworek ewoluuje inaczej wraz z upływem czasu opieki!</p>
       <div class="char-options">
         <button class="char-option-btn" onclick="selectCharacter('lumi')">
-          <span class="char-icon">🌸</span><div class="char-details"><h4>Lumi</h4><p>Puszek 🌱 ➔ Dorosły 🌸 ➔ Król 👑</p></div>
+          <span class="char-icon">🌸</span><div class="char-details"><h4>Lumi</h4><p>Puszek 🌱 ➔ Młodziak 🌿 ➔ Dorosły 🌸 ➔ Mistyczny 👑</p></div>
         </button>
         <button class="char-option-btn" onclick="selectCharacter('spinacz')">
-          <span class="char-icon">📎</span><div class="char-details"><h4>Spinacz</h4><p>Srebrny 📎 ➔ Złoty 🌟 ➔ Złoty Król 👑</p></div>
+          <span class="char-icon">📎</span><div class="char-details"><h4>Spinacz</h4><p>Srebrny 📎 ➔ Czarny 🖤 ➔ Złoty 🌟 ➔ Złoty Król 👑</p></div>
         </button>
         <button class="char-option-btn" onclick="selectCharacter('kotek')">
-          <span class="char-icon">🐱</span><div class="char-details"><h4>Kotek</h4><p>Kotek 🐱 ➔ Tygrys 🐯 ➔ Wielki Tygrys 👑</p></div>
+          <span class="char-icon">🐱</span><div class="char-details"><h4>Kotek</h4><p>Kotek 🐱 ➔ Żbik 🐾 ➔ Tygrys 🐯 ➔ Wielki Tygrys 👑</p></div>
         </button>
       </div>
     </div>
@@ -202,12 +202,12 @@
     </section>
 
     <nav class="actions-deck">
-      <button class="action-btn" id="btn-feed"><span class="icon">🍎</span><span class="label">Karm</span></button>
-      <button class="action-btn" id="btn-sleep"><span class="icon">🌙</span><span class="label" id="label-sleep">Sen</span></button>
-      <button class="action-btn" id="btn-clean"><span class="icon">🫧</span><span class="label">Odkurz</span></button>
-      <button class="action-btn" id="btn-toy"><span class="icon">🧶</span><span class="label">Włóczka</span></button>
-      <button class="action-btn" id="btn-train"><span class="icon">🧩</span><span class="label">Trening</span></button>
-      <button class="action-btn" id="btn-exercise"><span class="icon">🏃‍♂️</span><span class="label">Skacz</span></button>
+      <button class="action-btn" id="btn-feed"><span class="icon">🍎</span><span class="label">Nakarm</span></button>
+      <button class="action-btn" id="btn-sleep"><span class="icon">🌙</span><span class="label" id="label-sleep">aaa kotki dwa</span></button>
+      <button class="action-btn" id="btn-clean"><span class="icon">🫧</span><span class="label">Wyczyść</span></button>
+      <button class="action-btn" id="btn-toy"><span class="icon">🧶</span><span class="label">Baw się</span></button>
+      <button class="action-btn" id="btn-train"><span class="icon">🧩</span><span class="label">Pogłówkuj</span></button>
+      <button class="action-btn" id="btn-exercise"><span class="icon">🏃‍♂️</span><span class="label">Ćwicz</span></button>
     </nav>
   </div>
 
@@ -215,8 +215,8 @@
     /* --- CONFIG EWOLUCJI I POSTACI --- */
     const CHARACTERS = {
       lumi: { name: 'Lumi', stages: [{ name: 'Maluch 🌱', radius: 50 }, { name: 'Młodziak 🌿', radius: 62 }, { name: 'Dorosły 🌸', radius: 72 }, { name: 'Mistyczny 👑', radius: 82 }] },
-      spinacz: { name: 'Spinacz', stages: [{ name: 'Srebrny 📎', radius: 45 }, { name: 'Czarny 🖤', radius: 55 }, { name: 'Złoty 🌟', radius: 65 }, { name: 'Złoty Król 👑', radius: 75 }] },
-      kotek: { name: 'Kotek', stages: [{ name: 'Kotek 🐱', radius: 50 }, { name: 'Żbik 🐾', radius: 60 }, { name: 'Tygrys 🐯', radius: 70 }, { name: 'Wielki Tygrys 👑', radius: 80 }] }
+      spinacz: { name: 'Spinacz', stages: [{ name: 'Srebrny 📎', radius: 50 }, { name: 'Czarny 🖤', radius: 60 }, { name: 'Złoty 🌟', radius: 70 }, { name: 'Złoty Król 👑', radius: 80 }] },
+      kotek: { name: 'Kotek', stages: [{ name: 'Kotek 🐱', radius: 50 }, { name: 'Żbik 🐾', radius: 62 }, { name: 'Tygrys 🐯', radius: 74 }, { name: 'Wielki Tygrys 👑', radius: 85 }] }
     };
 
     const TRAITS = {
@@ -255,7 +255,7 @@
 
     /* --- ZAPIS/ODCZYT --- */
     function loadGame() {
-      const saved = localStorage.getItem('lumi_pet_save_v7');
+      const saved = localStorage.getItem('lumi_pet_save_ultimate_v1');
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
@@ -278,7 +278,7 @@
 
     function saveGame() {
       gameState.lastUpdate = Date.now();
-      localStorage.setItem('lumi_pet_save_v7', JSON.stringify(gameState));
+      localStorage.setItem('lumi_pet_save_ultimate_v1', JSON.stringify(gameState));
     }
 
     function recordInteraction() {
@@ -472,8 +472,11 @@
         }
 
         ctx.beginPath(); ctx.lineWidth = 2.5; ctx.strokeStyle = '#4a4e69';
-        if (gameState.happiness > 50) ctx.arc(0, radius*0.16, radius*0.1, 0.1*Math.PI, 0.9*Math.PI);
-        else ctx.arc(0, radius*0.24, radius*0.09, 1.1*Math.PI, 1.9*Math.PI);
+        if (gameState.happiness > 50) {
+          ctx.arc(0, radius*0.16, radius*0.1, 0.1*Math.PI, 0.9*Math.PI);
+        } else {
+          ctx.arc(0, radius*0.24, radius*0.09, 1.1*Math.PI, 1.9*Math.PI);
+        }
         ctx.stroke();
       }
     }
@@ -496,78 +499,76 @@
     }
 
     // --- SPINACZ ---
-    function drawSpinacz(ctx, stage, r) {
-      if(stage===3) drawAura(ctx, r);
-      
-      // Kształt metalicznego, podłużnego elementu (ala zaokrąglony prostokąt)
+    function drawSpinaczPet(ctx, stage, r) {
+      if (stage === 3) drawAura(ctx, r + 10);
+      let strokeColor, highlightColor;
+      if (stage === 0) { strokeColor = '#a0aab5'; highlightColor = '#ffffff';
+      } else if (stage === 1) { strokeColor = '#1e293b'; highlightColor = '#64748b';
+      } else { strokeColor = '#fbbf24'; highlightColor = '#fef08a'; }
+      const wireWidth = Math.max(10, r * 0.22);
+      ctx.lineWidth = wireWidth; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      const h = r * 1.3, w = r * 0.55;
+      ctx.strokeStyle = strokeColor;
       ctx.beginPath();
-      ctx.arc(0, -r*0.4, r*0.6, Math.PI, 0);
-      ctx.arc(0, r*0.4, r*0.6, 0, Math.PI);
-      ctx.closePath();
-      
-      const grad = ctx.createLinearGradient(-r, -r, r, r);
-      if (stage === 0) { grad.addColorStop(0,'#ffffff'); grad.addColorStop(1,'#94a3b8'); } // Srebrny
-      else if (stage === 1) { grad.addColorStop(0,'#64748b'); grad.addColorStop(1,'#0f172a'); } // Czarny
-      else { grad.addColorStop(0,'#fef08a'); grad.addColorStop(1,'#ca8a04'); } // Złoty
-      
-      ctx.fillStyle = grad; ctx.fill();
-
-      // Symulacja dziury (żeby wyglądał trochę jak spinacz)
-      ctx.strokeStyle = timeOfDay === 'night' ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.6)';
-      ctx.lineWidth = r * 0.15;
-      ctx.beginPath();
-      ctx.arc(0, -r*0.2, r*0.3, Math.PI, 0);
-      ctx.arc(0, r*0.2, r*0.3, 0, Math.PI);
-      ctx.closePath();
+      ctx.arc(0, -h + w, w, Math.PI, 0, false); ctx.lineTo(w, h - w); ctx.arc(0, h - w, w, 0, Math.PI, false);
+      ctx.lineTo(-w, -h + w + 12); ctx.arc(-w/2, -h + w + 12, w/2, Math.PI, 0, false); ctx.lineTo(0, h - w - 16);
       ctx.stroke();
-
-      if(stage>=2) drawCrown(ctx, r);
-
-      // Jasna lub ciemna twarz w zależności od koloru
-      ctx.save();
-      if (stage === 1) ctx.filter = 'invert(1)'; 
-      drawFace(ctx, r);
+      ctx.lineWidth = wireWidth * 0.3; ctx.strokeStyle = highlightColor; ctx.stroke();
+      if (stage >= 2) drawCrown(ctx, h - 5);
+      ctx.save(); ctx.translate(0, -h * 0.2); 
+      if (stage === 1) ctx.filter = 'invert(1)'; // Kontrastująca twarz dla czarnego spinacza
+      drawFace(ctx, r * 0.8); 
       ctx.restore();
     }
 
     // --- KOTEK ---
-    function drawKotek(ctx, stage, r) {
-      if(stage===3) drawAura(ctx, r);
-
-      // Uszy
-      ctx.fillStyle = stage >= 2 ? '#f59e0b' : '#94a3b8'; // Pomarańczowy dla tygrysa, szary dla kotka
-      ctx.beginPath();
-      ctx.moveTo(-r*0.8, -r*0.1); ctx.lineTo(-r*0.95, -r*0.9); ctx.lineTo(-r*0.2, -r*0.7);
-      ctx.moveTo(r*0.8, -r*0.1); ctx.lineTo(r*0.95, -r*0.9); ctx.lineTo(r*0.2, -r*0.7);
-      ctx.fill();
-
-      // Ciało
-      ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2);
-      const grad = ctx.createLinearGradient(-r,-r,r,r);
-      if(stage >= 2) { grad.addColorStop(0,'#fcd34d'); grad.addColorStop(1,'#d97706'); }
-      else { grad.addColorStop(0,'#e2e8f0'); grad.addColorStop(1,'#64748b'); }
-      ctx.fillStyle = grad; ctx.fill();
-
-      // Paski dla tygrysa
-      if(stage >= 2) {
-        ctx.strokeStyle = '#451a03'; ctx.lineWidth = 4; ctx.lineCap = 'round';
-        ctx.beginPath(); ctx.moveTo(-r, 0); ctx.lineTo(-r*0.5, 0); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(r, 0); ctx.lineTo(r*0.5, 0); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(-r*0.8, -r*0.4); ctx.lineTo(-r*0.4, -r*0.25); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(r*0.8, -r*0.4); ctx.lineTo(r*0.4, -r*0.25); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(0, -r); ctx.lineTo(0, -r*0.6); ctx.stroke();
-      }
-
-      if(stage===3) drawCrown(ctx, r);
+    function drawKotekPet(ctx, stage, r) {
+      if (stage === 3) drawAura(ctx, r);
+      let mainColor, stripeColor;
+      if (stage === 0) { mainColor = '#ffb703'; stripeColor = '#fb8500';
+      } else if (stage === 1) { mainColor = '#8d7966'; stripeColor = '#4a3e3d';
+      } else { mainColor = '#ff6b00'; stripeColor = '#111111'; }
+      ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fillStyle = mainColor; ctx.shadowColor = 'rgba(0,0,0,0.1)'; ctx.shadowBlur = 10; ctx.fill(); ctx.shadowBlur = 0;
       
-      drawFace(ctx, r);
-
+      if (stage >= 1) {
+        ctx.fillStyle = stripeColor;
+        ctx.beginPath(); ctx.moveTo(-8, -r + 10); ctx.lineTo(0, -r + 28); ctx.lineTo(8, -r + 10); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(-16, -r + 22); ctx.lineTo(-4, -r + 35); ctx.lineTo(-12, -r + 35); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(16, -r + 22); ctx.lineTo(4, -r + 35); ctx.lineTo(12, -r + 35); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(-r + 5, -5); ctx.lineTo(-r + 22, 0); ctx.lineTo(-r + 8, 12); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(r - 5, -5); ctx.lineTo(r - 22, 0); ctx.lineTo(r - 8, 12); ctx.fill();
+      }
+      
+      // Uszy
+      ctx.fillStyle = mainColor;
+      ctx.beginPath(); ctx.moveTo(-r * 0.8, -r * 0.3); ctx.lineTo(-r * 0.5, -r * 1.1); ctx.lineTo(-r * 0.1, -r * 0.8); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(r * 0.8, -r * 0.3); ctx.lineTo(r * 0.5, -r * 1.1); ctx.lineTo(r * 0.1, -r * 0.8); ctx.closePath(); ctx.fill();
+      
+      // Środek uszu
+      ctx.fillStyle = '#ffb5a7';
+      ctx.beginPath(); ctx.moveTo(-r * 0.7, -r * 0.4); ctx.lineTo(-r * 0.5, -r * 0.95); ctx.lineTo(-r * 0.2, -r * 0.75); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(r * 0.7, -r * 0.4); ctx.lineTo(r * 0.5, -r * 0.95); ctx.lineTo(r * 0.2, -r * 0.75); ctx.closePath(); ctx.fill();
+      
+      if (stage === 1) {
+        ctx.strokeStyle = '#3a2e2b'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(-r * 0.5, -r * 1.1); ctx.lineTo(-r * 0.55, -r * 1.35);
+        ctx.moveTo(r * 0.5, -r * 1.1); ctx.lineTo(r * 0.55, -r * 1.35); ctx.stroke();
+      }
+      
+      // Policzki / pyszczek
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath(); ctx.arc(-r * 0.18, r * 0.2, r * 0.2, 0, Math.PI * 2); ctx.arc(r * 0.18, r * 0.2, r * 0.2, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#ff70a6'; ctx.beginPath(); ctx.arc(0, r * 0.12, r * 0.08, 0, Math.PI * 2); ctx.fill();
+      
       // Wąsy
-      ctx.strokeStyle = '#4a4e69'; ctx.lineWidth = 1.5; ctx.lineCap = 'round';
-      ctx.beginPath(); ctx.moveTo(-r*0.4, 0); ctx.lineTo(-r*0.85, -10); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(-r*0.4, 5); ctx.lineTo(-r*0.85, 5); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(r*0.4, 0); ctx.lineTo(r*0.85, -10); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(r*0.4, 5); ctx.lineTo(r*0.85, 5); ctx.stroke();
+      ctx.strokeStyle = 'rgba(74, 78, 105, 0.6)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(-r * 0.25, r * 0.2); ctx.lineTo(-r * 0.85, r * 0.1);
+      ctx.moveTo(-r * 0.25, r * 0.25); ctx.lineTo(-r * 0.8, r * 0.3);
+      ctx.moveTo(r * 0.25, r * 0.2); ctx.lineTo(r * 0.85, r * 0.1);
+      ctx.moveTo(r * 0.25, r * 0.25); ctx.lineTo(r * 0.8, r * 0.3); ctx.stroke();
+      
+      if (stage === 3) drawCrown(ctx, r);
+      drawFace(ctx, r);
     }
 
     function drawPet(w, h) {
@@ -612,9 +613,9 @@
       ctx.translate(petPos.x, centerY + floatY + jumpOffset); 
       ctx.scale(1, scaleY);
       
-      // Wybór odpowiedniej funkcji rysującej postać
-      if (gameState.character === 'spinacz') drawSpinacz(ctx, evo.stage, radius);
-      else if (gameState.character === 'kotek') drawKotek(ctx, evo.stage, radius);
+      // Wybór odpowiedniej funkcji rysującej postać (z pierwszej wersji, ale wywołanej ze zmodyfikowanym położeniem i wielkością)
+      if (gameState.character === 'spinacz') drawSpinaczPet(ctx, evo.stage, radius);
+      else if (gameState.character === 'kotek') drawKotekPet(ctx, evo.stage, radius);
       else drawLumiPet(ctx, evo.stage, radius);
       
       ctx.restore();
@@ -797,7 +798,6 @@
           if (gameState.energy < 2) {
             showSpeech("Jestem za zmęczony na zabawy... 🥱");
           } else {
-            // Rzucenie włóczką: -2% energii, -1% wagi (1kg), +3% szczęścia
             gameState.energy = Math.max(0, gameState.energy - 2);
             gameState.weight = Math.max(10, gameState.weight - 1);
             gameState.happiness = Math.min(100, gameState.happiness + 3);
@@ -864,8 +864,8 @@
       
       if (jumpOffset >= -5) {
         jumpVelocity = -18;
-        gameState.weight = Math.max(10, gameState.weight - 0.5);
-        gameState.energy = Math.max(0, gameState.energy - 3);
+        gameState.weight = Math.max(10, gameState.weight - 1);
+        gameState.energy = Math.max(0, gameState.energy - 2);
         gameState.hunger = Math.max(0, gameState.hunger - 1);
         
         spawnParticles(petPos.x, canvas.offsetHeight / 2, '💦', 3);
