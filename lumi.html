@@ -153,6 +153,52 @@
       touch-action: none;
     }
 
+    /* DYMEK Z TEKSTEM */
+    .speech-bubble {
+      position: absolute;
+      top: 15%;
+      margin-left: 30px;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 12px 18px;
+      border-radius: 20px;
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: #4a4e69;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      transform: translateY(10px);
+      z-index: 20;
+      text-align: center;
+      max-width: 75%;
+    }
+
+    body.time-night .speech-bubble {
+      background: rgba(30, 41, 59, 0.95);
+      color: #f1f5f9;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .speech-bubble.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .speech-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 20px;
+      border-width: 10px 10px 0;
+      border-style: solid;
+      border-color: rgba(255, 255, 255, 0.95) transparent transparent transparent;
+    }
+
+    body.time-night .speech-bubble::after {
+      border-color: rgba(30, 41, 59, 0.95) transparent transparent transparent;
+    }
+
     /* Paski potrzeb */
     .stats-card {
       background: var(--card-bg);
@@ -373,6 +419,8 @@
     <!-- Obszar gry / Canvas -->
     <main class="game-viewport">
       <canvas id="petCanvas"></canvas>
+      <!-- Nowy element dymka z tekstem -->
+      <div id="speech-bubble" class="speech-bubble"></div>
     </main>
 
     <!-- Wskaźniki statystyk -->
@@ -491,6 +539,61 @@
       localStorage.setItem('lumi_pet_save_v4', JSON.stringify(gameState));
     }
 
+    /* --- SYSTEM MOWY (SPEECH BUBBLE) --- */
+    let speechTimeout = null;
+
+    function showSpeech(forceMessage = null) {
+      const bubbleElem = document.getElementById('speech-bubble');
+      let message = forceMessage;
+
+      if (!message) {
+        if (gameState.isSleeping) {
+          return; // W trakcie snu nie mówi sam z siebie
+        } else {
+          let needs = [];
+          if (gameState.hunger <= 40) needs.push("Burczy mi w brzuszku... 🍎");
+          if (gameState.energy <= 40) needs.push("Proszę, chcę już spać... 🥱");
+          if (gameState.happiness <= 40) needs.push("Proszę, pobaw się ze mną 🥺");
+          if (gameState.cleanliness <= 40) needs.push("Czas na kąpiel, proszę pomóż mi ✨");
+
+          if (needs.length > 0) {
+            // Jeśli statystyki są niskie, prosi o pomoc
+            message = needs[Math.floor(Math.random() * needs.length)];
+          } else {
+            // Jeśli statystyki są wysokie, mówi miłe rzeczy
+            const happyPhrases = [
+              "Dobrze, że jesteś! 🥰", 
+              "Czuję się świetnie! 🌸", 
+              "Lubię spędzać z Tobą czas! 💖", 
+              "Dziękuję za opiekę! ☀️", 
+              "Ale fajnie! ✨"
+            ];
+            message = happyPhrases[Math.floor(Math.random() * happyPhrases.length)];
+          }
+        }
+      }
+
+      bubbleElem.textContent = message;
+      bubbleElem.classList.add('active');
+
+      if (speechTimeout) clearTimeout(speechTimeout);
+      
+      speechTimeout = setTimeout(() => {
+        bubbleElem.classList.remove('active');
+      }, 3500);
+    }
+
+    // Automatyczne mówienie co 10 sekund (jeśli nie śpi)
+    setInterval(() => {
+      const bubbleElem = document.getElementById('speech-bubble');
+      if (!bubbleElem.classList.contains('active') && !gameState.isSleeping) {
+        if (Math.random() > 0.3) { // 70% szans, że się odezwie
+           showSpeech();
+        }
+      }
+    }, 10000);
+
+
     /* --- REGULA EWOLUCJI (5 min = 300s, 10 min = 600s, 15 min = 900s) --- */
     function getEvolutionStage(sec) {
       if (sec < 300) return { stage: 0, nextAt: 300 };
@@ -509,6 +612,7 @@
       if (previousStage !== -1 && previousStage !== evo.stage) {
         spawnParticles(canvas.offsetWidth / 2, canvas.offsetHeight / 2, '⭐', 20);
         spawnParticles(canvas.offsetWidth / 2, canvas.offsetHeight / 2, '✨', 20);
+        showSpeech("Ewoluowałem! 🎉");
       }
       previousStage = evo.stage;
 
@@ -533,6 +637,7 @@
       checkEvolution();
       saveGame();
       spawnParticles(canvas.offsetWidth / 2, canvas.offsetHeight / 2, '✨', 15);
+      showSpeech("Cześć! Odtąd jestem z Tobą! 🥰");
     }
 
     function openCharModal() { document.getElementById('charModal').classList.add('active'); }
@@ -672,7 +777,6 @@
 
     /* --- FUNKCJE RYSOWANIA DLA POSZCZEGÓLNYCH POSTACI --- */
 
-    // KORONA DLA EWOLUCJI
     function drawCrown(ctx, radius) {
       ctx.fillStyle = '#ffd166';
       ctx.beginPath();
@@ -687,7 +791,6 @@
       ctx.fill();
     }
 
-    // AURA DLA NAJWYŻSZEJ EWOLUCJI
     function drawAura(ctx, radius) {
       ctx.save();
       ctx.beginPath();
@@ -699,11 +802,9 @@
       ctx.restore();
     }
 
-    // 1. POSTAĆ: LUMI
     function drawLumiPet(ctx, stage, radius) {
       if (stage === 3) drawAura(ctx, radius);
 
-      // Skrzydełka (Faza 1, 2, 3)
       if (stage >= 1) {
         ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
         ctx.beginPath();
@@ -712,7 +813,6 @@
         ctx.fill();
       }
 
-      // Ciało
       ctx.beginPath();
       ctx.arc(0, 0, radius, 0, Math.PI * 2);
       const gradient = ctx.createLinearGradient(-radius, -radius, radius, radius);
@@ -729,37 +829,32 @@
       ctx.fill();
       ctx.shadowBlur = 0;
 
-      // Uszka
       ctx.fillStyle = stage === 3 ? '#c7ceea' : '#f8bbd0';
       ctx.beginPath();
       ctx.arc(-radius * 0.55, -radius * 0.75, radius * 0.25, 0, Math.PI * 2);
       ctx.arc(radius * 0.55, -radius * 0.75, radius * 0.25, 0, Math.PI * 2);
       ctx.fill();
 
-      // Korona (Faza 2, 3)
       if (stage >= 2) drawCrown(ctx, radius);
 
-      // Rumieńce
       ctx.fillStyle = 'rgba(255, 105, 180, 0.3)';
       ctx.beginPath();
       ctx.arc(-radius * 0.5, radius * 0.15, radius * 0.16, 0, Math.PI * 2);
       ctx.arc(radius * 0.5, radius * 0.15, radius * 0.16, 0, Math.PI * 2);
       ctx.fill();
 
-      // Oczy i Uśmiech
       drawFace(ctx, radius);
     }
 
-    // 2. POSTAĆ: SPINACZ (PAPERCLIP)
     function drawSpinaczPet(ctx, stage, radius) {
       if (stage === 3) drawAura(ctx, radius + 10);
 
       let strokeColor, highlightColor;
-      if (stage === 0) { // Srebrny
+      if (stage === 0) { 
         strokeColor = '#a0aab5'; highlightColor = '#ffffff';
-      } else if (stage === 1) { // Czarny
+      } else if (stage === 1) { 
         strokeColor = '#1e293b'; highlightColor = '#64748b';
-      } else { // Złoty / Złoty Król
+      } else { 
         strokeColor = '#fbbf24'; highlightColor = '#fef08a';
       }
 
@@ -771,7 +866,6 @@
       const h = radius * 1.3;
       const w = radius * 0.55;
 
-      // Główny kształt spinacza
       ctx.strokeStyle = strokeColor;
       ctx.beginPath();
       ctx.arc(0, -h + w, w, Math.PI, 0, false);
@@ -782,35 +876,30 @@
       ctx.lineTo(0, h - w - 16);
       ctx.stroke();
 
-      // Błysk / Polerowanie metaliczne
       ctx.lineWidth = wireWidth * 0.3;
       ctx.strokeStyle = highlightColor;
       ctx.stroke();
 
-      // Korona (Faza 2 i 3)
       if (stage >= 2) drawCrown(ctx, h - 5);
 
-      // Oczki na spinaczu
       ctx.save();
       ctx.translate(0, -h * 0.2);
       drawFace(ctx, radius * 0.8);
       ctx.restore();
     }
 
-    // 3. POSTAĆ: KOTEK ➔ ŻBIK ➔ TYGRYS
     function drawKotekPet(ctx, stage, radius) {
       if (stage === 3) drawAura(ctx, radius);
 
       let mainColor, stripeColor;
-      if (stage === 0) { // Kotek
+      if (stage === 0) { 
         mainColor = '#ffb703'; stripeColor = '#fb8500';
-      } else if (stage === 1) { // Żbik
+      } else if (stage === 1) { 
         mainColor = '#8d7966'; stripeColor = '#4a3e3d';
-      } else { // Tygrys / Wielki Tygrys
+      } else { 
         mainColor = '#ff6b00'; stripeColor = '#111111';
       }
 
-      // Ciało i Głowa
       ctx.beginPath();
       ctx.arc(0, 0, radius, 0, Math.PI * 2);
       ctx.fillStyle = mainColor;
@@ -819,10 +908,8 @@
       ctx.fill();
       ctx.shadowBlur = 0;
 
-      // Paski (Żbik i Tygrys)
       if (stage >= 1) {
         ctx.fillStyle = stripeColor;
-        // Paski na czołu
         ctx.beginPath();
         ctx.moveTo(-8, -radius + 10); ctx.lineTo(0, -radius + 28); ctx.lineTo(8, -radius + 10); ctx.fill();
         ctx.beginPath();
@@ -830,16 +917,13 @@
         ctx.beginPath();
         ctx.moveTo(16, -radius + 22); ctx.lineTo(4, -radius + 35); ctx.lineTo(12, -radius + 35); ctx.fill();
 
-        // Paski na policzkach
         ctx.beginPath();
         ctx.moveTo(-radius + 5, -5); ctx.lineTo(-radius + 22, 0); ctx.lineTo(-radius + 8, 12); ctx.fill();
         ctx.beginPath();
         ctx.moveTo(radius - 5, -5); ctx.lineTo(radius - 22, 0); ctx.lineTo(radius - 8, 12); ctx.fill();
       }
 
-      // Uszy
       ctx.fillStyle = mainColor;
-      // Lewe ucho
       ctx.beginPath();
       ctx.moveTo(-radius * 0.8, -radius * 0.3);
       ctx.lineTo(-radius * 0.5, -radius * 1.1);
@@ -847,7 +931,6 @@
       ctx.closePath();
       ctx.fill();
 
-      // Prawe ucho
       ctx.beginPath();
       ctx.moveTo(radius * 0.8, -radius * 0.3);
       ctx.lineTo(radius * 0.5, -radius * 1.1);
@@ -855,7 +938,6 @@
       ctx.closePath();
       ctx.fill();
 
-      // Wnętrze uszu (Różowe)
       ctx.fillStyle = '#ffb5a7';
       ctx.beginPath();
       ctx.moveTo(-radius * 0.7, -radius * 0.4);
@@ -871,7 +953,6 @@
       ctx.closePath();
       ctx.fill();
 
-      // Pędzelki na uszach (Żbik - Faza 1)
       if (stage === 1) {
         ctx.strokeStyle = '#3a2e2b';
         ctx.lineWidth = 3;
@@ -881,20 +962,17 @@
         ctx.stroke();
       }
 
-      // Kufa / Pyszczek (Biały)
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
       ctx.arc(-radius * 0.18, radius * 0.2, radius * 0.2, 0, Math.PI * 2);
       ctx.arc(radius * 0.18, radius * 0.2, radius * 0.2, 0, Math.PI * 2);
       ctx.fill();
 
-      // Nosek
       ctx.fillStyle = '#ff70a6';
       ctx.beginPath();
       ctx.arc(0, radius * 0.12, radius * 0.08, 0, Math.PI * 2);
       ctx.fill();
 
-      // Wąsy
       ctx.strokeStyle = 'rgba(74, 78, 105, 0.6)';
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -904,14 +982,11 @@
       ctx.moveTo(radius * 0.25, radius * 0.25); ctx.lineTo(radius * 0.8, radius * 0.3);
       ctx.stroke();
 
-      // Korona dla Wielkiego Tygrysa (Faza 3)
       if (stage === 3) drawCrown(ctx, radius);
 
-      // Oczy i Uśmiech
       drawFace(ctx, radius);
     }
 
-    // WSPÓLNA TWARZ (OCZY + UŚMIECH)
     function drawFace(ctx, radius) {
       ctx.fillStyle = '#4a4e69';
       if (gameState.isSleeping) {
@@ -935,7 +1010,6 @@
         ctx.arc(radius * 0.27, -5, radius * 0.04, 0, Math.PI * 2);
         ctx.fill();
 
-        // Uśmiech
         ctx.beginPath();
         ctx.lineWidth = 2.5;
         ctx.strokeStyle = '#4a4e69';
@@ -948,7 +1022,6 @@
       }
     }
 
-    /* MAIN RYSOWANIE PET */
     function drawPet(w, h) {
       const centerX = w / 2;
       const centerY = h / 2 + 10;
@@ -957,13 +1030,11 @@
       const charInfo = CHARACTERS[charKey] || CHARACTERS.lumi;
       const radius = charInfo.stages[evo.stage].radius;
 
-      // Cień pod stworkiem
       ctx.beginPath();
       ctx.ellipse(centerX, centerY + radius + 10, (radius - 5) * (2 - petScaleY * 0.8), 12, 0, 0, Math.PI * 2);
       ctx.fillStyle = gameState.isSleeping ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.12)';
       ctx.fill();
 
-      // Animacja falowania
       breathProgress += 0.03;
       const floatOffsetY = Math.sin(breathProgress) * 6;
       const currentScaleY = petScaleY + Math.sin(breathProgress * 1.5) * 0.02;
@@ -972,7 +1043,6 @@
       ctx.translate(centerX, centerY + floatOffsetY);
       ctx.scale(1, currentScaleY);
 
-      // Wybór rysowania w zależności od postaci
       if (charKey === 'spinacz') {
         drawSpinaczPet(ctx, evo.stage, radius);
       } else if (charKey === 'kotek') {
@@ -983,7 +1053,6 @@
 
       ctx.restore();
 
-      // Rysowanie cząsteczek
       for (let i = particles.length - 1; i >= 0; i--) {
         let p = particles[i];
         p.x += p.vx;
@@ -1038,13 +1107,11 @@
       checkEvolution();
     }
 
-    // Licznik opieki (co 1 sekunda)
     setInterval(() => {
       gameState.careTimeSeconds += 1;
       checkEvolution();
     }, 1000);
 
-    // Spadek statystyk (co 3 sekundy)
     setInterval(() => {
       if (gameState.isSleeping) {
         gameState.energy = Math.min(100, gameState.energy + 1.2);
@@ -1063,7 +1130,10 @@
 
     /* --- INTERAKCJE --- */
     canvas.addEventListener('pointerdown', (e) => {
-      if (gameState.isSleeping) return;
+      if (gameState.isSleeping) {
+        showSpeech("Zzz... 🌙");
+        return;
+      }
 
       const rect = canvas.getBoundingClientRect();
       const clickX = e.clientX - rect.left;
@@ -1077,13 +1147,19 @@
 
       spawnParticles(clickX, clickY, '💖');
       if (navigator.vibrate) navigator.vibrate(20);
+      
+      showSpeech("Hihi, łaskoczesz! 😄");
       updateUI();
     });
 
     document.getElementById('btn-feed').addEventListener('click', () => {
-      if (gameState.isSleeping) return;
+      if (gameState.isSleeping) {
+        showSpeech("Zzz... 🌙");
+        return;
+      }
       gameState.hunger = Math.min(100, gameState.hunger + 25);
       spawnParticles(canvas.offsetWidth / 2, canvas.offsetHeight / 2, '🍎');
+      showSpeech("Mniam mniam! Pyszne! 🍎");
       updateUI();
     });
 
@@ -1091,14 +1167,21 @@
       gameState.isSleeping = !gameState.isSleeping;
       if (gameState.isSleeping) {
         spawnParticles(canvas.offsetWidth / 2, canvas.offsetHeight / 2, '✨');
+        showSpeech("Dobranoc... 🌙");
+      } else {
+        showSpeech("Dzień dobry! ☀️");
       }
       updateUI();
     });
 
     document.getElementById('btn-clean').addEventListener('click', () => {
-      if (gameState.isSleeping) return;
+      if (gameState.isSleeping) {
+        showSpeech("Zzz... 🌙");
+        return;
+      }
       gameState.cleanliness = 100;
       spawnParticles(canvas.offsetWidth / 2, canvas.offsetHeight / 2, '🫧');
+      showSpeech("Ale czysto! Błysk! ✨");
       updateUI();
     });
 
