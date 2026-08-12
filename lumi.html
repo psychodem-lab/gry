@@ -14,17 +14,32 @@
       --card-bg: rgba(255, 255, 255, 0.45);
       --card-border: rgba(255, 255, 255, 0.6);
       --text-color: #4a4e69;
-      --accent-color: #b5e2fa;
       --btn-shadow: 0 8px 20px rgba(100, 110, 140, 0.15);
       --font-family: 'Nunito', sans-serif;
     }
 
-    body.night-mode {
-      --bg-top: #1f1c2c;
-      --bg-bottom: #928dab;
-      --card-bg: rgba(30, 30, 50, 0.5);
+    /* Pory Dnia */
+    body.time-morning {
+      --bg-top: #ffecd2;
+      --bg-bottom: #fcb69f;
+      --text-color: #5d4037;
+    }
+    body.time-day {
+      --bg-top: #a1c4fd;
+      --bg-bottom: #c2e9fb;
+      --text-color: #2c3e50;
+    }
+    body.time-sunset {
+      --bg-top: #f3a683;
+      --bg-bottom: #f7d794;
+      --text-color: #4a235a;
+    }
+    body.time-night {
+      --bg-top: #0f172a;
+      --bg-bottom: #1e1b4b;
+      --card-bg: rgba(30, 41, 59, 0.55);
       --card-border: rgba(255, 255, 255, 0.15);
-      --text-color: #f0f3f8;
+      --text-color: #f1f5f9;
     }
 
     * {
@@ -76,21 +91,41 @@
       flex-direction: column;
     }
 
+    .pet-name-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
     .pet-name {
       font-weight: 800;
       font-size: 1.1rem;
     }
 
-    .pet-status-text {
-      font-size: 0.8rem;
-      opacity: 0.8;
+    .evo-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.35);
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    .evo-timer {
+      font-size: 0.75rem;
+      opacity: 0.85;
+      margin-top: 2px;
+    }
+
+    .top-controls {
+      display: flex;
+      gap: 8px;
     }
 
     .top-controls button {
       background: rgba(255, 255, 255, 0.3);
       border: none;
       font-size: 1.2rem;
-      padding: 8px 12px;
+      padding: 8px 10px;
       border-radius: 12px;
       cursor: pointer;
       color: var(--text-color);
@@ -101,7 +136,7 @@
       transform: scale(0.9);
     }
 
-    /* Obszar świata gry */
+    /* Obszar gry / Canvas */
     .game-viewport {
       position: relative;
       flex: 1;
@@ -165,11 +200,11 @@
     .fill-happiness { background: linear-gradient(90deg, #fbc2eb, #a6c1ee); }
     .fill-clean { background: linear-gradient(90deg, #84fab0, #8fd3f4); }
 
-    /* Panel Akcji */
+    /* Panel Akcji (3 przyciski) */
     .actions-deck {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
       margin-top: 12px;
     }
 
@@ -179,7 +214,7 @@
       -webkit-backdrop-filter: blur(12px);
       border: 1px solid var(--card-border);
       border-radius: 20px;
-      padding: 12px 6px;
+      padding: 14px 8px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -196,86 +231,13 @@
     }
 
     .action-btn .icon {
-      font-size: 1.5rem;
+      font-size: 1.6rem;
     }
 
     .action-btn .label {
-      font-size: 0.75rem;
+      font-size: 0.8rem;
       font-weight: 700;
       color: var(--text-color);
-    }
-
-    /* Modal oddechowy */
-    .breath-modal {
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.4);
-      backdrop-filter: blur(8px);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 100;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.4s ease;
-      border-radius: 24px;
-      padding: 20px;
-      text-align: center;
-      color: #fff;
-    }
-
-    .breath-modal.active {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    .breath-circle {
-      width: 140px;
-      height: 140px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.3);
-      border: 3px solid rgba(255, 255, 255, 0.8);
-      margin: 24px 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 1.1rem;
-      font-weight: 800;
-      box-shadow: 0 0 30px rgba(255, 255, 255, 0.4);
-    }
-
-    .breath-circle.anim-inhale {
-      animation: inhale 4s ease-in-out forwards;
-    }
-    .breath-circle.anim-hold {
-      animation: hold 4s ease-in-out forwards;
-    }
-    .breath-circle.anim-exhale {
-      animation: exhale 4s ease-in-out forwards;
-    }
-
-    @keyframes inhale {
-      from { transform: scale(1); background: rgba(255, 255, 255, 0.2); }
-      to { transform: scale(1.6); background: rgba(255, 255, 255, 0.6); }
-    }
-    @keyframes hold {
-      transform: scale(1.6);
-    }
-    @keyframes exhale {
-      from { transform: scale(1.6); background: rgba(255, 255, 255, 0.6); }
-      to { transform: scale(1); background: rgba(255, 255, 255, 0.2); }
-    }
-
-    .close-breath-btn {
-      margin-top: 10px;
-      background: rgba(255, 255, 255, 0.2);
-      border: 1px solid rgba(255, 255, 255, 0.4);
-      color: white;
-      padding: 8px 20px;
-      border-radius: 16px;
-      font-family: inherit;
-      font-weight: 700;
     }
   </style>
 </head>
@@ -285,25 +247,20 @@
     <!-- Górny panel -->
     <header class="header">
       <div class="pet-info">
-        <span class="pet-name">Lumi</span>
-        <span class="pet-status-text" id="status-text">Czuje się odprężony...</span>
+        <div class="pet-name-row">
+          <span class="pet-name">Lumi</span>
+          <span class="evo-badge" id="evo-badge">Maluch 🌱</span>
+        </div>
+        <span class="evo-timer" id="evo-timer">Następna ewolucja: 05:00</span>
       </div>
       <div class="top-controls">
-        <button id="sound-toggle-btn" title="Muzyka relaksacyjna">🎵</button>
+        <button id="weather-toggle-btn" title="Zmień pogodę">☀️</button>
       </div>
     </header>
 
-    <!-- Obszar interakcji ze stworkiem -->
+    <!-- Obszar gry / Canvas -->
     <main class="game-viewport">
       <canvas id="petCanvas"></canvas>
-
-      <!-- Modal Ćwiczenia Oddechowego -->
-      <div class="breath-modal" id="breathModal">
-        <h2>Spokojny Oddech</h2>
-        <p style="font-size: 0.9rem; opacity: 0.9; margin-top: 6px;">Oddychaj razem z Lumi</p>
-        <div class="breath-circle" id="breathCircle">Wdech</div>
-        <button class="close-breath-btn" id="closeBreathBtn">Zakończ</button>
-      </div>
     </main>
 
     <!-- Wskaźniki statystyk -->
@@ -340,131 +297,33 @@
         <span class="icon">✨</span>
         <span class="label">Czyść</span>
       </button>
-      <button class="action-btn" id="btn-breathe">
-        <span class="icon">🧘</span>
-        <span class="label">Oddech</span>
-      </button>
     </nav>
   </div>
 
   <script>
-    /* --- SYSTEM AUDIO (SYNTEZATOR RELAKSACYJNY WEB AUDIO) --- */
-    class RelaxAudio {
-      constructor() {
-        this.ctx = null;
-        this.isMuted = true;
-        this.ambientOsc = null;
-        this.gainNode = null;
-      }
-
-      init() {
-        if (!this.ctx) {
-          const AudioCtx = window.AudioContext || window.webkitAudioContext;
-          this.ctx = new AudioCtx();
-        }
-      }
-
-      toggleAmbient() {
-        this.init();
-        if (this.ctx.state === 'suspended') {
-          this.ctx.resume();
-        }
-
-        if (this.isMuted) {
-          this.startAmbient();
-          this.isMuted = false;
-        } else {
-          this.stopAmbient();
-          this.isMuted = true;
-        }
-        return !this.isMuted;
-      }
-
-      startAmbient() {
-        // Generowanie ciepłego, ewolucyjnego tła synth (drone)
-        this.ambientOsc = this.ctx.createOscillator();
-        const osc2 = this.ctx.createOscillator();
-        this.gainNode = this.ctx.createGain();
-        const filter = this.ctx.createBiquadFilter();
-
-        this.ambientOsc.type = 'sine';
-        this.ambientOsc.frequency.setValueAtTime(130.81, this.ctx.currentTime); // C3
-
-        osc2.type = 'triangle';
-        osc2.frequency.setValueAtTime(196.00, this.ctx.currentTime); // G3
-
-        filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(350, this.ctx.currentTime);
-
-        this.gainNode.gain.setValueAtTime(0.01, this.ctx.currentTime);
-        this.gainNode.gain.exponentialRampToValueAtTime(0.12, this.ctx.currentTime + 3);
-
-        this.ambientOsc.connect(filter);
-        osc2.connect(filter);
-        filter.connect(this.gainNode);
-        this.gainNode.connect(this.ctx.destination);
-
-        this.ambientOsc.start();
-        osc2.start();
-      }
-
-      stopAmbient() {
-        if (this.gainNode) {
-          this.gainNode.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 1);
-          setTimeout(() => {
-            if (this.ambientOsc) this.ambientOsc.stop();
-          }, 1000);
-        }
-      }
-
-      playTone(freq, type = 'sine', duration = 0.5) {
-        if (this.isMuted || !this.ctx) return;
-        try {
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-          osc.type = type;
-          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-          
-          gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
-
-          osc.connect(gain);
-          gain.connect(this.ctx.destination);
-
-          osc.start();
-          osc.stop(this.ctx.currentTime + duration);
-        } catch(e){}
-      }
-
-      playHappyChime() {
-        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
-        notes.forEach((freq, idx) => {
-          setTimeout(() => this.playTone(freq, 'sine', 0.4), idx * 90);
-        });
-      }
-    }
-
-    /* --- STAN GRY & LOGIKA STWORKA --- */
+    /* --- STAN GRY & ZEGAR --- */
     const defaultState = {
       hunger: 85,
       energy: 90,
       happiness: 80,
       cleanliness: 95,
       isSleeping: false,
+      careTimeSeconds: 0, // Czas opieki w sekundach
       lastUpdate: Date.now()
     };
 
     let gameState = { ...defaultState };
+    let timeOfDay = 'day';
+    let weatherState = 'clear';
 
     function loadGame() {
-      const saved = localStorage.getItem('lumi_pet_save');
+      const saved = localStorage.getItem('lumi_pet_save_v3');
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
           const now = Date.now();
           const elapsedMinutes = (now - parsed.lastUpdate) / (1000 * 60);
 
-          // Powolny, łagodny decay podczas nieobecności (max do 20%, brak ryzyka śmierci)
           gameState.hunger = Math.max(20, parsed.hunger - elapsedMinutes * 0.15);
           gameState.energy = parsed.isSleeping 
             ? Math.min(100, parsed.energy + elapsedMinutes * 0.4) 
@@ -472,6 +331,7 @@
           gameState.happiness = Math.max(20, parsed.happiness - elapsedMinutes * 0.12);
           gameState.cleanliness = Math.max(20, parsed.cleanliness - elapsedMinutes * 0.08);
           gameState.isSleeping = parsed.isSleeping;
+          gameState.careTimeSeconds = parsed.careTimeSeconds || 0;
           gameState.lastUpdate = now;
         } catch(e) {
           gameState = { ...defaultState };
@@ -481,17 +341,68 @@
 
     function saveGame() {
       gameState.lastUpdate = Date.now();
-      localStorage.setItem('lumi_pet_save', JSON.stringify(gameState));
+      localStorage.setItem('lumi_pet_save_v3', JSON.stringify(gameState));
     }
 
-    /* --- RENDERING GRAPHICS (CANVAS 2D) --- */
+    /* --- REGULA EWOLUCJI (5 min = 300s, 10 min = 600s, 15 min = 900s) --- */
+    function getEvolutionStage(sec) {
+      if (sec < 300) {
+        return { stage: 0, name: 'Maluch 🌱', radius: 52, wings: false, crown: false, aura: false, nextAt: 300 };
+      } else if (sec < 600) {
+        return { stage: 1, name: 'Młodziak 🌿', radius: 64, wings: true, crown: false, aura: false, nextAt: 600 };
+      } else if (sec < 900) {
+        return { stage: 2, name: 'Dorosły 🌸', radius: 74, wings: true, crown: true, aura: false, nextAt: 900 };
+      } else {
+        return { stage: 3, name: 'Mistyczny 👑', radius: 84, wings: true, crown: true, aura: true, nextAt: null };
+      }
+    }
+
+    let previousStage = -1;
+
+    function checkEvolution() {
+      const evo = getEvolutionStage(gameState.careTimeSeconds);
+      
+      // Efekt ewolucji (rozbłysk cząsteczek)
+      if (previousStage !== -1 && previousStage !== evo.stage) {
+        spawnParticles(canvas.offsetWidth / 2, canvas.offsetHeight / 2, '⭐', 20);
+        spawnParticles(canvas.offsetWidth / 2, canvas.offsetHeight / 2, '✨', 20);
+      }
+      previousStage = evo.stage;
+
+      document.getElementById('evo-badge').textContent = evo.name;
+
+      const timerElem = document.getElementById('evo-timer');
+      if (evo.nextAt) {
+        const remaining = evo.nextAt - gameState.careTimeSeconds;
+        const mins = Math.floor(remaining / 60);
+        const secs = Math.floor(remaining % 60);
+        const formatted = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        timerElem.textContent = `Następna ewolucja: ${formatted}`;
+      } else {
+        timerElem.textContent = 'Maksymalny poziom ewolucji!';
+      }
+    }
+
+    /* --- PORA DNIA (ZEGAR URZĄDZENIA) --- */
+    function checkTimeOfDay() {
+      const hour = new Date().getHours();
+      if (hour >= 6 && hour < 12) timeOfDay = 'morning';
+      else if (hour >= 12 && hour < 18) timeOfDay = 'day';
+      else if (hour >= 18 && hour < 21) timeOfDay = 'sunset';
+      else timeOfDay = 'night';
+
+      document.body.className = `time-${timeOfDay}`;
+    }
+
+    /* --- CANVAS & ANIMACJE --- */
     const canvas = document.getElementById('petCanvas');
     const ctx = canvas.getContext('2d');
-    const audio = new RelaxAudio();
 
     let particles = [];
+    let rainDrops = [];
+    let clouds = [];
+    let stars = [];
     let petScaleY = 1;
-    let petWobble = 0;
     let breathProgress = 0;
 
     function resizeCanvas() {
@@ -500,18 +411,49 @@
       canvas.width = rect.width * dpr;
       canvas.height = rect.height * dpr;
       ctx.scale(dpr, dpr);
+      initWeatherElements();
     }
     window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
 
-    // Cząsteczki (serduszka, iskierki)
-    function spawnParticles(x, y, symbol) {
-      for (let i = 0; i < 6; i++) {
+    function initWeatherElements() {
+      const w = canvas.offsetWidth;
+      const h = canvas.offsetHeight;
+
+      rainDrops = [];
+      for (let i = 0; i < 45; i++) {
+        rainDrops.push({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          length: 10 + Math.random() * 15,
+          speed: 4 + Math.random() * 6,
+          opacity: 0.3 + Math.random() * 0.4
+        });
+      }
+
+      clouds = [
+        { x: w * 0.1, y: 30, scale: 0.8, speed: 0.15 },
+        { x: w * 0.6, y: 50, scale: 1.1, speed: 0.1 }
+      ];
+
+      stars = [];
+      for (let i = 0; i < 30; i++) {
+        stars.push({
+          x: Math.random() * w,
+          y: Math.random() * (h * 0.7),
+          size: 1 + Math.random() * 2,
+          alpha: Math.random(),
+          speed: 0.02 + Math.random() * 0.02
+        });
+      }
+    }
+
+    function spawnParticles(x, y, symbol, count = 6) {
+      for (let i = 0; i < count; i++) {
         particles.push({
           x: x + (Math.random() - 0.5) * 40,
           y: y + (Math.random() - 0.5) * 40,
-          vx: (Math.random() - 0.5) * 1.5,
-          vy: -1.5 - Math.random(),
+          vx: (Math.random() - 0.5) * 2,
+          vy: -1.5 - Math.random() * 2,
           alpha: 1,
           size: 16 + Math.random() * 8,
           symbol: symbol
@@ -519,22 +461,74 @@
       }
     }
 
-    /* Rysowanie Stworka Lumi */
-    function drawPet() {
-      const width = canvas.offsetWidth;
-      const height = canvas.offsetHeight;
-      const centerX = width / 2;
-      const centerY = height / 2 + 10;
+    /* RYSOWANIE POGODY */
+    function drawEnvironment(w, h) {
+      if (timeOfDay === 'night') {
+        ctx.fillStyle = '#ffffff';
+        stars.forEach(s => {
+          s.alpha += s.speed;
+          const a = (Math.sin(s.alpha) + 1) / 2;
+          ctx.globalAlpha = a * 0.8;
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.globalAlpha = 1;
+      }
 
-      ctx.clearRect(0, 0, width, height);
+      if (weatherState === 'cloudy' || weatherState === 'rain') {
+        ctx.fillStyle = timeOfDay === 'night' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.45)';
+        clouds.forEach(c => {
+          c.x += c.speed;
+          if (c.x > w + 60) c.x = -60;
+
+          ctx.save();
+          ctx.translate(c.x, c.y);
+          ctx.scale(c.scale, c.scale);
+          ctx.beginPath();
+          ctx.arc(0, 0, 18, 0, Math.PI * 2);
+          ctx.arc(16, -8, 22, 0, Math.PI * 2);
+          ctx.arc(36, 0, 18, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        });
+      }
+
+      if (weatherState === 'rain') {
+        ctx.strokeStyle = timeOfDay === 'night' ? 'rgba(180, 210, 255, 0.5)' : 'rgba(120, 160, 220, 0.6)';
+        ctx.lineWidth = 1.5;
+        rainDrops.forEach(d => {
+          d.y += d.speed;
+          d.x += 0.5;
+          if (d.y > h) {
+            d.y = -d.length;
+            d.x = Math.random() * w;
+          }
+
+          ctx.globalAlpha = d.opacity;
+          ctx.beginPath();
+          ctx.moveTo(d.x, d.y);
+          ctx.lineTo(d.x + 2, d.y + d.length);
+          ctx.stroke();
+        });
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    /* RYSOWANIE STWORKA LUMI (Z UWZGLĘDNIENIEM EWOLUCJI) */
+    function drawPet(w, h) {
+      const centerX = w / 2;
+      const centerY = h / 2 + 10;
+      const evo = getEvolutionStage(gameState.careTimeSeconds);
+      const radius = evo.radius;
 
       // Cień pod stworkiem
       ctx.beginPath();
-      ctx.ellipse(centerX, centerY + 75, 65 * (2 - petScaleY * 0.8), 12, 0, 0, Math.PI * 2);
-      ctx.fillStyle = gameState.isSleeping ? 'rgba(0,0,0,0.08)' : 'rgba(0,0,0,0.12)';
+      ctx.ellipse(centerX, centerY + radius + 5, (radius - 5) * (2 - petScaleY * 0.8), 12, 0, 0, Math.PI * 2);
+      ctx.fillStyle = gameState.isSleeping ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.12)';
       ctx.fill();
 
-      // Oddychanie i falowanie
+      // Animacja falowania
       breathProgress += 0.03;
       const floatOffsetY = Math.sin(breathProgress) * 6;
       const currentScaleY = petScaleY + Math.sin(breathProgress * 1.5) * 0.02;
@@ -543,8 +537,32 @@
       ctx.translate(centerX, centerY + floatOffsetY);
       ctx.scale(1, currentScaleY);
 
-      // Ciało stworka (Miękki pastelowy "Blob")
-      const radius = 70;
+      // AURA (Faza 3)
+      if (evo.aura) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(0, 0, radius + 18, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 223, 186, 0.25)';
+        ctx.shadowColor = 'rgba(255, 215, 0, 0.6)';
+        ctx.shadowBlur = 25;
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // SKRZYDEŁKA (Faza 1, 2, 3)
+      if (evo.wings) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        // Lewe skrzydło
+        ctx.beginPath();
+        ctx.ellipse(-radius + 5, -10, 16, 28, Math.PI / 4, 0, Math.PI * 2);
+        ctx.fill();
+        // Prawe skrzydło
+        ctx.beginPath();
+        ctx.ellipse(radius - 5, -10, 16, 28, -Math.PI / 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // CIAŁO STWORKA
       ctx.beginPath();
       ctx.arc(0, 0, radius, 0, Math.PI * 2);
       
@@ -552,6 +570,10 @@
       if (gameState.isSleeping) {
         gradient.addColorStop(0, '#d4fc79');
         gradient.addColorStop(1, '#96e6a1');
+      } else if (evo.stage === 3) {
+        gradient.addColorStop(0, '#ffffff');
+        gradient.addColorStop(0.5, '#e0c3fc');
+        gradient.addColorStop(1, '#8ec5fc');
       } else {
         gradient.addColorStop(0, '#ffffff');
         gradient.addColorStop(0.5, '#fce4ec');
@@ -560,65 +582,77 @@
       
       ctx.fillStyle = gradient;
       ctx.shadowColor = 'rgba(255, 182, 193, 0.4)';
-      ctx.shadowBlur = 20;
+      ctx.shadowBlur = 18;
       ctx.fill();
       ctx.shadowBlur = 0;
 
-      // Uszka / Rogi
-      ctx.fillStyle = '#f8bbd0';
+      // USZKA
+      ctx.fillStyle = evo.stage === 3 ? '#c7ceea' : '#f8bbd0';
       ctx.beginPath();
-      ctx.arc(-40, -55, 18, 0, Math.PI * 2);
-      ctx.arc(40, -55, 18, 0, Math.PI * 2);
+      ctx.arc(-radius * 0.55, -radius * 0.75, radius * 0.25, 0, Math.PI * 2);
+      ctx.arc(radius * 0.55, -radius * 0.75, radius * 0.25, 0, Math.PI * 2);
       ctx.fill();
 
-      // Rumieńce
-      ctx.fillStyle = 'rgba(255, 105, 180, 0.3)';
-      ctx.beginPath();
-      ctx.arc(-38, 12, 12, 0, Math.PI * 2);
-      ctx.arc(38, 12, 12, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Oczy
-      ctx.fillStyle = '#4a4e69';
-      if (gameState.isSleeping) {
-        // Śpiące oczy (łuki)
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = '#4a4e69';
+      // KORONA (Faza 2, 3)
+      if (evo.crown) {
+        ctx.fillStyle = '#ffd166';
         ctx.beginPath();
-        ctx.arc(-22, 0, 8, 0.1 * Math.PI, 0.9 * Math.PI);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(22, 0, 8, 0.1 * Math.PI, 0.9 * Math.PI);
-        ctx.stroke();
-      } else {
-        // Otwarte, błyszczące oczy
-        ctx.beginPath();
-        ctx.arc(-22, -2, 8, 0, Math.PI * 2);
-        ctx.arc(22, -2, 8, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Błysk w oku
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.arc(-24, -5, 3, 0, Math.PI * 2);
-        ctx.arc(20, -5, 3, 0, Math.PI * 2);
+        ctx.moveTo(-15, -radius - 2);
+        ctx.lineTo(-20, -radius - 22);
+        ctx.lineTo(-7, -radius - 12);
+        ctx.lineTo(0, -radius - 26);
+        ctx.lineTo(7, -radius - 12);
+        ctx.lineTo(20, -radius - 22);
+        ctx.lineTo(15, -radius - 2);
+        ctx.closePath();
         ctx.fill();
       }
 
-      // Uśmiech
+      // RUMIEŃCE
+      ctx.fillStyle = 'rgba(255, 105, 180, 0.3)';
+      ctx.beginPath();
+      ctx.arc(-radius * 0.5, radius * 0.15, radius * 0.16, 0, Math.PI * 2);
+      ctx.arc(radius * 0.5, radius * 0.15, radius * 0.16, 0, Math.PI * 2);
+      ctx.fill();
+
+      // OCZY
+      ctx.fillStyle = '#4a4e69';
+      if (gameState.isSleeping) {
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#4a4e69';
+        ctx.beginPath();
+        ctx.arc(-radius * 0.3, 0, radius * 0.11, 0.1 * Math.PI, 0.9 * Math.PI);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(radius * 0.3, 0, radius * 0.11, 0.1 * Math.PI, 0.9 * Math.PI);
+        ctx.stroke();
+      } else {
+        ctx.beginPath();
+        ctx.arc(-radius * 0.3, -2, radius * 0.11, 0, Math.PI * 2);
+        ctx.arc(radius * 0.3, -2, radius * 0.11, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(-radius * 0.33, -5, radius * 0.04, 0, Math.PI * 2);
+        ctx.arc(radius * 0.27, -5, radius * 0.04, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // UŚMIECH
       ctx.beginPath();
       ctx.lineWidth = 2.5;
       ctx.strokeStyle = '#4a4e69';
       if (gameState.happiness > 50) {
-        ctx.arc(0, 10, 7, 0.1 * Math.PI, 0.9 * Math.PI);
+        ctx.arc(0, radius * 0.14, radius * 0.1, 0.1 * Math.PI, 0.9 * Math.PI);
       } else {
-        ctx.arc(0, 16, 6, 1.1 * Math.PI, 1.9 * Math.PI);
+        ctx.arc(0, radius * 0.22, radius * 0.09, 1.1 * Math.PI, 1.9 * Math.PI);
       }
       ctx.stroke();
 
       ctx.restore();
 
-      // Rysowanie i aktualizacja cząsteczek
+      // Rysowanie cząsteczek akcji
       for (let i = particles.length - 1; i >= 0; i--) {
         let p = particles[i];
         p.x += p.vx;
@@ -636,11 +670,25 @@
     }
 
     function gameLoop() {
-      drawPet();
+      const w = canvas.offsetWidth;
+      const h = canvas.offsetHeight;
+      ctx.clearRect(0, 0, w, h);
+
+      drawEnvironment(w, h);
+      drawPet(w, h);
+
       requestAnimationFrame(gameLoop);
     }
 
-    /* --- UPDATE UI & LOGIKA POTRZEB --- */
+    /* --- LOGIKA GRY & INTERFEJS --- */
+    function toggleWeather() {
+      const weathers = ['clear', 'rain', 'cloudy'];
+      const icons = { 'clear': '☀️', 'rain': '🌧️', 'cloudy': '☁️' };
+      let nextIdx = (weathers.indexOf(weatherState) + 1) % weathers.length;
+      weatherState = weathers[nextIdx];
+      document.getElementById('weather-toggle-btn').textContent = icons[weatherState];
+    }
+
     function updateUI() {
       document.getElementById('val-hunger').textContent = `${Math.round(gameState.hunger)}%`;
       document.getElementById('bar-hunger').style.width = `${gameState.hunger}%`;
@@ -654,22 +702,18 @@
       document.getElementById('val-clean').textContent = `${Math.round(gameState.cleanliness)}%`;
       document.getElementById('bar-clean').style.width = `${gameState.cleanliness}%`;
 
-      const statusElem = document.getElementById('status-text');
-      if (gameState.isSleeping) {
-        statusElem.textContent = "Lumi smacznie śpi... (Zzz)";
-      } else if (gameState.hunger < 30) {
-        statusElem.textContent = "Lumi robi się głodny...";
-      } else if (gameState.happiness > 80) {
-        statusElem.textContent = "Lumi jest bardzo szczęśliwy!";
-      } else {
-        statusElem.textContent = "Lumi czuje się odprężony.";
-      }
-
       document.getElementById('label-sleep').textContent = gameState.isSleeping ? 'Wstań' : 'Sen';
-      document.body.classList.toggle('night-mode', gameState.isSleeping);
+
+      checkEvolution();
     }
 
-    // Pętla spadku statystyk w czasie rzeczywistym
+    // Licznik czasu opieki (co 1 sekunda)
+    setInterval(() => {
+      gameState.careTimeSeconds += 1;
+      checkEvolution();
+    }, 1000);
+
+    // Pętla spadku statystyk (co 3 sekundy)
     setInterval(() => {
       if (gameState.isSleeping) {
         gameState.energy = Math.min(100, gameState.energy + 1.2);
@@ -684,8 +728,9 @@
       saveGame();
     }, 3000);
 
-    /* --- OBSŁUGA INTERAKCJI / AKCJI --- */
-    // Głaskanie na kranie/kliknięciu w Canvas
+    setInterval(checkTimeOfDay, 60000);
+
+    /* --- INTERAKCJE --- */
     canvas.addEventListener('pointerdown', (e) => {
       if (gameState.isSleeping) return;
 
@@ -695,14 +740,11 @@
 
       gameState.happiness = Math.min(100, gameState.happiness + 5);
       
-      // Animacja skoku
       petScaleY = 0.85;
       setTimeout(() => petScaleY = 1.1, 100);
       setTimeout(() => petScaleY = 1, 250);
 
       spawnParticles(clickX, clickY, '💖');
-      audio.playTone(600, 'sine', 0.2);
-      
       if (navigator.vibrate) navigator.vibrate(20);
       updateUI();
     });
@@ -710,14 +752,12 @@
     document.getElementById('btn-feed').addEventListener('click', () => {
       if (gameState.isSleeping) return;
       gameState.hunger = Math.min(100, gameState.hunger + 25);
-      audio.playHappyChime();
       spawnParticles(canvas.offsetWidth / 2, canvas.offsetHeight / 2, '🍎');
       updateUI();
     });
 
     document.getElementById('btn-sleep').addEventListener('click', () => {
       gameState.isSleeping = !gameState.isSleeping;
-      audio.playTone(300, 'sine', 0.5);
       if (gameState.isSleeping) {
         spawnParticles(canvas.offsetWidth / 2, canvas.offsetHeight / 2, '✨');
       }
@@ -727,61 +767,16 @@
     document.getElementById('btn-clean').addEventListener('click', () => {
       if (gameState.isSleeping) return;
       gameState.cleanliness = 100;
-      audio.playTone(880, 'sine', 0.3);
       spawnParticles(canvas.offsetWidth / 2, canvas.offsetHeight / 2, '🫧');
       updateUI();
     });
 
-    // Przycisk Audio
-    document.getElementById('sound-toggle-btn').addEventListener('click', (e) => {
-      const active = audio.toggleAmbient();
-      e.target.style.opacity = active ? '1' : '0.5';
-    });
+    document.getElementById('weather-toggle-btn').addEventListener('click', toggleWeather);
 
-    /* --- MINIGRA / CWICZENIE ODDECHOWE --- */
-    const breathModal = document.getElementById('breathModal');
-    const breathCircle = document.getElementById('breathCircle');
-    let breathInterval = null;
-
-    document.getElementById('btn-breathe').addEventListener('click', () => {
-      breathModal.classList.add('active');
-      runBreathingCycle();
-    });
-
-    document.getElementById('closeBreathBtn').addEventListener('click', () => {
-      breathModal.classList.remove('active');
-      clearTimeout(breathInterval);
-    });
-
-    function runBreathingCycle() {
-      if (!breathModal.classList.contains('active')) return;
-
-      // Wdech (4s)
-      breathCircle.className = 'breath-circle anim-inhale';
-      breathCircle.textContent = 'Wdech...';
-      audio.playTone(220, 'sine', 3.8);
-
-      breathInterval = setTimeout(() => {
-        // Wstrzymanie (4s)
-        breathCircle.className = 'breath-circle anim-hold';
-        breathCircle.textContent = 'Zatrzymaj';
-
-        breathInterval = setTimeout(() => {
-          // Wydech (4s)
-          breathCircle.className = 'breath-circle anim-exhale';
-          breathCircle.textContent = 'Wydech...';
-          audio.playTone(174, 'sine', 3.8);
-
-          gameState.happiness = Math.min(100, gameState.happiness + 10);
-          updateUI();
-
-          breathInterval = setTimeout(runBreathingCycle, 4000);
-        }, 4000);
-      }, 4000);
-    }
-
-    // Inicjalizacja
+    // Start
     loadGame();
+    checkTimeOfDay();
+    resizeCanvas();
     updateUI();
     gameLoop();
   </script>
