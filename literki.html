@@ -227,12 +227,12 @@
         function startGame() {
             document.getElementById('start-screen').style.display = 'none';
             document.getElementById('game-screen').style.display = 'flex';
-            speakText("Zaczynamy zabawę!", nextTurn);
+            speakText(" Zaczynamy! ", nextTurn);
         }
 
         function repeatAudio() {
             if (currentQuestion) {
-                speakText(`Co zaczyna się na literę ${currentQuestion.letter}?`);
+                speakText(` Co zaczyna się na literę  ${currentQuestion.letter}?`);
             }
         }
 
@@ -288,12 +288,12 @@
                     colors: ['#ff6b6b', '#4ecdc4', '#ffe66d']
                 });
 
-                speakText(`Wspaniale! ${currentQuestion.word} zaczyna się na literę ${currentQuestion.letter}.`, () => {
+                speakText(` Wspaniale! ${currentQuestion.word} zaczyna się na literę ${currentQuestion.letter}.`, () => {
                     setTimeout(nextTurn, 1000);
                 });
             } else {
                 cardElement.classList.add('wrong');
-                speakText("Spróbuj jeszcze raz.");
+                speakText(" Spróbuj jeszcze raz ");
                 
                 setTimeout(() => {
                     cardElement.classList.remove('wrong');
