@@ -2,33 +2,38 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Turbo Wyścigi 2D</title>
     <style>
         * {
             box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
         }
         body {
             margin: 0;
-            padding: 0;
+            padding: 10px;
             background: linear-gradient(135deg, #1e1e2f 0%, #0f0c1b 100%);
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
             min-height: 100vh;
+            min-height: -webkit-fill-available;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: white;
             overflow: hidden;
+            touch-action: none;
         }
         #ui {
-            margin-bottom: 15px;
             text-align: center;
-            animation: fadeIn 1s ease-in-out;
+            margin-bottom: 5px;
+            flex-shrink: 0;
         }
         h1 {
-            margin: 0 0 5px 0;
-            font-size: 28px;
+            margin: 0 0 2px 0;
+            font-size: clamp(20px, 5vw, 28px);
             background: linear-gradient(45deg, #ff6b6b, #feca57);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -36,23 +41,46 @@
         }
         p {
             margin: 0;
-            font-size: 14px;
+            font-size: clamp(11px, 3.2vw, 14px);
             color: #a4b0be;
+        }
+        .game-wrapper {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-grow: 1;
+            width: 100%;
+            max-height: calc(100vh - 160px);
         }
         .canvas-container {
             position: relative;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.6), 0 0 20px rgba(84, 160, 255, 0.2);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6), 0 0 20px rgba(84, 160, 255, 0.2);
             border-radius: 12px;
             overflow: hidden;
             border: 3px solid #54a0ff;
+            max-width: 100%;
+            max-height: 100%;
+            aspect-ratio: 450 / 650;
+            touch-action: none;
         }
         canvas {
             display: block;
+            width: 100%;
+            height: 100%;
             background-color: #2f3640;
+            touch-action: none;
         }
-        button {
-            padding: 12px 28px;
-            font-size: 16px;
+        .restart-overlay {
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+        #restartBtn {
+            padding: 14px 32px;
+            font-size: 18px;
             font-weight: bold;
             cursor: pointer;
             background: linear-gradient(45deg, #ff4757, #ff6b6b);
@@ -60,21 +88,56 @@
             border: none;
             border-radius: 30px;
             display: none;
-            margin-top: 15px;
-            box-shadow: 0 5px 15px rgba(255, 71, 87, 0.4);
-            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(255, 71, 87, 0.6);
+            transition: transform 0.2s, box-shadow 0.2s;
+            touch-action: manipulation;
         }
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 7px 20px rgba(255, 71, 87, 0.6);
-            background: linear-gradient(45deg, #ff3838, #ff4757);
+        #restartBtn:active {
+            transform: scale(0.96);
         }
-        button:active {
-            transform: translateY(1px);
+        /* Kontrolki dotykowe na telefony */
+        .mobile-controls {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            width: 100%;
+            max-width: 450px;
+            padding: 10px 15px 10px 15px;
+            flex-shrink: 0;
+            touch-action: none;
         }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .touch-btn {
+            flex: 1;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            color: #ffffff;
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            transition: background 0.1s, transform 0.1s, border-color 0.1s, box-shadow 0.1s;
+            touch-action: none;
+        }
+        .touch-btn:active, .touch-btn.active {
+            background: rgba(84, 160, 255, 0.4);
+            border-color: #54a0ff;
+            transform: scale(0.95);
+            box-shadow: 0 0 15px rgba(84, 160, 255, 0.6);
+        }
+        .touch-btn span {
+            pointer-events: none;
+        }
+        .touch-hint {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #747d8c;
+            margin-top: 2px;
         }
     </style>
 </head>
@@ -82,18 +145,35 @@
 
     <div id="ui">
         <h1>TURBO WYŚCIGI</h1>
-        <p>Sterowanie: Strzałki Lewo/Prawo lub klawisze A / D</p>
+        <p id="instructionText">Steruj przyciskami na dole, dotknij ekranu lub użyj strzałek / A D</p>
     </div>
 
-    <div class="canvas-container">
-        <canvas id="gameCanvas" width="450" height="650"></canvas>
+    <div class="game-wrapper">
+        <div class="canvas-container" id="canvasContainer">
+            <canvas id="gameCanvas" width="450" height="650"></canvas>
+            <div class="restart-overlay">
+                <button id="restartBtn" onclick="resetGame()">ZAGRAJ PONOWNIE</button>
+            </div>
+        </div>
     </div>
-    <button id="restartBtn" onclick="resetGame()">Zagraj Ponownie</button>
+
+    <!-- Przyciski mobilne -->
+    <div class="mobile-controls" id="mobileControls">
+        <button class="touch-btn" id="btnLeft" aria-label="W lewo">
+            <span>◀</span>
+        </button>
+        <button class="touch-btn" id="btnRight" aria-label="W prawo">
+            <span>▶</span>
+        </button>
+    </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const restartBtn = document.getElementById('restartBtn');
+        const btnLeft = document.getElementById('btnLeft');
+        const btnRight = document.getElementById('btnRight');
+        const canvasContainer = document.getElementById('canvasContainer');
 
         // Zmienne gry
         let frames = 0;
@@ -104,52 +184,113 @@
         let particles = [];
         let roadOffset = 0;
 
+        // Sterowanie
+        let moveLeft = false;
+        let moveRight = false;
+        let touchTargetX = null;
+
         // Obiekt gracza
         const player = {
             width: 44,
             height: 80,
             x: canvas.width / 2 - 22,
             y: canvas.height - 110,
-            speed: 6,
-            dx: 0
+            speed: 6.5
         };
 
-        // Nasłuchiwanie klawiszy
-        const keys = {};
+        // Klawiatura
         document.addEventListener('keydown', (e) => {
             if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
-                player.dx = -player.speed;
+                moveLeft = true;
             } else if (e.code === 'ArrowRight' || e.code === 'KeyD') {
-                player.dx = player.speed;
+                moveRight = true;
             }
         });
 
         document.addEventListener('keyup', (e) => {
-            if (
-                e.code === 'ArrowLeft' || e.code === 'KeyA' ||
-                e.code === 'ArrowRight' || e.code === 'KeyD'
-            ) {
-                player.dx = 0;
+            if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+                moveLeft = false;
+            } else if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+                moveRight = false;
             }
         });
 
+        // Obsługa wibracji (haptic feedback)
+        function triggerHaptic(duration = 20) {
+            if (navigator.vibrate) {
+                try {
+                    navigator.vibrate(duration);
+                } catch (e) {}
+            }
+        }
+
+        // Dotykowe przyciski ekranowe (Touch Events)
+        function setupButtonTouch(btn, isLeft) {
+            const startHandler = (e) => {
+                e.preventDefault();
+                if (isLeft) moveLeft = true;
+                else moveRight = true;
+                btn.classList.add('active');
+                triggerHaptic(10);
+            };
+
+            const endHandler = (e) => {
+                e.preventDefault();
+                if (isLeft) moveLeft = false;
+                else moveRight = false;
+                btn.classList.remove('active');
+            };
+
+            btn.addEventListener('touchstart', startHandler, { passive: false });
+            btn.addEventListener('touchend', endHandler, { passive: false });
+            btn.addEventListener('touchcancel', endHandler, { passive: false });
+            btn.addEventListener('mousedown', startHandler);
+            btn.addEventListener('mouseup', endHandler);
+            btn.addEventListener('mouseleave', endHandler);
+        }
+
+        setupButtonTouch(btnLeft, true);
+        setupButtonTouch(btnRight, false);
+
+        // Bezpośrednie sterowanie dotykiem / przeciąganiem na planszy (Canvas touch/drag)
+        function getCanvasTouchX(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const scaleX = canvas.width / rect.width;
+            return (clientX - rect.left) * scaleX;
+        }
+
+        function handleTouchCanvas(e) {
+            if (isGameOver) return;
+            e.preventDefault();
+            const touchX = getCanvasTouchX(e);
+            touchTargetX = touchX;
+        }
+
+        canvas.addEventListener('touchstart', handleTouchCanvas, { passive: false });
+        canvas.addEventListener('touchmove', handleTouchCanvas, { passive: false });
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            touchTargetX = null;
+        }, { passive: false });
+        canvas.addEventListener('touchcancel', (e) => {
+            e.preventDefault();
+            touchTargetX = null;
+        }, { passive: false });
+
         // Kolory i warianty przeszkód
         const obstacleTypes = [
-            { main: '#ff4757', accent: '#ff6b6b', roof: '#2f3542' }, // Czerwony sportowy
-            { main: '#ffa502', accent: '#ff7f50', roof: '#2f3542' }, // Pomarańczowy
-            { main: '#2ed573', accent: '#7bed9f', roof: '#2f3542' }, // Zielony
-            { main: '#9b59b6', accent: '#8e44ad', roof: '#2f3542' }, // Fioletowy
-            { main: '#eccc68', accent: '#ffa502', roof: '#2f3542' }  // Żółty taxi
+            { main: '#ff4757', accent: '#ff6b6b', roof: '#2f3542' },
+            { main: '#ffa502', accent: '#ff7f50', roof: '#2f3542' },
+            { main: '#2ed573', accent: '#7bed9f', roof: '#2f3542' },
+            { main: '#9b59b6', accent: '#8e44ad', roof: '#2f3542' },
+            { main: '#eccc68', accent: '#ffa502', roof: '#2f3542' }
         ];
 
-        // Klasa przeszkody
         class Obstacle {
             constructor() {
                 this.width = 44;
                 this.height = 80;
-                // Trzy pasy ruchu
-                const lanes = [65, 168, 272, 340];
-                // Lub losowa pozycja na jezdni (od 50 do canvas.width - 50 - width)
                 this.x = 45 + Math.random() * (canvas.width - 90 - this.width);
                 this.y = -this.height - 50;
                 this.speed = gameSpeed * (0.7 + Math.random() * 0.3);
@@ -171,32 +312,28 @@
             ctx.save();
             
             // Cień auta
-            ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-            ctx.shadowBlur = 10;
-            ctx.shadowOffsetY = 5;
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+            ctx.shadowBlur = 8;
+            ctx.shadowOffsetY = 4;
 
             // Koła
             ctx.fillStyle = '#1e272e';
-            // Lewe przednie
-            ctx.fillRect(x - 5, y + 12, 6, 16);
-            // Prawe przednie
-            ctx.fillRect(x + w - 1, y + 12, 6, 16);
-            // Lewe tylne
-            ctx.fillRect(x - 5, y + h - 24, 6, 16);
-            // Prawe tylne
-            ctx.fillRect(x + w - 1, y + h - 24, 6, 16);
+            ctx.fillRect(x - 4, y + 12, 6, 16);
+            ctx.fillRect(x + w - 2, y + 12, 6, 16);
+            ctx.fillRect(x - 4, y + h - 24, 6, 16);
+            ctx.fillRect(x + w - 2, y + h - 24, 6, 16);
 
-            // Główne nadwozie (karoseria)
+            // Główne nadwozie
             ctx.beginPath();
             ctx.roundRect(x, y, w, h, [12, 12, 8, 8]);
             ctx.fillStyle = mainColor;
             ctx.fill();
 
-            // Refleksy / gradient na karoserii
+            // Refleksy / gradient
             let grad = ctx.createLinearGradient(x, y, x + w, y);
             grad.addColorStop(0, 'rgba(255,255,255,0.3)');
             grad.addColorStop(0.5, 'rgba(255,255,255,0)');
-            grad.addColorStop(1, 'rgba(0,0,0,0.2)');
+            grad.addColorStop(1, 'rgba(0,0,0,0.25)');
             ctx.fillStyle = grad;
             ctx.fill();
 
@@ -217,7 +354,7 @@
             ctx.roundRect(x + 7, y + h - 36, w - 14, 12, [1, 1, 4, 4]);
             ctx.fill();
 
-            // Reflektory przednie (dla auta i przeszkód)
+            // Reflektory przednie
             ctx.fillStyle = isPlayer ? '#70a1ff' : '#fff200';
             ctx.shadowColor = isPlayer ? '#1e90ff' : '#fffa65';
             ctx.shadowBlur = 8;
@@ -239,11 +376,11 @@
             drawDetailedCar(player.x, player.y, player.width, player.height, '#00d2d3', '#54a0ff', '#2f3542', true);
         }
 
-        // Efekt cząsteczek dymu/iskier spalin
+        // Cząsteczki spalin
         function addParticle() {
             if (frames % 2 === 0) {
                 particles.push({
-                    x: player.x + player.width / 2 + (Math.random() - 0.5) * 20,
+                    x: player.x + player.width / 2 + (Math.random() - 0.5) * 16,
                     y: player.y + player.height,
                     size: 2 + Math.random() * 4,
                     color: Math.random() > 0.5 ? 'rgba(255,255,255,0.6)' : 'rgba(200,200,200,0.4)',
@@ -268,9 +405,9 @@
             }
         }
 
-        // Tworzenie i aktualizacja przeszkód
+        // Aktualizacja przeszkód
         function handleObstacles() {
-            if (frames % 80 === 0) {
+            if (frames % 75 === 0) {
                 obstacles.push(new Obstacle());
             }
 
@@ -288,8 +425,8 @@
                     continue;
                 }
 
-                // Kolizja z dokładniejszym marginesem
-                let margin = 4;
+                // Kolizja
+                let margin = 5;
                 if (
                     player.x + margin < obstacles[i].x + obstacles[i].width - margin &&
                     player.x + player.width - margin > obstacles[i].x + margin &&
@@ -297,31 +434,32 @@
                     player.y + player.height - margin > obstacles[i].y + margin
                 ) {
                     isGameOver = true;
+                    triggerHaptic(100);
                 }
             }
         }
 
-        // Tło i pasy na drodze z pejzażem pobocza
+        // Tło i pasy drogi
         function drawRoad() {
             // Trawa / pobocze
             ctx.fillStyle = '#1e3799';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Asfalt jezdni
+            // Asfalt
             ctx.fillStyle = '#353b48';
             ctx.fillRect(35, 0, canvas.width - 70, canvas.height);
 
-            // Krawędzie jezdni (białe linie)
+            // Białe linie krawędzi
             ctx.fillStyle = '#f5f6fa';
             ctx.fillRect(35, 0, 6, canvas.height);
             ctx.fillRect(canvas.width - 41, 0, 6, canvas.height);
 
-            // Pobocze wzór (krawężnik czerwono-biały lub pasy trawy)
+            // Krawężnik pobocza
             ctx.fillStyle = '#222f3e';
             ctx.fillRect(0, 0, 35, canvas.height);
             ctx.fillRect(canvas.width - 35, 0, 35, canvas.height);
 
-            // Pasy rozdzielające (przerywane, animowane)
+            // Pasy środkowe
             roadOffset = (roadOffset + gameSpeed) % 80;
             ctx.fillStyle = '#fbc531';
             for (let i = -80; i < canvas.height + 80; i += 80) {
@@ -332,14 +470,14 @@
         // Wyświetlanie wyniku
         function drawScore() {
             ctx.save();
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
             ctx.beginPath();
-            ctx.roundRect(10, 10, 150, 45, 10);
+            ctx.roundRect(10, 10, 140, 42, 10);
             ctx.fill();
 
             ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 20px "Segoe UI", Arial';
-            ctx.fillText(`Wynik: ${score}`, 25, 38);
+            ctx.font = 'bold 18px "Segoe UI", Arial';
+            ctx.fillText(`Wynik: ${score}`, 22, 37);
             ctx.restore();
         }
 
@@ -351,6 +489,9 @@
             gameSpeed = 4;
             obstacles = [];
             particles = [];
+            moveLeft = false;
+            moveRight = false;
+            touchTargetX = null;
             player.x = canvas.width / 2 - player.width / 2;
             restartBtn.style.display = 'none';
             gameLoop();
@@ -364,16 +505,16 @@
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
                 ctx.fillStyle = '#ff4757';
-                ctx.font = 'bold 38px "Segoe UI", Arial';
+                ctx.font = 'bold 36px "Segoe UI", Arial';
                 ctx.textAlign = 'center';
                 ctx.shadowColor = 'rgba(255, 71, 87, 0.5)';
                 ctx.shadowBlur = 15;
-                ctx.fillText('KONIEC GRY', canvas.width / 2, canvas.height / 2 - 30);
+                ctx.fillText('KONIEC GRY', canvas.width / 2, canvas.height / 2 - 25);
 
                 ctx.fillStyle = '#ffffff';
-                ctx.font = '22px "Segoe UI", Arial';
+                ctx.font = '20px "Segoe UI", Arial';
                 ctx.shadowBlur = 0;
-                ctx.fillText(`Twój wynik: ${score}`, canvas.width / 2, canvas.height / 2 + 15);
+                ctx.fillText(`Twój wynik: ${score}`, canvas.width / 2, canvas.height / 2 + 20);
                 
                 ctx.textAlign = 'left';
                 ctx.restore();
@@ -382,13 +523,23 @@
                 return;
             }
 
-            // Czyszczenie płótna
+            // Czyszczenie
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             drawRoad();
 
-            // Aktualizacja pozycji gracza z płynnym ruchem
-            player.x += player.dx;
+            // Sterowanie bezpośrednim dotykiem (płynne podążanie za palcem)
+            if (touchTargetX !== null) {
+                const targetCarCenter = touchTargetX - player.width / 2;
+                const diff = targetCarCenter - player.x;
+                if (Math.abs(diff) > 2) {
+                    player.x += Math.sign(diff) * Math.min(Math.abs(diff), player.speed * 1.2);
+                }
+            } else {
+                // Sterowanie przyciskami / klawiaturą
+                if (moveLeft) player.x -= player.speed;
+                if (moveRight) player.x += player.speed;
+            }
 
             // Ograniczenia krawędzi jezdni
             if (player.x < 42) player.x = 42;
@@ -404,7 +555,7 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // Uruchomienie gry
+        // Start
         gameLoop();
     </script>
 </body>
