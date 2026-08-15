@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Piłkarzyki na kartce</title>
+  <style>
+    :root {
+      --bg-color: #1e1e2e;
+      --card-bg: #2b2b3d;
+      --accent-color: #e74c3c;
+      --highlight: rgba(241, 196, 15, 0.8);
+      --text-color: #ffffff;
+      
+      --p1-color: #3498db; /* Niebieski - Gracz 1 */
+      --p2-color: #e74c3c; /* Czerwony - Gracz 2 / AI */
+      --line-color: #a0a0b0;
+      --board-bg: #1a1a24;
+      --boundary-color: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    h1 {
+      margin-bottom: 15px;
+      font-size: 2.2rem;
+      text-align: center;
+      background: linear-gradient(135deg, #3498db, #e74c3c);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+      max-width: 600px;
+      width: 100%;
+    }
+
+    .controls {
+      background-color: var(--card-bg);
+      padding: 15px 20px;
+      border-radius: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    label {
+      font-size: 0.85rem;
+      color: var(--line-color);
+      font-weight: bold;
+    }
+
+    select, button {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: none;
+      background-color: #3b3b52;
+      color: var(--text-color);
+      font-size: 0.95rem;
+      cursor: pointer;
+      outline: none;
+      transition: background 0.2s;
+    }
+
+    select:hover, button:hover {
+      background-color: #4a4a68;
+    }
+
+    button.primary {
+      background-color: var(--p1-color);
+      font-weight: bold;
+      padding: 10px 20px;
+    }
+
+    button.primary:hover {
+      background-color: #2980b9;
+    }
+
+    .status-bar {
+      font-size: 1.2rem;
+      font-weight: bold;
+      padding: 12px 20px;
+      background-color: var(--card-bg);
+      border-radius: 8px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      transition: color 0.3s;
+    }
+
+    .turn-indicator {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid white;
+    }
+
+    .board-wrapper {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      background-color: var(--board-bg);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+      border: 2px solid var(--card-bg);
+    }
+
+    canvas {
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    @media (max-width: 500px) {
+      .board-wrapper {
+        padding: 10px;
+      }
+      canvas {
+        max-width: 100%;
+        height: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Piłkarzyki na kartce</h1>
+
+    <div class="controls">
+      <div class="control-group">
+        <label for="mode">Tryb gry:</label>
+        <select id="mode">
+          <option value="ai">Gracz vs Komputer</option>
+          <option value="pvp">Gracz vs Gracz</option>
+        </select>
+      </div>
+
+      <div class="control-group" id="difficulty-group">
+        <label for="difficulty">Poziom AI:</label>
+        <select id="difficulty">
+          <option value="easy">Łatwy (Losowy)</option>
+          <option value="medium" selected>Średni</option>
+          <option value="hard">Trudny (Strateg)</option>
+        </select>
+      </div>
+
+      <button class="primary" id="restart-btn">Nowy Mecz</button>
+    </div>
+
+    <div class="status-bar" id="status">
+      <div class="turn-indicator" id="turn-color" style="background-color: var(--p1-color);"></div>
+      <span id="status-text">Tura: Niebiescy (Gracz 1)</span>
+    </div>
+
+    <div class="board-wrapper">
+      <canvas id="gameCanvas"></canvas>
+    </div>
+  </div>
+
+  <script>
+    // --- KONFIGURACJA PLANSZY ---
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Wymiary planszy w kratkach
+    const GRID_W = 8;
+    const GRID_H = 10;
+    const CELL_SIZE = 35; // Piksele na kratkę
+    
+    // Obliczenia wymiarów płótna (z miejscem na bramki Y: -1 i Y: 11)
+    const OFFSET_X = 20;
+    const OFFSET_Y = 55; 
+    canvas.width = GRID_W * CELL_SIZE + OFFSET_X * 2;
+    canvas.height = GRID_H * CELL_SIZE + OFFSET_Y * 2;
+
+    // --- ZMIENNE STANU GRY ---
+    let points = new Set(); // Odwiedzone punkty ("x,y")
+    let edges = new Set();  // Narysowane linie ("x1,y1-x2,y2")
+    let drawnPaths = [];    // Historia ruchów: {x1,y1,x2,y2, player}
+    let currentPos = {x: 4, y: 5};
+    
+    let currentPlayer = 1; // 1 (Niebiescy) lub 2 (Czerwoni)
+    let isGameOver = false;
+    let isAITurn = false;
+
+    let hoverPos = null; // Do podświetlania możliwego ruchu myszką
+
+    // Elementy UI
+    const modeSelect = document.getElementById('mode');
+    const diffSelect = document.getElementById('difficulty');
+    const diffGroup = document.getElementById('difficulty-group');
+    const restartBtn = document.getElementById('restart-btn');
+    const statusText = document.getElementById('status-text');
+    const turnIndicator = document.getElementById('turn-color');
+
+    // --- INICJALIZACJA ---
+    function initGame() {
+      points.clear();
+      edges.clear();
+      drawnPaths = [];
+      currentPos = {x: 4, y: 5};
+      currentPlayer = 1;
+      isGameOver = false;
+      isAITurn = false;
+      hoverPos = null;
+
+      // Tworzenie ramki boiska
+      const addBnd = (x1,y1, x2,y2) => {
+        edges.add(getEdgeKey(x1,y1, x2,y2));
+        points.add(`${x1},${y1}`);
+        points.add(`${x2},${y2}`);
+      };
+
+      // Pionowe krawędzie boczne
+      for(let y=0; y<GRID_H; y++) {
+        addBnd(0, y, 0, y+1);
+        addBnd(GRID_W, y, GRID_W, y+1);
+      }
+      // Poziome krawędzie (bez bramek)
+      for(let x=0; x<3; x++) { addBnd(x, 0, x+1, 0); addBnd(x, GRID_H, x+1, GRID_H); }
+      for(let x=5; x<8; x++) { addBnd(x, 0, x+1, 0); addBnd(x, GRID_H, x+1, GRID_H); }
+      
+      // Górna bramka (Y = -1)
+      addBnd(3, 0, 3, -1); addBnd(3, -1, 4, -1); addBnd(4, -1, 5, -1); addBnd(5, -1, 5, 0);
+      
+      // Dolna bramka (Y = 11)
+      addBnd(3, 10, 3, 11); addBnd(3, 11, 4, 11); addBnd(4, 11, 5, 11); addBnd(5, 11, 5, 10);
+
+      // Środek boiska jest startowy (pierwsze odbicie możliwe)
+      points.add('4,5'); 
+
+      updateStatus();
+      draw();
+    }
+
+    function getEdgeKey(x1, y1, x2, y2) {
+      if (x1 < x2 || (x1 === x2 && y1 < y2)) return `${x1},${y1}-${x2},${y2}`;
+      return `${x2},${y2}-${x1},${y1}`;
+    }
+
+    // --- LOGIKA RUCHU ---
+    function getValidMoves(pos, currentEdges) {
+      let valid = [];
+      for(let dx=-1; dx<=1; dx++) {
+        for(let dy=-1; dy<=1; dy++) {
+          if (dx === 0 && dy === 0) continue;
+          let nx = pos.x + dx;
+          let ny = pos.y + dy;
+          
+          // Sprawdzenie granic z uwzględnieniem bramek
+          let isInsideBounds = (nx >= 0 && nx <= 8 && ny >= 0 && ny <= 10) || 
+                               (nx >= 3 && nx <= 5 && (ny === -1 || ny === 11));
+          if (!isInsideBounds) continue;
+
+          // Nie można wejść do bramki ukośnie "z boku" ściany, tylko ze światła bramki
+          if (ny === -1 && pos.y === 0 && (pos.x < 3 || pos.x > 5)) continue;
+          if (ny === 11 && pos.y === 10 && (pos.x < 3 || pos.x > 5)) continue;
+          // Zablokuj wychodzenie z bramki (to i tak koniec gry, ale zabezpieczamy)
+          if (pos.y === -1 || pos.y === 11) continue;
+
+          let target = {x: nx, y: ny};
+          let edgeKey = getEdgeKey(pos.x, pos.y, nx, ny);
+
+          // 1. Linia już istnieje
+          if (currentEdges.has(edgeKey)) continue;
+
+          // 2. Przecinanie się przekątnych (krzyżowanie linii)
+          if (Math.abs(dx) === 1 && Math.abs(dy) === 1) {
+            let crossKey = getEdgeKey(pos.x + dx, pos.y, pos.x, pos.y + dy);
+            if (currentEdges.has(crossKey)) continue;
+          }
+
+          valid.push(target);
+        }
+      }
+      return valid;
+    }
+
+    function executeMove(targetPos) {
+      let edgeKey = getEdgeKey(currentPos.x, currentPos.y, targetPos.x, targetPos.y);
+      let isBounce = points.has(`${targetPos.x},${targetPos.y}`);
+
+      // Zapisujemy ruch
+      drawnPaths.push({
+        x1: currentPos.x, y1: currentPos.y,
+        x2: targetPos.x, y2: targetPos.y,
+        player: currentPlayer
+      });
+
+      edges.add(edgeKey);
+      points.add(`${targetPos.x},${targetPos.y}`);
+      currentPos = targetPos;
+
+      checkGameState(isBounce);
+    }
+
+    function checkGameState(isBounce) {
+      // 1. Gol
+      if (currentPos.y === -1) {
+        endGame(1, "Gol dla Niebieskich!"); return;
+      }
+      if (currentPos.y === 11) {
+        endGame(2, "Gol dla Czerwonych!"); return;
+      }
+
+      // 2. Brak ruchów (Blok / Samobój)
+      let availableMoves = getValidMoves(currentPos, edges);
+      if (availableMoves.length === 0) {
+        // Przegrywa ten, kto właśnie się zablokował (aktualny gracz)
+        endGame(3 - currentPlayer, `Gracz zablokowany!`); return;
+      }
+
+      // 3. Zmiana tury, jeśli nie było odbicia
+      if (!isBounce) {
+        currentPlayer = 3 - currentPlayer;
+      }
+
+      updateStatus();
+      draw();
+
+      // Odpal AI jeśli jego kolej
+      if (modeSelect.value === 'ai' && currentPlayer === 2 && !isGameOver) {
+        isAITurn = true;
+        setTimeout(playAITurn, 400); // Lekkie opóźnienie dla naturalnego czucia gry
+      } else {
+        isAITurn = false;
+      }
+    }
+
+    function endGame(winnerPlayer, reason) {
+      isGameOver = true;
+      let winnerColor = winnerPlayer === 1 ? 'Niebiescy' : 'Czerwoni';
+      statusText.innerHTML = `🎉 Wygrywają ${winnerColor}! (${reason})`;
+      turnIndicator.style.backgroundColor = winnerPlayer === 1 ? 'var(--p1-color)' : 'var(--p2-color)';
+      draw();
+    }
+
+    function updateStatus() {
+      if (isGameOver) return;
+      
+      const isP1 = currentPlayer === 1;
+      turnIndicator.style.backgroundColor = isP1 ? 'var(--p1-color)' : 'var(--p2-color)';
+      
+      if (modeSelect.value === 'ai' && !isP1) {
+        statusText.innerText = "Komputer myśli...";
+      } else {
+        statusText.innerText = isP1 ? "Tura: Niebiescy (Twoja)" : "Tura: Czerwoni";
+      }
+    }
+
+    // --- RYSOWANIE (CANVAS) ---
+    function draw() {
+      // Tło
+      ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--board-bg');
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Siatka (kropki)
+      ctx.fillStyle = 'rgba(255,255,255,0.1)';
+      for(let x=0; x<=GRID_W; x++) {
+        for(let y=0; y<=GRID_H; y++) {
+          ctx.beginPath();
+          ctx.arc(OFFSET_X + x * CELL_SIZE, OFFSET_Y + y * CELL_SIZE, 2, 0, Math.PI*2);
+          ctx.fill();
+        }
+      }
+
+      // Rysowanie obramowania boiska i bramek
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      
+      const drawLine = (x1,y1,x2,y2) => {
+        ctx.beginPath();
+        ctx.moveTo(OFFSET_X + x1 * CELL_SIZE, OFFSET_Y + y1 * CELL_SIZE);
+        ctx.lineTo(OFFSET_X + x2 * CELL_SIZE, OFFSET_Y + y2 * CELL_SIZE);
+        ctx.stroke();
+      };
+
+      // Krawędzie boiska pobierane z 'edges', gdzie gracz = 0 (ramka) nie istnieje, 
+      // Rysujemy ręcznie ramkę, aby była idealnie biała
+      drawLine(0,0, 3,0); drawLine(5,0, 8,0);
+      drawLine(0,10, 3,10); drawLine(5,10, 8,10);
+      drawLine(0,0, 0,10); drawLine(8,0, 8,10);
+      drawLine(3,0, 3,-1); drawLine(3,-1, 5,-1); drawLine(5,-1, 5,0); // Bramka Top
+      drawLine(3,10, 3,11); drawLine(3,11, 5,11); drawLine(5,11, 5,10); // Bramka Bot
+
+      // Rysowanie narysowanych ścieżek
+      drawnPaths.forEach(path => {
+        ctx.strokeStyle = path.player === 1 ? '#3498db' : '#e74c3c';
+        ctx.lineWidth = 4;
+        drawLine(path.x1, path.y1, path.x2, path.y2);
+      });
+
+      // Podświetlenie możliwości ruchu
+      if (!isGameOver && !isAITurn) {
+        let validMoves = getValidMoves(currentPos, edges);
+        
+        // Rysuj możliwe punkty
+        validMoves.forEach(m => {
+          ctx.fillStyle = currentPlayer === 1 ? 'rgba(52, 152, 219, 0.5)' : 'rgba(231, 76, 60, 0.5)';
+          ctx.beginPath();
+          ctx.arc(OFFSET_X + m.x * CELL_SIZE, OFFSET_Y + m.y * CELL_SIZE, 6, 0, Math.PI*2);
+          ctx.fill();
+        });
+
+        // Jeśli myszka jest nad poprawnym punktem, narysuj linię podglądu
+        if (hoverPos) {
+          let isHoverValid = validMoves.some(m => m.x === hoverPos.x && m.y === hoverPos.y);
+          if (isHoverValid) {
+            ctx.strokeStyle = currentPlayer === 1 ? 'rgba(52, 152, 219, 0.5)' : 'rgba(231, 76, 60, 0.5)';
+            ctx.lineWidth = 4;
+            drawLine(currentPos.x, currentPos.y, hoverPos.x, hoverPos.y);
+          }
+        }
+      }
+
+      // Aktualna piłka
+      ctx.fillStyle = '#f1c40f'; // Żółta piłka
+      ctx.beginPath();
+      ctx.arc(OFFSET_X + currentPos.x * CELL_SIZE, OFFSET_Y + currentPos.y * CELL_SIZE, 8, 0, Math.PI*2);
+      ctx.fill();
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    // --- INTERAKCJA MYSZKĄ ---
+    function getGridPosFromEvent(e) {
+      const rect = canvas.getBoundingClientRect();
+      // Skalowanie na wypadek responsywnego płótna
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const x = (e.clientX - rect.left) * scaleX;
+      const y = (e.clientY - rect.top) * scaleY;
+      
+      const gridX = Math.round((x - OFFSET_X) / CELL_SIZE);
+      const gridY = Math.round((y - OFFSET_Y) / CELL_SIZE);
+      return {x: gridX, y: gridY};
+    }
+
+    canvas.addEventListener('mousemove', (e) => {
+      if (isGameOver || isAITurn) return;
+      hoverPos = getGridPosFromEvent(e);
+      draw();
+    });
+
+    canvas.addEventListener('mouseout', () => {
+      hoverPos = null;
+      draw();
+    });
+
+    canvas.addEventListener('click', (e) => {
+      if (isGameOver || isAITurn) return;
+      let target = getGridPosFromEvent(e);
+      
+      let validMoves = getValidMoves(currentPos, edges);
+      let isValid = validMoves.find(m => m.x === target.x && m.y === target.y);
+      
+      if (isValid) {
+        executeMove(isValid);
+      }
+    });
+
+    // --- SZTUCZNA INTELIGENCJA (AI) ---
+    function playAITurn() {
+      if (isGameOver) return;
+      
+      let diff = diffSelect.value;
+      let depth = diff === 'hard' ? 6 : (diff === 'medium' ? 3 : 1);
+      
+      // Znajdź wszystkie sekwencje ruchów dla aktualnej tury
+      let allPaths = getAIPaths(currentPos, edges, points, [], depth);
+      
+      if (allPaths.length === 0) {
+        // AI się zablokowało i nie ma żadnego ruchu
+        let fallbackMoves = getValidMoves(currentPos, edges);
+        if (fallbackMoves.length > 0) executeMove(fallbackMoves[0]);
+        return;
+      }
+
+      // Ocena ścieżek
+      let bestPath = null;
+      let bestScore = -Infinity;
+
+      allPaths.forEach(path => {
+        let score = evaluatePath(path);
+        // Delikatny czynnik losowy w przypadku takich samych ocen
+        if (score > bestScore || (score === bestScore && Math.random() > 0.5)) {
+          bestScore = score;
+          bestPath = path;
+        }
+      });
+
+      if (!bestPath || bestPath.length === 0) return;
+
+      // Animowane wykonanie kroków AI (gdy jest wielokrotne odbicie)
+      let stepIndex = 0;
+      function stepAI() {
+        if (isGameOver) return;
+        executeMove(bestPath[stepIndex]);
+        stepIndex++;
+        
+        if (stepIndex < bestPath.length && currentPlayer === 2 && !isGameOver) {
+          setTimeout(stepAI, 300); // 300ms między odbiciami AI
+        }
+      }
+      
+      stepAI();
+    }
+
+    // Generator wszystkich sekwencji ruchów z odbiciami (DFS)
+    function getAIPaths(pos, currentEdges, currentPoints, currentPath, maxDepth) {
+      if (maxDepth === 0) return [currentPath];
+      
+      let paths = [];
+      let moves = getValidMoves(pos, currentEdges);
+
+      if (moves.length === 0) return [currentPath];
+
+      for (let move of moves) {
+        let isBounce = currentPoints.has(`${move.x},${move.y}`);
+        let nextEdges = new Set(currentEdges);
+        nextEdges.add(getEdgeKey(pos.x, pos.y, move.x, move.y));
+        let nextPoints = new Set(currentPoints);
+        nextPoints.add(`${move.x},${move.y}`);
+        
+        let nextPath = [...currentPath, move];
+
+        // Warunki stopu rekurencji: gol wroga, nasz gol
+        if (move.y === 11 || move.y === -1) {
+          paths.push(nextPath);
+          continue;
+        }
+
+        if (isBounce) {
+          let subPaths = getAIPaths(move, nextEdges, nextPoints, nextPath, maxDepth - 1);
+          paths.push(...subPaths);
+        } else {
+          paths.push(nextPath); // Tura się kończy
+        }
+      }
+      return paths.length > 0 ? paths : [currentPath];
+    }
+
+    // Funkcja heurystyczna AI
+    function evaluatePath(path) {
+      if (path.length === 0) return -10000;
+      let endPos = path[path.length - 1];
+      
+      // AI (Czerwoni) grają z góry na dół, ich celem jest bramka Y = 11
+      if (endPos.y === 11) return 10000; // Wygrana (Gol do dolnej)
+      if (endPos.y === -1) return -10000; // Samobój (Gol do górnej)
+
+      // Sprawdzenie czy po tej sekwencji AI się nie blokuje
+      // (Aby ocenić stan na końcu tury tworzymy symulowane zbiory krawędzi)
+      let simEdges = new Set(edges);
+      let tempPos = currentPos;
+      path.forEach(step => {
+        simEdges.add(getEdgeKey(tempPos.x, tempPos.y, step.x, step.y));
+        tempPos = step;
+      });
+      let nextMoves = getValidMoves(endPos, simEdges);
+      if (nextMoves.length === 0) return -5000; // Samozablokowanie się
+
+      // Heurystyka pozycyjna:
+      // Im większe Y, tym bliżej bramki przeciwnika.
+      // Dążymy również delikatnie do osi środkowej (X=4), by nie zablokować się na bandach.
+      let score = endPos.y * 10;
+      
+      let diff = diffSelect.value;
+      if (diff === 'hard') {
+        score -= Math.abs(endPos.x - 4) * 2; // Unikaj boków
+      } else if (diff === 'easy') {
+        score = Math.random() * 100; // Czysty los
+      }
+
+      return score;
+    }
+
+    // --- LISTENERY UI ---
+    modeSelect.addEventListener('change', () => {
+      diffGroup.style.display = modeSelect.value === 'ai' ? 'flex' : 'none';
+      initGame();
+    });
+    
+    diffSelect.addEventListener('change', initGame);
+    restartBtn.addEventListener('click', initGame);
+
+    // Rozruch gry
+    initGame();
+  </script>
+</body>
+</html>
