@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Wyścig Pionków (Skoczek / Halma)</title>
+  <title>Wyścig Skoczków / Halma na Ciemnych Polach</title>
   <style>
     :root {
       --bg-color: #1e1e2e;
@@ -186,7 +186,7 @@
 <body>
 
   <div class="container">
-    <h1>Wyścig Skoczków (Halma)</h1>
+    <h1>Wyścig Skoczków (na Ciemnych Polach)</h1>
 
     <div class="controls">
       <div class="control-group">
@@ -214,10 +214,10 @@
     <div class="board" id="board"></div>
 
     <div class="instructions">
-      <strong>Zasady gry:</strong> Przeprowadź swoje 8 pionków na drugi koniec planszy (rzęd startowy przeciwnika).
-      <br>• Pionki poruszają się <strong>po ukosie</strong> w 4 kierunkach (o 1 pole) do tyłu lub do przodu.
-      <br>• Mogą <strong>przeskakiwać</strong> przez swoje lub obce pionki (skok po przekątnej o 2 pola).
-      <br>• Gra automatycznie wylicza długie serie skoków w jednym ruchu!
+      <strong>Zasady gry:</strong> Gra toczy się wyłącznie na <strong>ciemnych polach</strong>.
+      <br>• Każdy gracz ma 8 pionków ustawionych w 2 pierwszych rzędach na ciemnych polach (4 + 4).
+      <br>• Cel: przeprowadzenie wszystkich 8 pionków do bazy przeciwnika (2 pierwsze rzędy po drugiej stronie).
+      <br>• Pionki poruszają się po ukosie o 1 pole lub przeskakują przez pionki (swoje i przeciwnika) z możliwością wykonywania serii skoków.
     </div>
   </div>
 
@@ -241,24 +241,37 @@
     const difficultyGroup = document.getElementById('difficulty-group');
     const restartBtn = document.getElementById('restart-btn');
 
-    // 4 kierunki ukośne (up-left, up-right, down-left, down-right)
+    // 4 kierunki ukośne
     const diagonalDirections = [
       [-1, -1], [-1, 1],
       [1, -1],  [1, 1]
     ];
 
+    // Sprawdzenie czy pole jest ciemne (r + c jest nieparzyste)
+    function isDarkSquare(r, c) {
+      return (r + c) % 2 !== 0;
+    }
+
     // Inicjalizacja gry
     function initGame() {
       boardState = Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(EMPTY));
       
-      // Czarny gracz na samej górze (rzęd 0 - 8 pionków)
-      for (let c = 0; c < BOARD_SIZE; c++) {
-        boardState[0][c] = BLACK;
+      // Czarny gracz: pierwsze 2 rzędy na ciemnych polach (4 + 4 = 8 pionków)
+      for (let r = 0; r < 2; r++) {
+        for (let c = 0; c < BOARD_SIZE; c++) {
+          if (isDarkSquare(r, c)) {
+            boardState[r][c] = BLACK;
+          }
+        }
       }
       
-      // Biały gracz na samej dole (rzęd 7 - 8 pionków)
-      for (let c = 0; c < BOARD_SIZE; c++) {
-        boardState[7][c] = WHITE;
+      // Biały gracz: ostatnie 2 rzędy na ciemnych polach (4 + 4 = 8 pionków)
+      for (let r = 6; r < 8; r++) {
+        for (let c = 0; c < BOARD_SIZE; c++) {
+          if (isDarkSquare(r, c)) {
+            boardState[r][c] = WHITE;
+          }
+        }
       }
 
       currentPlayer = WHITE;
@@ -277,8 +290,8 @@
       for (let r = 0; r < BOARD_SIZE; r++) {
         for (let c = 0; c < BOARD_SIZE; c++) {
           const square = document.createElement('div');
-          const isLight = (r + c) % 2 === 0;
-          square.className = `square ${isLight ? 'light' : 'dark'}`;
+          const dark = isDarkSquare(r, c);
+          square.className = `square ${dark ? 'dark' : 'light'}`;
 
           if (selectedSquare && selectedSquare.r === r && selectedSquare.c === c) {
             square.classList.add('selected');
@@ -336,23 +349,23 @@
       }
     }
 
-    // Algorytm wyliczania prawidłowych ruchów i serii skoków po przekątnej
+    // Wyliczanie ruchów i serii skoków po przekątnej (wyłącznie po ciemnych polach)
     function getValidDiagonalMoves(startR, startC, board) {
       const moves = [];
 
-      // 1. Zwykłe kroki o 1 pole po przekątnej na puste pola
+      // 1. Zwykły krok o 1 pole po przekątnej
       for (const [dr, dc] of diagonalDirections) {
         const nr = startR + dr;
         const nc = startC + dc;
 
         if (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE) {
-          if (board[nr][nc] === EMPTY) {
+          if (board[nr][nc] === EMPTY && isDarkSquare(nr, nc)) {
             moves.push({ r: nr, c: nc });
           }
         }
       }
 
-      // 2. Skoki (w tym pojedyncze oraz pętle serii skoków za pomocą przeszukiwania BFS)
+      // 2. Skoki wielokrotne (przeskakiwanie przez dowolne pionki na ciemnych polach)
       const queue = [{ r: startR, c: startC }];
       const visitedJumps = new Set();
       visitedJumps.add(`${startR},${startC}`);
@@ -366,10 +379,8 @@
           const landR = current.r + 2 * dr;
           const landC = current.c + 2 * dc;
 
-          // Czy pole przeskakiwane i pole lądowania są na planszy?
           if (landR >= 0 && landR < BOARD_SIZE && landC >= 0 && landC < BOARD_SIZE) {
-            // Musi być pionek do przeskoczenia i wolne pole lądowania
-            if (board[midR][midC] !== EMPTY && board[landR][landC] === EMPTY) {
+            if (board[midR][midC] !== EMPTY && board[landR][landC] === EMPTY && isDarkSquare(landR, landC)) {
               const key = `${landR},${landC}`;
               if (!visitedJumps.has(key)) {
                 visitedJumps.add(key);
@@ -384,19 +395,16 @@
       return moves;
     }
 
-    // Wykonanie ruchu na planszy
     function makeMove(fromR, fromC, toR, toC) {
       boardState[toR][toC] = boardState[fromR][fromC];
       boardState[fromR][fromC] = EMPTY;
     }
 
-    // Przełączanie tury
     function switchTurn() {
       currentPlayer = currentPlayer === WHITE ? BLACK : WHITE;
       updateStatus();
     }
 
-    // Aktualizacja stanu
     function updateStatus() {
       if (isGameOver) return;
       
@@ -407,21 +415,34 @@
       }
     }
 
-    // Sprawdzanie wygranej
+    // Warunek wygranej: zajęcie wszystkich 8 ciemnych pól w bazie przeciwnika
     function checkWin() {
-      let whiteCountAtTarget = 0;
-      let blackCountAtTarget = 0;
+      let whiteInTarget = 0;
+      let blackInTarget = 0;
 
-      for (let c = 0; c < BOARD_SIZE; c++) {
-        if (boardState[0][c] === WHITE) whiteCountAtTarget++;
-        if (boardState[7][c] === BLACK) blackCountAtTarget++;
+      // Baza dla białych: rzędy 0 i 1 (ciemne pola)
+      for (let r = 0; r < 2; r++) {
+        for (let c = 0; c < BOARD_SIZE; c++) {
+          if (isDarkSquare(r, c) && boardState[r][c] === WHITE) {
+            whiteInTarget++;
+          }
+        }
       }
 
-      if (whiteCountAtTarget === 8) {
+      // Baza dla czarnych: rzędy 6 i 7 (ciemne pola)
+      for (let r = 6; r < 8; r++) {
+        for (let c = 0; c < BOARD_SIZE; c++) {
+          if (isDarkSquare(r, c) && boardState[r][c] === BLACK) {
+            blackInTarget++;
+          }
+        }
+      }
+
+      if (whiteInTarget === 8) {
         isGameOver = true;
         statusEl.innerText = '🎉 Wygrywają Białe! 🎉';
         return true;
-      } else if (blackCountAtTarget === 8) {
+      } else if (blackInTarget === 8) {
         isGameOver = true;
         statusEl.innerText = modeSelect.value === 'ai' ? '💻 Komputer wygrał!' : '🎉 Wygrywają Czarne! 🎉';
         return true;
@@ -429,8 +450,7 @@
       return false;
     }
 
-    // --- LOGIKA AI ---
-
+    // LOGIKA AI
     function triggerAIMove() {
       if (isGameOver) return;
 
@@ -446,11 +466,9 @@
       let chosenMove;
 
       if (difficulty === 'easy') {
-        // Łatwy: losowy ruch
         chosenMove = allMoves[Math.floor(Math.random() * allMoves.length)];
       } 
       else if (difficulty === 'medium') {
-        // Średni: wybiera ruch dający największy postęp w dół planszy (rzęd 0 -> 7)
         allMoves.sort((a, b) => {
           const progressA = a.toR - a.fromR;
           const progressB = b.toR - b.fromR;
@@ -459,7 +477,6 @@
         chosenMove = allMoves[0];
       } 
       else if (difficulty === 'hard') {
-        // Trudny: Ocena pozycji uwzględniająca dalekie skoki i bliskość celu
         let bestScore = -Infinity;
         let bestMoves = [];
 
@@ -511,20 +528,17 @@
       for (let r = 0; r < BOARD_SIZE; r++) {
         for (let c = 0; c < BOARD_SIZE; c++) {
           if (boardState[r][c] === BLACK) {
-            // Postęp czarnych (rzędy 0 -> 7)
             score += r * 12;
-            if (r === 7) score += 60; // premia za dotarcie
+            if (r >= 6) score += 50;
           } else if (boardState[r][c] === WHITE) {
-            // Postęp białych (rzędy 7 -> 0)
             score -= (7 - r) * 10;
-            if (r === 0) score -= 60;
+            if (r <= 1) score -= 50;
           }
         }
       }
       return score;
     }
 
-    // Zdawienia UI
     modeSelect.addEventListener('change', () => {
       difficultyGroup.style.display = modeSelect.value === 'ai' ? 'flex' : 'none';
       initGame();
@@ -532,7 +546,6 @@
 
     restartBtn.addEventListener('click', initGame);
 
-    // Uruchomienie gry
     initGame();
   </script>
 </body>
