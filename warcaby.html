@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Warcaby Klasyczne</title>
+  <title>Warcaby Klasyczne - Arcydzieło</title>
   <style>
     :root {
       --bg-color: #1e1e2e;
@@ -36,8 +36,11 @@
 
     h1 {
       margin-bottom: 15px;
-      font-size: 2rem;
+      font-size: 2.2rem;
       text-align: center;
+      background: linear-gradient(135deg, #f1c40f, #e74c3c);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
 
     .container {
@@ -45,17 +48,17 @@
       flex-direction: column;
       align-items: center;
       gap: 15px;
-      max-width: 500px;
+      max-width: 550px;
       width: 100%;
     }
 
     .controls {
       background-color: var(--card-bg);
-      padding: 12px 20px;
+      padding: 15px 20px;
       border-radius: 12px;
       display: flex;
       flex-wrap: wrap;
-      gap: 12px;
+      gap: 15px;
       justify-content: center;
       align-items: center;
       width: 100%;
@@ -65,12 +68,13 @@
     .control-group {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 5px;
     }
 
     label {
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       color: #a0a0b0;
+      font-weight: bold;
     }
 
     select, button {
@@ -79,14 +83,20 @@
       border: none;
       background-color: #3b3b52;
       color: var(--text-color);
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       cursor: pointer;
       outline: none;
+      transition: background 0.2s;
+    }
+
+    select:hover, button:hover {
+      background-color: #4a4a68;
     }
 
     button.primary {
       background-color: var(--accent-color);
       font-weight: bold;
+      padding: 10px 20px;
     }
 
     button.primary:hover {
@@ -94,33 +104,34 @@
     }
 
     .status-bar {
-      font-size: 1.1rem;
+      font-size: 1.2rem;
       font-weight: bold;
-      padding: 10px 15px;
+      padding: 12px 20px;
       background-color: var(--card-bg);
       border-radius: 8px;
       width: 100%;
       text-align: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
     }
 
-    /* Wyświetlanie planszy ze stałym wymiarem w pikselach dla pewności */
     .board-wrapper {
       width: 100%;
-      max-width: 440px;
+      max-width: 460px;
       display: flex;
       justify-content: center;
+      margin-top: 10px;
     }
 
     .board {
       display: grid;
       grid-template-columns: repeat(8, 1fr);
       grid-template-rows: repeat(8, 1fr);
-      width: 440px;
-      height: 440px;
+      width: 460px;
+      height: 460px;
       border-radius: 8px;
       overflow: hidden;
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
-      border: 4px solid var(--card-bg);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+      border: 5px solid var(--card-bg);
     }
 
     .square {
@@ -148,12 +159,13 @@
 
     .square.valid-move::after {
       content: '';
-      width: 16px;
-      height: 16px;
+      width: 18px;
+      height: 18px;
       background-color: var(--move-dot);
       border-radius: 50%;
       position: absolute;
       z-index: 3;
+      box-shadow: 0 0 5px rgba(0,0,0,0.5);
     }
 
     .square.valid-capture::after {
@@ -166,7 +178,6 @@
       z-index: 3;
     }
 
-    /* Piony i Damki */
     .piece {
       width: 80%;
       height: 80%;
@@ -174,31 +185,39 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.3);
+      box-shadow: 0 5px 8px rgba(0, 0, 0, 0.5), inset 0 2px 4px rgba(255, 255, 255, 0.3);
       position: relative;
       z-index: 2;
-      transition: transform 0.15s ease;
+      transition: transform 0.2s ease, filter 0.2s ease;
+    }
+
+    .piece:hover {
+      filter: brightness(1.1);
     }
 
     .piece.white {
-      background: radial-gradient(circle at 30% 30%, #ffffff, #cccccc);
-      border: 2px solid #999;
+      background: radial-gradient(circle at 30% 30%, #ffffff, #dcdde1);
+      border: 2px solid #b2bec3;
     }
 
     .piece.black {
-      background: radial-gradient(circle at 30% 30%, #444444, #111111);
-      border: 2px solid #000;
+      background: radial-gradient(circle at 30% 30%, #485460, #1e272e);
+      border: 2px solid #0f1418;
     }
 
     .piece.king::before {
       content: '👑';
-      font-size: 1.4rem;
+      font-size: 1.6rem;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
     }
 
-    @media (max-width: 480px) {
+    @media (max-width: 500px) {
       .board {
-        width: 90vw;
-        height: 90vw;
+        width: 92vw;
+        height: 92vw;
+      }
+      .piece.king::before {
+        font-size: 1.2rem;
       }
     }
   </style>
@@ -206,7 +225,7 @@
 <body>
 
   <div class="container">
-    <h1>Warcaby Klasyczne</h1>
+    <h1>Warcaby: Edycja Mistrzowska</h1>
 
     <div class="controls">
       <div class="control-group">
@@ -217,10 +236,19 @@
         </select>
       </div>
 
-      <button class="primary" id="restart-btn">Nowa Gra</button>
+      <div class="control-group" id="difficulty-group">
+        <label for="difficulty">Poziom trudności:</label>
+        <select id="difficulty">
+          <option value="easy">Łatwy (Losowy)</option>
+          <option value="medium" selected>Średni (Amator)</option>
+          <option value="hard">Trudny (Mistrz AI)</option>
+        </select>
+      </div>
+
+      <button class="primary" id="restart-btn">Rozpocznij Nową Grę</button>
     </div>
 
-    <div class="status-bar" id="status">Tura Białych</div>
+    <div class="status-bar" id="status">Przygotowanie planszy...</div>
 
     <div class="board-wrapper">
       <div class="board" id="board"></div>
@@ -241,7 +269,11 @@
     const boardEl = document.getElementById('board');
     const statusEl = document.getElementById('status');
     const modeSelect = document.getElementById('mode');
+    const difficultySelect = document.getElementById('difficulty');
+    const difficultyGroup = document.getElementById('difficulty-group');
     const restartBtn = document.getElementById('restart-btn');
+
+    // --- LOGIKA PLANSZY I RUCHÓW ---
 
     function initBoard() {
       boardState = Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(null));
@@ -249,11 +281,8 @@
       for (let r = 0; r < BOARD_SIZE; r++) {
         for (let c = 0; c < BOARD_SIZE; c++) {
           if ((r + c) % 2 !== 0) {
-            if (r < 3) {
-              boardState[r][c] = { color: BLACK, isKing: false };
-            } else if (r > 4) {
-              boardState[r][c] = { color: WHITE, isKing: false };
-            }
+            if (r < 3) boardState[r][c] = { color: BLACK, isKing: false };
+            else if (r > 4) boardState[r][c] = { color: WHITE, isKing: false };
           }
         }
       }
@@ -280,13 +309,9 @@
             square.classList.add('selected');
           }
 
-          const move = validMovesForSelected.find(m => m.r === r && m.c === c);
+          const move = validMovesForSelected.find(m => m.toR === r && m.toC === c);
           if (move) {
-            if (move.capture) {
-              square.classList.add('valid-capture');
-            } else {
-              square.classList.add('valid-move');
-            }
+            square.classList.add(move.captures.length > 0 ? 'valid-capture' : 'valid-move');
           }
 
           const piece = boardState[r][c];
@@ -307,18 +332,30 @@
       if (modeSelect.value === 'ai' && currentPlayer === BLACK) return;
 
       const clickedPiece = boardState[r][c];
+      const allPlayerMoves = getAllValidMoves(currentPlayer, boardState);
+      const mustCapture = allPlayerMoves.some(m => m.captures.length > 0);
 
+      // Wybór figury
       if (clickedPiece && clickedPiece.color === currentPlayer) {
-        selectedSquare = { r, c };
-        validMovesForSelected = getPieceMoves(r, c, boardState);
+        const pieceMoves = allPlayerMoves.filter(m => m.fromR === r && m.fromC === c);
+        
+        // Przymus bicia - zablokuj figury, które nie mogą bić, jeśli inne mogą
+        if (mustCapture && pieceMoves.length === 0) {
+          selectedSquare = null;
+          validMovesForSelected = [];
+        } else {
+          selectedSquare = { r, c };
+          validMovesForSelected = pieceMoves;
+        }
         renderBoard();
         return;
       }
 
+      // Wykonanie ruchu
       if (selectedSquare) {
-        const move = validMovesForSelected.find(m => m.r === r && m.c === c);
+        const move = validMovesForSelected.find(m => m.toR === r && m.toC === c);
         if (move) {
-          executeMove(selectedSquare.r, selectedSquare.c, move);
+          executeMove(boardState, move);
           selectedSquare = null;
           validMovesForSelected = [];
 
@@ -331,69 +368,146 @@
           renderBoard();
 
           if (modeSelect.value === 'ai' && currentPlayer === BLACK && !isGameOver) {
-            setTimeout(triggerAIMove, 400);
+            setTimeout(triggerAIMove, 500); // Małe opóźnienie dla AI
           }
         }
       }
     }
 
-    function executeMove(fromR, fromC, move) {
-      const piece = boardState[fromR][fromC];
-      boardState[fromR][fromC] = null;
+    function executeMove(board, move) {
+      const piece = board[move.fromR][move.fromC];
+      board[move.fromR][move.fromC] = null;
 
-      if (move.capture) {
-        boardState[move.capture.r][move.capture.c] = null;
+      // Usuń zbite pionki
+      for (const cap of move.captures) {
+        board[cap.r][cap.c] = null;
       }
 
-      if ((piece.color === WHITE && move.r === 0) || (piece.color === BLACK && move.r === 7)) {
+      // Promocja na damkę
+      if ((piece.color === WHITE && move.toR === 0) || (piece.color === BLACK && move.toR === 7)) {
         piece.isKing = true;
       }
 
-      boardState[move.r][move.c] = piece;
+      board[move.toR][move.toC] = piece;
     }
 
+    // Generator wszystkich ruchów dla gracza (z przymusem bicia)
+    function getAllValidMoves(player, board) {
+      let moves = [];
+      for (let r = 0; r < BOARD_SIZE; r++) {
+        for (let c = 0; c < BOARD_SIZE; c++) {
+          if (board[r][c] && board[r][c].color === player) {
+            moves.push(...getPieceMoves(r, c, board));
+          }
+        }
+      }
+
+      // Filtracja - Przymus bicia
+      const captureMoves = moves.filter(m => m.captures.length > 0);
+      if (captureMoves.length > 0) {
+        // Warcaby klasyczne wymagają wzięcia jak największej ilości bić (opcjonalnie, tu bierzemy dowolne bicie)
+        const maxCaps = Math.max(...captureMoves.map(m => m.captures.length));
+        return captureMoves.filter(m => m.captures.length === maxCaps);
+      }
+      return moves;
+    }
+
+    // Wyszukiwanie ruchów dla konkretnego pionka (w tym łańcuchy bić)
     function getPieceMoves(r, c, board) {
       const piece = board[r][c];
       if (!piece) return [];
 
-      const moves = [];
+      let captures = [];
+      let simpleMoves = [];
+      
       const directions = piece.isKing 
         ? [[-1, -1], [-1, 1], [1, -1], [1, 1]]
         : piece.color === WHITE ? [[-1, -1], [-1, 1]] : [[1, -1], [1, 1]];
 
+      // 1. Zwykłe ruchy
       for (const [dr, dc] of directions) {
-        const nr = r + dr;
-        const nc = c + dc;
+        let nr = r + dr;
+        let nc = c + dc;
+        if (piece.isKing) {
+          while (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE && !board[nr][nc]) {
+            simpleMoves.push({ fromR: r, fromC: c, toR: nr, toC: nc, captures: [] });
+            nr += dr; nc += dc;
+          }
+        } else {
+          if (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE && !board[nr][nc]) {
+            simpleMoves.push({ fromR: r, fromC: c, toR: nr, toC: nc, captures: [] });
+          }
+        }
+      }
 
-        if (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE) {
-          if (!board[nr][nc]) {
-            moves.push({ r: nr, c: nc, capture: null });
-          } else if (board[nr][nc].color !== piece.color) {
-            const jumpR = nr + dr;
-            const jumpC = nc + dc;
-            if (jumpR >= 0 && jumpR < BOARD_SIZE && jumpC >= 0 && jumpC < BOARD_SIZE && !board[jumpR][jumpC]) {
-              moves.push({ r: jumpR, c: jumpC, capture: { r: nr, c: nc } });
+      // 2. Rekurencyjne szukanie bić (wielokrotne bicie)
+      function findCaptures(currR, currC, currentBoard, currentPath) {
+        let foundFurther = false;
+        
+        for (const [dr, dc] of directions) {
+          if (!piece.isKing) {
+            const jumpR = currR + dr * 2;
+            const jumpC = currC + dc * 2;
+            const midR = currR + dr;
+            const midC = currC + dc;
+
+            if (jumpR >= 0 && jumpR < BOARD_SIZE && jumpC >= 0 && jumpC < BOARD_SIZE) {
+              const midPiece = currentBoard[midR][midC];
+              if (midPiece && midPiece.color !== piece.color && !currentBoard[jumpR][jumpC]) {
+                foundFurther = true;
+                const nextBoard = currentBoard.map(row => [...row]);
+                nextBoard[currR][currC] = null;
+                nextBoard[midR][midC] = null;
+                nextBoard[jumpR][jumpC] = piece;
+
+                findCaptures(jumpR, jumpC, nextBoard, {
+                  fromR: r, fromC: c, toR: jumpR, toC: jumpC,
+                  captures: [...currentPath.captures, { r: midR, c: midC }]
+                });
+              }
+            }
+          }
+          // Damka (uproszczone bicie o 1 pole za przeciwnikiem)
+          else {
+            let step = 1;
+            while(true) {
+              const checkR = currR + dr * step;
+              const checkC = currC + dc * step;
+              if (checkR < 0 || checkR >= BOARD_SIZE || checkC < 0 || checkC >= BOARD_SIZE) break;
+              
+              const target = currentBoard[checkR][checkC];
+              if (target) {
+                if (target.color === piece.color) break; // Zablokowane własnym
+                
+                const landR = checkR + dr;
+                const landC = checkC + dc;
+                
+                if (landR >= 0 && landR < BOARD_SIZE && landC >= 0 && landC < BOARD_SIZE && !currentBoard[landR][landC]) {
+                  foundFurther = true;
+                  const nextBoard = currentBoard.map(row => [...row]);
+                  nextBoard[currR][currC] = null;
+                  nextBoard[checkR][checkC] = null;
+                  nextBoard[landR][landC] = piece;
+
+                  findCaptures(landR, landC, nextBoard, {
+                    fromR: r, fromC: c, toR: landR, toC: landC,
+                    captures: [...currentPath.captures, { r: checkR, c: checkC }]
+                  });
+                }
+                break;
+              }
+              step++;
             }
           }
         }
-      }
-
-      return moves;
-    }
-
-    function getAllMoves(player, board) {
-      const allMoves = [];
-      for (let r = 0; r < BOARD_SIZE; r++) {
-        for (let c = 0; c < BOARD_SIZE; c++) {
-          if (board[r][c] && board[r][c].color === player) {
-            const moves = getPieceMoves(r, c, board);
-            moves.forEach(m => {
-              allMoves.push({ fromR: r, fromC: c, ...m });
-            });
-          }
+        if (!foundFurther && currentPath.captures.length > 0) {
+          captures.push(currentPath);
         }
       }
-      return allMoves;
+
+      findCaptures(r, c, board, { fromR: r, fromC: c, toR: r, toC: c, captures: [] });
+
+      return captures.length > 0 ? captures : simpleMoves;
     }
 
     function switchTurn() {
@@ -404,62 +518,156 @@
     function updateStatus() {
       if (isGameOver) return;
       if (modeSelect.value === 'ai') {
-        statusEl.innerText = currentPlayer === WHITE ? 'Twoja tura (Białe)' : 'Komputer myśli...';
+        statusEl.innerText = currentPlayer === WHITE ? '👤 Twoja tura (Białe)' : '🤖 Komputer myśli...';
       } else {
         statusEl.innerText = currentPlayer === WHITE ? 'Tura: Gracz 1 (Białe)' : 'Tura: Gracz 2 (Czarne)';
       }
     }
 
     function checkGameOver() {
-      const whiteMoves = getAllMoves(WHITE, boardState);
-      const blackMoves = getAllMoves(BLACK, boardState);
+      const p1Moves = getAllValidMoves(WHITE, boardState);
+      const p2Moves = getAllValidMoves(BLACK, boardState);
 
-      let whitePieces = 0;
-      let blackPieces = 0;
-
-      for (let r = 0; r < BOARD_SIZE; r++) {
-        for (let c = 0; c < BOARD_SIZE; c++) {
-          if (boardState[r][c]?.color === WHITE) whitePieces++;
-          if (boardState[r][c]?.color === BLACK) blackPieces++;
-        }
-      }
-
-      if (whitePieces === 0 || whiteMoves.length === 0) {
+      if (p1Moves.length === 0) {
         isGameOver = true;
-        statusEl.innerText = modeSelect.value === 'ai' ? '💻 Komputer wygrał!' : '🎉 Wygrywają Czarne!';
+        statusEl.innerText = modeSelect.value === 'ai' ? '💻 Komputer wygrał! Spróbuj ponownie.' : '🎉 Wygrywają Czarne!';
         return true;
       }
-      if (blackPieces === 0 || blackMoves.length === 0) {
+      if (p2Moves.length === 0) {
         isGameOver = true;
-        statusEl.innerText = '🎉 Wygrywają Białe!';
+        statusEl.innerText = '🎉 Wygrywają Białe! Gratulacje!';
         return true;
       }
       return false;
     }
 
+    // --- AI - SZTUCZNA INTELIGENCJA ---
+
     function triggerAIMove() {
       if (isGameOver) return;
+      
+      const difficulty = difficultySelect.value;
+      const moves = getAllValidMoves(BLACK, boardState);
+      if (moves.length === 0) return;
 
-      const moves = getAllMoves(BLACK, boardState);
-      if (moves.length === 0) {
-        checkGameOver();
-        return;
+      let chosenMove;
+
+      if (difficulty === 'easy') {
+        chosenMove = moves[Math.floor(Math.random() * moves.length)];
+      } 
+      else if (difficulty === 'medium') {
+        // Ocena planszy po wykonaniu 1 ruchu w przód (Chciwy algorytm)
+        let bestScore = -Infinity;
+        let bestMoves = [];
+        
+        for (const move of moves) {
+          const tempBoard = cloneBoard(boardState);
+          executeMove(tempBoard, move);
+          const score = evaluateBoard(tempBoard, BLACK);
+          
+          if (score > bestScore) {
+            bestScore = score;
+            bestMoves = [move];
+          } else if (score === bestScore) {
+            bestMoves.push(move);
+          }
+        }
+        chosenMove = bestMoves[Math.floor(Math.random() * bestMoves.length)];
+      } 
+      else if (difficulty === 'hard') {
+        // Algorytm Minimax z cięciami Alfa-Beta (głębokość 3)
+        let bestScore = -Infinity;
+        let bestMoves = [];
+        
+        for (const move of moves) {
+          const tempBoard = cloneBoard(boardState);
+          executeMove(tempBoard, move);
+          const score = minimax(tempBoard, 3, -Infinity, Infinity, false);
+          
+          if (score > bestScore) {
+            bestScore = score;
+            bestMoves = [move];
+          } else if (score === bestScore) {
+            bestMoves.push(move);
+          }
+        }
+        chosenMove = bestMoves[Math.floor(Math.random() * bestMoves.length)];
       }
 
-      const captures = moves.filter(m => m.capture);
-      const chosenMove = captures.length > 0 
-        ? captures[Math.floor(Math.random() * captures.length)] 
-        : moves[Math.floor(Math.random() * moves.length)];
-
-      executeMove(chosenMove.fromR, chosenMove.fromC, chosenMove);
-
-      if (!checkGameOver()) {
-        switchTurn();
-      }
+      executeMove(boardState, chosenMove);
+      if (!checkGameOver()) switchTurn();
       renderBoard();
     }
 
-    modeSelect.addEventListener('change', initBoard);
+    // Funkcja heurystyczna AI
+    function evaluateBoard(board, maximizingPlayer) {
+      let score = 0;
+      for (let r = 0; r < BOARD_SIZE; r++) {
+        for (let c = 0; c < BOARD_SIZE; c++) {
+          const piece = board[r][c];
+          if (piece) {
+            let val = piece.isKing ? 10 : 3;
+            // Dodatkowy bonus za bezpieczeństwo na brzegach i promowanie się
+            if (!piece.isKing) {
+              if (piece.color === BLACK) val += (r * 0.1); 
+              else val += ((7 - r) * 0.1);
+            }
+            if (c === 0 || c === 7) val += 0.5; // Bezpieczne pola
+
+            if (piece.color === maximizingPlayer) score += val;
+            else score -= val;
+          }
+        }
+      }
+      return score;
+    }
+
+    // Klonowanie planszy dla symulacji
+    function cloneBoard(board) {
+      return board.map(row => row.map(cell => cell ? { ...cell } : null));
+    }
+
+    // Algorytm Minimax (dla poziomu Trudnego)
+    function minimax(board, depth, alpha, beta, isMaximizing) {
+      if (depth === 0) return evaluateBoard(board, BLACK);
+      
+      const currentPlayerColor = isMaximizing ? BLACK : WHITE;
+      const moves = getAllValidMoves(currentPlayerColor, board);
+      
+      if (moves.length === 0) return isMaximizing ? -1000 : 1000;
+
+      if (isMaximizing) {
+        let maxEval = -Infinity;
+        for (const move of moves) {
+          const tempBoard = cloneBoard(board);
+          executeMove(tempBoard, move);
+          const ev = minimax(tempBoard, depth - 1, alpha, beta, false);
+          maxEval = Math.max(maxEval, ev);
+          alpha = Math.max(alpha, ev);
+          if (beta <= alpha) break;
+        }
+        return maxEval;
+      } else {
+        let minEval = Infinity;
+        for (const move of moves) {
+          const tempBoard = cloneBoard(board);
+          executeMove(tempBoard, move);
+          const ev = minimax(tempBoard, depth - 1, alpha, beta, true);
+          minEval = Math.min(minEval, ev);
+          beta = Math.min(beta, ev);
+          if (beta <= alpha) break;
+        }
+        return minEval;
+      }
+    }
+
+    // --- OBSŁUGA ZDARZEŃ ---
+
+    modeSelect.addEventListener('change', () => {
+      difficultyGroup.style.display = modeSelect.value === 'ai' ? 'flex' : 'none';
+      initBoard();
+    });
+    difficultySelect.addEventListener('change', initBoard);
     restartBtn.addEventListener('click', initBoard);
 
     initBoard();
