@@ -149,7 +149,6 @@
             40%, 80% { transform: translateX(10px); }
         }
 
-        /* Responsywność dla małych ekranów (np. telefony) */
         @media (max-width: 480px) {
             .letter-display { font-size: 6rem; }
             .option-card { width: 90px; height: 90px; font-size: 3rem; gap: 10px; }
@@ -160,56 +159,62 @@
 </head>
 <body>
 
-    <!-- Ekran startowy (wymagany by przeglądarka pozwoliła na odtwarzanie dźwięku) -->
     <div id="start-screen">
         <h1>🐘 Literkowe Safari 🍉</h1>
         <p style="font-size: 1.2rem;">Włącz dźwięk w urządzeniu!</p>
         <button class="btn-start" onclick="startGame()">Grajmy!</button>
     </div>
 
-    <!-- Ekran gry -->
     <div id="game-screen">
         <div class="instruction" id="instruction-text">Co zaczyna się na literę...</div>
-        
         <div class="letter-display" id="current-letter" onclick="repeatAudio()">A a</div>
-        
-        <div class="options-container" id="options">
-            <!-- Tutaj JavaScript wstawi przyciski z obrazkami -->
-        </div>
+        <div class="options-container" id="options"></div>
     </div>
 
     <script>
-        // Słownik polskiego alfabetu (litera, słowo, emoji)
+        // Pełny słownik polskiego alfabetu 
+        // (bez liter oznaczających miękkość w środku wyrazu jak 'ń' czy 'ą')
         const alphabetData = [
             { letter: "A", word: "arbuz", emoji: "🍉" },
             { letter: "B", word: "balon", emoji: "🎈" },
             { letter: "C", word: "cytryna", emoji: "🍋" },
+            { letter: "Ć", word: "ćma", emoji: "🦋" },
             { letter: "D", word: "dom", emoji: "🏠" },
+            { letter: "E", word: "ekran", emoji: "📺" },
             { letter: "F", word: "flaga", emoji: "🚩" },
             { letter: "G", word: "gwiazda", emoji: "⭐" },
+            { letter: "H", word: "helikopter", emoji: "🚁" },
+            { letter: "I", word: "igloo", emoji: "🧊" },
             { letter: "J", word: "jabłko", emoji: "🍎" },
             { letter: "K", word: "kot", emoji: "🐱" },
             { letter: "L", word: "lód", emoji: "🍦" },
+            { letter: "Ł", word: "łódka", emoji: "⛵" },
             { letter: "M", word: "mysz", emoji: "🐭" },
+            { letter: "N", word: "namiot", emoji: "⛺" },
+            { letter: "O", word: "oko", emoji: "👁️" },
+            { letter: "Ó", word: "ósemka", emoji: "8️⃣" },
             { letter: "P", word: "pies", emoji: "🐶" },
             { letter: "R", word: "ryba", emoji: "🐟" },
             { letter: "S", word: "słoń", emoji: "🐘" },
+            { letter: "Ś", word: "ślimak", emoji: "🐌" },
             { letter: "T", word: "tort", emoji: "🎂" },
+            { letter: "U", word: "ucho", emoji: "👂" },
+            { letter: "W", word: "wieloryb", emoji: "🐳" },
+            { letter: "Y", word: "yeti", emoji: "⛄" },
             { letter: "Z", word: "zegar", emoji: "⏰" },
+            { letter: "Ź", word: "źrebak", emoji: "🐎" },
             { letter: "Ż", word: "żaba", emoji: "🐸" }
         ];
 
         let currentQuestion = null;
-        let isSpeaking = false;
 
-        // Funkcja do czytania tekstu na głos (Web Speech API)
         function speakText(text, callback) {
             if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel(); // Przerwij poprzednie mówienie
+                window.speechSynthesis.cancel(); 
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.lang = 'pl-PL';
-                utterance.rate = 0.85; // Nieco wolniej dla dzieci
-                utterance.pitch = 1.2; // Nieco wyższy, bardziej przyjazny ton
+                utterance.rate = 0.85; 
+                utterance.pitch = 1.2; 
                 
                 utterance.onend = function() {
                     if(callback) callback();
@@ -223,21 +228,19 @@
         function startGame() {
             document.getElementById('start-screen').style.display = 'none';
             document.getElementById('game-screen').style.display = 'flex';
-            speakText("Zaczynamy zabawę! Dopasuj obrazek do literki.", nextTurn);
+            speakText("Zaczynamy zabawę!", nextTurn);
         }
 
         function repeatAudio() {
             if (currentQuestion) {
-                speakText(`Litera ${currentQuestion.letter}. Jak ${currentQuestion.word}.`);
+                speakText(`Co zaczyna się na literę ${currentQuestion.letter}?`);
             }
         }
 
         function nextTurn() {
-            // 1. Wybierz losową poprawną literę
             const correctIndex = Math.floor(Math.random() * alphabetData.length);
             currentQuestion = alphabetData[correctIndex];
 
-            // 2. Wybierz dwie losowe błędne opcje
             let options = [currentQuestion];
             while (options.length < 3) {
                 const randomWrong = alphabetData[Math.floor(Math.random() * alphabetData.length)];
@@ -246,22 +249,22 @@
                 }
             }
 
-            // 3. Wymieszaj opcje
             options.sort(() => Math.random() - 0.5);
 
-            // 4. Zaktualizuj interfejs (pokaż dużą i małą literę, np. "A a")
             const letterEl = document.getElementById('current-letter');
             letterEl.textContent = `${currentQuestion.letter} ${currentQuestion.letter.toLowerCase()}`;
             
-            // Animacja wejścia litery
             letterEl.style.animation = 'none';
-            letterEl.offsetHeight; /* trigger reflow */
+            letterEl.offsetHeight; 
             letterEl.style.animation = 'bounceIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+
+            const instructionEl = document.getElementById('instruction-text');
+            const questionText = `Co zaczyna się na literę ${currentQuestion.letter}?`;
+            instructionEl.textContent = questionText;
 
             const optionsContainer = document.getElementById('options');
             optionsContainer.innerHTML = '';
 
-            // 5. Wygeneruj przyciski
             options.forEach(option => {
                 const card = document.createElement('div');
                 card.className = 'option-card';
@@ -270,18 +273,15 @@
                 optionsContainer.appendChild(card);
             });
 
-            // 6. Przeczytaj polecenie
             setTimeout(() => {
-                speakText(`Gdzie jest ${currentQuestion.word}?`);
+                speakText(questionText);
             }, 500);
         }
 
         function handleAnswer(cardElement, selectedOption) {
             if (selectedOption.letter === currentQuestion.letter) {
-                // Dobra odpowiedź
                 cardElement.classList.add('correct');
                 
-                // Konfetti
                 confetti({
                     particleCount: 100,
                     spread: 70,
@@ -289,15 +289,13 @@
                     colors: ['#ff6b6b', '#4ecdc4', '#ffe66d']
                 });
 
-                speakText("Wspaniale! " + currentQuestion.word, () => {
+                speakText(`Wspaniale! ${currentQuestion.word} zaczyna się na literę ${currentQuestion.letter}.`, () => {
                     setTimeout(nextTurn, 1000);
                 });
             } else {
-                // Zła odpowiedź
                 cardElement.classList.add('wrong');
                 speakText("Spróbuj jeszcze raz.");
                 
-                // Usuń klasę błędu po animacji by móc powtórzyć
                 setTimeout(() => {
                     cardElement.classList.remove('wrong');
                 }, 500);
