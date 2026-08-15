@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Wyścig Skoczków Szachowych</title>
+  <title>Wyścig Pionków (Skoczek / Halma)</title>
   <style>
     :root {
       --bg-color: #1e1e2e;
       --card-bg: #2b2b3d;
-      --accent-color: #6c5ce7;
-      --board-light: #eeeed2;
-      --board-dark: #769656;
-      --highlight: rgba(255, 235, 59, 0.6);
-      --move-dot: rgba(108, 92, 231, 0.7);
+      --accent-color: #e67e22;
+      --board-light: #f0d9b5;
+      --board-dark: #b58863;
+      --highlight: rgba(241, 196, 15, 0.7);
+      --move-dot: rgba(230, 126, 34, 0.85);
       --text-color: #ffffff;
     }
 
@@ -89,7 +89,7 @@
     }
 
     button.primary:hover {
-      background-color: #5b4bc4;
+      background-color: #d35400;
     }
 
     .status-bar {
@@ -120,7 +120,6 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: 2.2rem;
       cursor: pointer;
       user-select: none;
       position: relative;
@@ -145,21 +144,26 @@
       background-color: var(--move-dot);
       border-radius: 50%;
       position: absolute;
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
     }
 
-    .piece {
+    .pawn {
+      width: 75%;
+      height: 75%;
+      border-radius: 50%;
+      box-shadow: inset 0 -3px 6px rgba(0,0,0,0.4), 0 4px 8px rgba(0,0,0,0.5);
       transition: transform 0.15s ease-in-out;
       z-index: 2;
     }
 
-    .piece.white {
-      color: #ffffff;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.8), 0 0 2px #000;
+    .pawn.white {
+      background: radial-gradient(circle at 35% 35%, #ffffff, #dcdde1);
+      border: 2px solid #b2bec3;
     }
 
-    .piece.black {
-      color: #1a1a1a;
-      text-shadow: 0 1px 2px rgba(255,255,255,0.4);
+    .pawn.black {
+      background: radial-gradient(circle at 35% 35%, #485460, #1e272e);
+      border: 2px solid #0f1418;
     }
 
     .instructions {
@@ -172,8 +176,9 @@
     }
 
     @media (max-width: 500px) {
-      .square {
-        font-size: 1.7rem;
+      .square.valid-move::after {
+        width: 14px;
+        height: 14px;
       }
     }
   </style>
@@ -181,7 +186,7 @@
 <body>
 
   <div class="container">
-    <h1>Wyścig Skoczków</h1>
+    <h1>Wyścig Skoczków (Halma)</h1>
 
     <div class="controls">
       <div class="control-group">
@@ -209,12 +214,14 @@
     <div class="board" id="board"></div>
 
     <div class="instructions">
-      <strong>Cel gry:</strong> Przeprowadź wszystkie swoje 8 skoczków na drugi koniec planszy (rzęd startowy przeciwnika). Skoczki poruszają się klasycznym ruchem w kształcie litery "L". W tej wersji skoczki nie mogą nakładać się na swoje własne figury ani zbijać przeciwników (zablokowane pola).
+      <strong>Zasady gry:</strong> Przeprowadź swoje 8 pionków na drugi koniec planszy (rzęd startowy przeciwnika).
+      <br>• Pionki poruszają się <strong>po ukosie</strong> w 4 kierunkach (o 1 pole) do tyłu lub do przodu.
+      <br>• Mogą <strong>przeskakiwać</strong> przez swoje lub obce pionki (skok po przekątnej o 2 pola).
+      <br>• Gra automatycznie wylicza długie serie skoków w jednym ruchu!
     </div>
   </div>
 
   <script>
-    // Konfiguracja i Stan Gry
     const BOARD_SIZE = 8;
     const WHITE = 'W';
     const BLACK = 'B';
@@ -234,24 +241,22 @@
     const difficultyGroup = document.getElementById('difficulty-group');
     const restartBtn = document.getElementById('restart-btn');
 
-    // Wektor ruchów skoczka
-    const knightMoves = [
-      [-2, -1], [-2, 1],
-      [-1, -2], [-1, 2],
-      [1, -2],  [1, 2],
-      [2, -1],  [2, 1]
+    // 4 kierunki ukośne (up-left, up-right, down-left, down-right)
+    const diagonalDirections = [
+      [-1, -1], [-1, 1],
+      [1, -1],  [1, 1]
     ];
 
     // Inicjalizacja gry
     function initGame() {
       boardState = Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(EMPTY));
       
-      // Czarny gracz na samej górze (rzęd 0)
+      // Czarny gracz na samej górze (rzęd 0 - 8 pionków)
       for (let c = 0; c < BOARD_SIZE; c++) {
         boardState[0][c] = BLACK;
       }
       
-      // Biały gracz na samej dole (rzęd 7)
+      // Biały gracz na samej dole (rzęd 7 - 8 pionków)
       for (let c = 0; c < BOARD_SIZE; c++) {
         boardState[7][c] = WHITE;
       }
@@ -265,7 +270,7 @@
       renderBoard();
     }
 
-    // Renderowanie Szachownicy
+    // Renderowanie szachownicy
     function renderBoard() {
       boardEl.innerHTML = '';
 
@@ -274,26 +279,20 @@
           const square = document.createElement('div');
           const isLight = (r + c) % 2 === 0;
           square.className = `square ${isLight ? 'light' : 'dark'}`;
-          square.dataset.row = r;
-          square.dataset.col = c;
 
-          // Zaznaczanie wybranego pola
           if (selectedSquare && selectedSquare.r === r && selectedSquare.c === c) {
             square.classList.add('selected');
           }
 
-          // Zaznaczanie możliwych ruchów
           if (validMoves.some(m => m.r === r && m.c === c)) {
             square.classList.add('valid-move');
           }
 
-          // Rysowanie figury
           const piece = boardState[r][c];
           if (piece) {
-            const pieceEl = document.createElement('div');
-            pieceEl.className = `piece ${piece === WHITE ? 'white' : 'black'}`;
-            pieceEl.innerHTML = '♞';
-            square.appendChild(pieceEl);
+            const pawnEl = document.createElement('div');
+            pawnEl.className = `pawn ${piece === WHITE ? 'white' : 'black'}`;
+            square.appendChild(pawnEl);
           }
 
           square.addEventListener('click', () => handleSquareClick(r, c));
@@ -305,19 +304,19 @@
     // Obsługa kliknięć
     function handleSquareClick(r, c) {
       if (isGameOver) return;
-      if (modeSelect.value === 'ai' && currentPlayer === BLACK) return; // Blokada podczas tury AI
+      if (modeSelect.value === 'ai' && currentPlayer === BLACK) return;
 
       const clickedPiece = boardState[r][c];
 
-      // Wybór własnego skoczka
+      // Wybór własnego pionka
       if (clickedPiece === currentPlayer) {
         selectedSquare = { r, c };
-        validMoves = getValidKnightMoves(r, c, boardState);
+        validMoves = getValidDiagonalMoves(r, c, boardState);
         renderBoard();
         return;
       }
 
-      // Wykonanie ruchu na zaznaczone pole
+      // Wykonanie ruchu na wybrane pole
       if (selectedSquare && validMoves.some(m => m.r === r && m.c === c)) {
         makeMove(selectedSquare.r, selectedSquare.c, r, c);
         selectedSquare = null;
@@ -331,30 +330,57 @@
         switchTurn();
         renderBoard();
 
-        // Ruch AI jeśli aktywny tryb z komputerem
         if (modeSelect.value === 'ai' && currentPlayer === BLACK && !isGameOver) {
           setTimeout(triggerAIMove, 400);
         }
       }
     }
 
-    // Pobieranie prawidłowych ruchów dla danej figury
-    function getValidKnightMoves(r, c, currentBoard) {
+    // Algorytm wyliczania prawidłowych ruchów i serii skoków po przekątnej
+    function getValidDiagonalMoves(startR, startC, board) {
       const moves = [];
-      const piece = currentBoard[r][c];
 
-      for (const [dr, dc] of knightMoves) {
-        const nr = r + dr;
-        const nc = c + dc;
+      // 1. Zwykłe kroki o 1 pole po przekątnej na puste pola
+      for (const [dr, dc] of diagonalDirections) {
+        const nr = startR + dr;
+        const nc = startC + dc;
 
-        // Czy w granicach planszy?
         if (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE) {
-          // Pole musi być puste (brak bicia i braku nakładania się na własne/obce figury)
-          if (currentBoard[nr][nc] === EMPTY) {
+          if (board[nr][nc] === EMPTY) {
             moves.push({ r: nr, c: nc });
           }
         }
       }
+
+      // 2. Skoki (w tym pojedyncze oraz pętle serii skoków za pomocą przeszukiwania BFS)
+      const queue = [{ r: startR, c: startC }];
+      const visitedJumps = new Set();
+      visitedJumps.add(`${startR},${startC}`);
+
+      while (queue.length > 0) {
+        const current = queue.shift();
+
+        for (const [dr, dc] of diagonalDirections) {
+          const midR = current.r + dr;
+          const midC = current.c + dc;
+          const landR = current.r + 2 * dr;
+          const landC = current.c + 2 * dc;
+
+          // Czy pole przeskakiwane i pole lądowania są na planszy?
+          if (landR >= 0 && landR < BOARD_SIZE && landC >= 0 && landC < BOARD_SIZE) {
+            // Musi być pionek do przeskoczenia i wolne pole lądowania
+            if (board[midR][midC] !== EMPTY && board[landR][landC] === EMPTY) {
+              const key = `${landR},${landC}`;
+              if (!visitedJumps.has(key)) {
+                visitedJumps.add(key);
+                queue.push({ r: landR, c: landC });
+                moves.push({ r: landR, c: landC });
+              }
+            }
+          }
+        }
+      }
+
       return moves;
     }
 
@@ -370,7 +396,7 @@
       updateStatus();
     }
 
-    // Aktualizacja nagłówka stanu
+    // Aktualizacja stanu
     function updateStatus() {
       if (isGameOver) return;
       
@@ -381,7 +407,7 @@
       }
     }
 
-    // Sprawdzanie warunku wygranej
+    // Sprawdzanie wygranej
     function checkWin() {
       let whiteCountAtTarget = 0;
       let blackCountAtTarget = 0;
@@ -412,7 +438,6 @@
       const allMoves = getAllValidMoves(BLACK, boardState);
 
       if (allMoves.length === 0) {
-        // Brak ruchów - oddanie tury
         switchTurn();
         renderBoard();
         return;
@@ -421,11 +446,11 @@
       let chosenMove;
 
       if (difficulty === 'easy') {
-        // Łatwy: całkowicie losowy ruch
+        // Łatwy: losowy ruch
         chosenMove = allMoves[Math.floor(Math.random() * allMoves.length)];
       } 
       else if (difficulty === 'medium') {
-        // Średni: chciwy wybór ruchu najbardziej przybliżającego skoczka do rzędu 7
+        // Średni: wybiera ruch dający największy postęp w dół planszy (rzęd 0 -> 7)
         allMoves.sort((a, b) => {
           const progressA = a.toR - a.fromR;
           const progressB = b.toR - b.fromR;
@@ -434,18 +459,16 @@
         chosenMove = allMoves[0];
       } 
       else if (difficulty === 'hard') {
-        // Trudny: Zaawansowana ocena pozycji (postęp + blokowanie)
+        // Trudny: Ocena pozycji uwzględniająca dalekie skoki i bliskość celu
         let bestScore = -Infinity;
         let bestMoves = [];
 
         for (const move of allMoves) {
-          // Symulacja ruchu
           boardState[move.toR][move.toC] = BLACK;
           boardState[move.fromR][move.fromC] = EMPTY;
 
-          const score = evaluateBoard(BLACK);
+          const score = evaluateBoard();
 
-          // Cofnięcie ruchu
           boardState[move.fromR][move.fromC] = BLACK;
           boardState[move.toR][move.toC] = EMPTY;
 
@@ -467,13 +490,12 @@
       renderBoard();
     }
 
-    // Pobranie wszystkich dostępnych ruchów dla danej strony
     function getAllValidMoves(player, board) {
       const moves = [];
       for (let r = 0; r < BOARD_SIZE; r++) {
         for (let c = 0; c < BOARD_SIZE; c++) {
           if (board[r][c] === player) {
-            const valid = getValidKnightMoves(r, c, board);
+            const valid = getValidDiagonalMoves(r, c, board);
             for (const m of valid) {
               moves.push({ fromR: r, fromC: c, toR: m.r, toC: m.c });
             }
@@ -483,28 +505,26 @@
       return moves;
     }
 
-    // Funkcja oceny pozycji dla AI (Trudny)
-    function evaluateBoard(player) {
+    function evaluateBoard() {
       let score = 0;
 
       for (let r = 0; r < BOARD_SIZE; r++) {
         for (let c = 0; c < BOARD_SIZE; c++) {
           if (boardState[r][c] === BLACK) {
-            // Punkty za postęp w dół planszy (rzęd 0 -> rzęd 7)
-            score += r * 10;
-            // Duży bonus za dotarcie do celu
-            if (r === 7) score += 50;
+            // Postęp czarnych (rzędy 0 -> 7)
+            score += r * 12;
+            if (r === 7) score += 60; // premia za dotarcie
           } else if (boardState[r][c] === WHITE) {
-            // Karamy postęp białych graczy
-            score -= (7 - r) * 8;
-            if (r === 0) score -= 50;
+            // Postęp białych (rzędy 7 -> 0)
+            score -= (7 - r) * 10;
+            if (r === 0) score -= 60;
           }
         }
       }
       return score;
     }
 
-    // Obsługa zdarzeń UI
+    // Zdawienia UI
     modeSelect.addEventListener('change', () => {
       difficultyGroup.style.display = modeSelect.value === 'ai' ? 'flex' : 'none';
       initGame();
@@ -512,7 +532,7 @@
 
     restartBtn.addEventListener('click', initGame);
 
-    // Start gry przy załadowaniu
+    // Uruchomienie gry
     initGame();
   </script>
 </body>
