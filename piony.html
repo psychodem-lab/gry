@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Centrum Gier Planszowych</title>
+  <style>
+    :root {
+      --bg-color: #12121c;
+      --card-bg: #1e1e2e;
+      --card-hover: #2b2b3d;
+      --accent-color: #e74c3c;
+      --accent-hover: #c0392b;
+      --text-color: #ffffff;
+      --text-muted: #a0a0b0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    header h1 {
+      font-size: 2.8rem;
+      margin-bottom: 10px;
+      background: linear-gradient(135deg, #ff7675, #e74c3c);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+    }
+
+    .games-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 25px;
+      max-width: 1000px;
+      width: 100%;
+    }
+
+    .game-card {
+      background-color: var(--card-bg);
+      border-radius: 16px;
+      padding: 25px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+      transition: transform 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .game-card:hover {
+      transform: translateY(-8px);
+      background-color: var(--card-hover);
+      box-shadow: 0 12px 30px rgba(231, 76, 60, 0.2);
+    }
+
+    .game-icon {
+      font-size: 4rem;
+      margin-bottom: 15px;
+    }
+
+    .game-title {
+      font-size: 1.5rem;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    .game-desc {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+      line-height: 1.4;
+      flex-grow: 1;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s ease, transform 0.1s ease;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .btn-primary {
+      background-color: var(--accent-color);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--accent-hover);
+    }
+
+    .btn-secondary {
+      background-color: #3b3b52;
+      color: var(--text-color);
+    }
+
+    .btn-secondary:hover {
+      background-color: #4a4a68;
+    }
+
+    /* Modal / Podgląd gry w oknie */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.85);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      backdrop-filter: blur(5px);
+    }
+
+    .modal-container {
+      background-color: var(--card-bg);
+      width: 95%;
+      max-width: 800px;
+      height: 90vh;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+    }
+
+    .modal-header {
+      padding: 15px 20px;
+      background-color: #181824;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .modal-title {
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: var(--text-color);
+      font-size: 1.8rem;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .close-btn:hover {
+      color: var(--accent-color);
+    }
+
+    .modal-body {
+      flex-grow: 1;
+      width: 100%;
+      height: 100%;
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🎮 Centrum Gier</h1>
+    <p>Wybierz jedną z poniższych gier planszowych i rozpocznij rozgrywkę!</p>
+  </header>
+
+  <main class="games-grid">
+    
+    <!-- Karta: Skoczek -->
+    <div class="game-card">
+      <div class="game-icon">♞</div>
+      <h2 class="game-title">Skoczek Szachowy</h2>
+      <p class="game-desc">Wyczerpująca łamigłówka lógica. Zwiedź całą szachownicę skoczkiem, odwiedzając każde pole dokładnie jeden raz.</p>
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="openGame('skoczek.html', 'Skoczek Szachowy')">Graj w oknie</button>
+        <a href="skoczek.html" class="btn btn-secondary">Otwórz stronę</a>
+      </div>
+    </div>
+
+    <!-- Karta: Warcaby -->
+    <div class="game-card">
+      <div class="game-icon">⚪</div>
+      <h2 class="game-title">Warcaby Klasyczne</h2>
+      <p class="game-desc">Tradycyjna gra na planszy 8x8. Przymus bicia, wielokrotne skoki oraz potężne latające Damki. Graj z AI lub przyjacielem.</p>
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="openGame('warcaby.html', 'Warcaby Klasyczne')">Graj w oknie</button>
+        <a href="warcaby.html" class="btn btn-secondary">Otwórz stronę</a>
+      </div>
+    </div>
+
+    <!-- Karta: Szachy -->
+    <div class="game-card">
+      <div class="game-icon">♚</div>
+      <h2 class="game-title">Szachy Klasyczne</h2>
+      <p class="game-desc">Królewska gra strategiczna. Kompletny zestaw figur, podświetlanie poprawnych ruchów i tryb gry z komputerem o 3 poziomach trudności.</p>
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="openGame('szachy.html', 'Szachy Klasyczne')">Graj w oknie</button>
+        <a href="szachy.html" class="btn btn-secondary">Otwórz stronę</a>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Okno podglądu gry (Modal z Iframe) -->
+  <div class="modal-overlay" id="gameModal">
+    <div class="modal-container">
+      <div class="modal-header">
+        <span class="modal-title" id="modalTitle">Gra</span>
+        <button class="close-btn" onclick="closeGame()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <iframe id="gameIframe" src=""></iframe>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const modal = document.getElementById('gameModal');
+    const iframe = document.getElementById('gameIframe');
+    const modalTitle = document.getElementById('modalTitle');
+
+    function openGame(file, title) {
+      iframe.src = file;
+      modalTitle.innerText = title;
+      modal.style.display = 'flex';
+    }
+
+    function closeGame() {
+      modal.style.display = 'none';
+      iframe.src = ''; // czyszczenie stanu gry po zamknięciu
+    }
+
+    // Zamknięcie po kliknięciu poza okno modalne
+    window.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        closeGame();
+      }
+    });
+  </script>
+
+</body>
+</html>
