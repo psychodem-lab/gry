@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Warcaby Klasyczne</title>
+  <style>
+    :root {
+      --bg-color: #1e1e2e;
+      --card-bg: #2b2b3d;
+      --accent-color: #e74c3c;
+      --board-light: #f0d9b5;
+      --board-dark: #b58863;
+      --highlight: rgba(241, 196, 15, 0.7);
+      --move-dot: rgba(231, 76, 60, 0.85);
+      --text-color: #ffffff;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+      font-size: 2.2rem;
+      text-align: center;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      max-width: 600px;
+      width: 100%;
+    }
+
+    .controls {
+      background-color: var(--card-bg);
+      padding: 15px 25px;
+      border-radius: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    label {
+      font-size: 0.85rem;
+      color: #a0a0b0;
+    }
+
+    select, button {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: none;
+      background-color: #3b3b52;
+      color: var(--text-color);
+      font-size: 0.95rem;
+      cursor: pointer;
+      outline: none;
+      transition: background 0.2s;
+    }
+
+    select:hover, button:hover {
+      background-color: #4a4a68;
+    }
+
+    button.primary {
+      background-color: var(--accent-color);
+      font-weight: bold;
+    }
+
+    button.primary:hover {
+      background-color: #c0392b;
+    }
+
+    .status-bar {
+      font-size: 1.2rem;
+      font-weight: bold;
+      padding: 10px 20px;
+      background-color: var(--card-bg);
+      border-radius: 8px;
+      width: 100%;
+      text-align: center;
+      box-sizing: border-box;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      grid-template-rows: repeat(8, 1fr);
+      width: 100%;
+      max-width: 480px;
+      aspect-ratio: 1;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+      border: 4px solid var(--card-bg);
+    }
+
+    .square {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+      position: relative;
+    }
+
+    .square.light {
+      background-color: var(--board-light);
+    }
+
+    .square.dark {
+      background-color: var(--board-dark);
+    }
+
+    .square.selected {
+      background-color: var(--highlight) !important;
+    }
+
+    .square.valid-move::after {
+      content: '';
+      width: 20px;
+      height: 20px;
+      background-color: var(--move-dot);
+      border-radius: 50%;
+      position: absolute;
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .pawn {
+      width: 75%;
+      height: 75%;
+      border-radius: 50%;
+      box-shadow: inset 0 -3px 6px rgba(0,0,0,0.4), 0 4px 8px rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.5rem;
+      transition: transform 0.15s ease-in-out;
+      z-index: 2;
+    }
+
+    .pawn.white {
+      background: radial-gradient(circle at 35% 35%, #ffffff, #dcdde1);
+      border: 2px solid #b2bec3;
+      color: #d63031;
+    }
+
+    .pawn.black {
+      background: radial-gradient(circle at 35% 35%, #485460, #1e272e);
+      border: 2px solid #0f1418;
+      color: #f1c40f;
+    }
+
+    .instructions {
+      background-color: var(--card-bg);
+      padding: 15px 20px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      line-height: 1.4;
+      color: #cccccc;
+    }
+
+    @media (max-width: 500px) {
+      .square.valid-move::after {
+        width: 14px;
+        height: 14px;
+      }
+      .pawn {
+        font-size: 1.1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Warcaby Klasyczne</h1>
+
+    <div class="controls">
+      <div class="control-group">
+        <label for="mode">Tryb gry:</label>
+        <select id="mode">
+          <option value="ai">Gracz vs Komputer</option>
+          <option value="pvp">Gracz vs Gracz</option>
+        </select>
+      </div>
+
+      <div class="control-group" id="difficulty-group">
+        <label for="difficulty">Poziom AI:</label>
+        <select id="difficulty">
+          <option value="easy">Łatwy</option>
+          <option value="medium" selected>Średni</option>
+          <option value="hard">Trudny</option>
+        </select>
+      </div>
+
+      <button class="primary" id="restart-btn">Nowa Gra</button>
+    </div>
+
+    <div class="status-bar" id="status">Tura Gracza 1 (Białe)</div>
+
+    <div class="board" id="board"></div>
+
+    <div class="instructions">
+      <strong>Zasady gry w warcaby:</strong>
+      <br>• Ruchy odbywają się wyłącznie po <strong>ciemnych polach</strong>.
+      <br>• Zwykłe pionki poruszają się o 1 pole do przodu po przekątnej.
+      <br>• <strong>Bicie jest obowiązkowe!</strong> Można bić do przodu i do tyłu oraz wykonywać serie bić w jednym ruchu.
+      <br>• Pionek po dotarciu do ostatniego rzędu staje się <strong>Damką (👑)</strong>, która porusza się o dowolną liczbę pól.
+    </div>
+  </div>
+
+  <script>
+    const BOARD_SIZE = 8;
+    const WHITE = 'W';
+    const BLACK = 'B';
+    const WHITE_KING = 'WK';
+    const BLACK_KING = 'BK';
+    const EMPTY = null;
+
+    let boardState = [];
+    let currentPlayer = WHITE;
+    let selectedSquare = null;
+    let validMovesForSelected = [];
+    let allMustCaptureMoves = []; // Obsługa przymusu bicia
+    let isGameOver = false;
+
+    // Elementy DOM
+    const boardEl = document.getElementById('board');
+    const statusEl = document.getElementById('status');
+    const modeSelect = document.getElementById('mode');
+    const difficultySelect = document.getElementById('difficulty');
+    const difficultyGroup = document.getElementById('difficulty-group');
+    const restartBtn = document.getElementById('restart-btn');
+
+    function isDarkSquare(r, c) {
+      return (r + c) % 2 !== 0;
+    }
+
+    function isPlayerPiece(piece, player) {
+      if (!piece) return false;
+      return player === WHITE ? (piece === WHITE || piece === WHITE_KING) : (piece === BLACK || piece === BLACK_KING);
+    }
+
+    function isKing(piece) {
+      return piece === WHITE_KING || piece === BLACK_KING;
+    }
+
+    // Inicjalizacja gry
+    function initGame() {
+      boardState = Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(EMPTY));
+
+      // Czarny gracz: rzędy 0, 1, 2 (12 pionków)
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < BOARD_SIZE; c++) {
+          if (isDarkSquare(r, c)) boardState[r][c] = BLACK;
+        }
+      }
+
+      // Biały gracz: rzędy 5, 6, 7 (12 pionków)
+      for (let r = 5; r < BOARD_SIZE; r++) {
+        for (let c = 0; c < BOARD_SIZE; c++) {
+          if (isDarkSquare(r, c)) boardState[r][c] = WHITE;
+        }
+      }
+
+      currentPlayer = WHITE;
+      selectedSquare = null;
+      validMovesForSelected = [];
+      isGameOver = false;
+
+      updateMustCaptureState();
+      updateStatus();
+      renderBoard();
+    }
+
+    // Renderowanie szachownicy
+    function renderBoard() {
+      boardEl.innerHTML = '';
+
+      for (let r = 0; r < BOARD_SIZE; r++) {
+        for (let c = 0; c < BOARD_SIZE; c++) {
+          const square = document.createElement('div');
+          const dark = isDarkSquare(r, c);
+          square.className = `square ${dark ? 'dark' : 'light'}`;
+
+          if (selectedSquare && selectedSquare.r === r && selectedSquare.c === c) {
+            square.classList.add('selected');
+          }
+
+          if (validMovesForSelected.some(m => m.toR === r && m.toC === c)) {
+            square.classList.add('valid-move');
+          }
+
+          const piece = boardState[r][c];
+          if (piece) {
+            const pawnEl = document.createElement('div');
+            const isWhitePiece = piece === WHITE || piece === WHITE_KING;
+            pawnEl.className = `pawn ${isWhitePiece ? 'white' : 'black'}`;
+            if (isKing(piece)) {
+              pawnEl.innerHTML = '👑';
+            }
+            square.appendChild(pawnEl);
+          }
+
+          square.addEventListener('click', () => handleSquareClick(r, c));
+          boardEl.appendChild(square);
+        }
+      }
+    }
+
+    // Obsługa kliknięcia
+    function handleSquareClick(r, c) {
+      if (isGameOver) return;
+      if (modeSelect.value === 'ai' && currentPlayer === BLACK) return;
+
+      const clickedPiece = boardState[r][c];
+
+      // Wybór własnego pionka
+      if (isPlayerPiece(clickedPiece, currentPlayer)) {
+        // Jeśli jest przymus bicia, można wybrać tylko pionka, który ma bicie!
+        if (allMustCaptureMoves.length > 0) {
+          const hasCapture = allMustCaptureMoves.some(m => m.fromR === r && m.fromC === c);
+          if (!hasCapture) return; 
+        }
+
+        selectedSquare = { r, c };
+        const pieceMoves = getMovesForPiece(r, c, boardState);
+        
+        // Zastosowanie filtru przymusu bicia
+        if (allMustCaptureMoves.length > 0) {
+          validMovesForSelected = pieceMoves.filter(m => m.captures.length > 0);
+        } else {
+          validMovesForSelected = pieceMoves;
+        }
+
+        renderBoard();
+        return;
+      }
+
+      // Wykonanie ruchu
+      if (selectedSquare) {
+        const chosenMove = validMovesForSelected.find(m => m.toR === r && m.toC === c);
+        if (chosenMove) {
+          executeMove(chosenMove);
+          selectedSquare = null;
+          validMovesForSelected = [];
+
+          if (checkGameOver()) {
+            renderBoard();
+            return;
+          }
+
+          switchTurn();
+          renderBoard();
+
+          if (modeSelect.value === 'ai' && currentPlayer === BLACK && !isGameOver) {
+            setTimeout(triggerAIMove, 400);
+          }
+        }
+      }
+    }
+
+    // Wykonanie ruchu na planszy
+    function executeMove(move) {
+      const piece = boardState[move.fromR][move.fromC];
+      boardState[move.fromR][move.fromC] = EMPTY;
+
+      // Usunięcie zbitych pionków
+      for (const cap of move.captures) {
+        boardState[cap.r][cap.c] = EMPTY;
+      }
+
+      // Awans na Damkę
+      let finalPiece = piece;
+      if (piece === WHITE && move.toR === 0) finalPiece = WHITE_KING;
+      if (piece === BLACK && move.toR === 7) finalPiece = BLACK_KING;
+
+      boardState[move.toR][move.toC] = finalPiece;
+    }
+
+    // Aktualizacja listy bić (przymus)
+    function updateMustCaptureState() {
+      allMustCaptureMoves = [];
+      const allMoves = getAllMovesForPlayer(currentPlayer, boardState);
+      allMustCaptureMoves = allMoves.filter(m => m.captures.length > 0);
+    }
+
+    // Generator wszystkich ruchów i bić (z rekurencyjną obsługą serii bić)
+    function getMovesForPiece(r, c, board) {
+      const piece = board[r][c];
+      if (!piece) return [];
+
+      const captures = [];
+      const simpleMoves = [];
+      const isPieceKing = isKing(piece);
+      const isWhite = piece === WHITE || piece === WHITE_KING;
+
+      const directions = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+
+      // 1. Rekurencyjne wyszukiwanie serii bić
+      function findCaptures(currR, currC, currentBoard, visitedCaps, pathMove) {
+        let foundFurtherCapture = false;
+
+        if (!isPieceKing) {
+          // Zwykły pionek - bicie o 2 pola
+          for (const [dr, dc] of directions) {
+            const midR = currR + dr;
+            const midC = currC + dc;
+            const landR = currR + 2 * dr;
+            const landC = currC + 2 * dc;
+
+            if (landR >= 0 && landR < BOARD_SIZE && landC >= 0 && landC < BOARD_SIZE) {
+              const midPiece = currentBoard[midR][midC];
+              const landPiece = currentBoard[landR][landC];
+
+              if (midPiece && !isPlayerPiece(midPiece, isWhite ? WHITE : BLACK) && landPiece === EMPTY) {
+                const capKey = `${midR},${midC}`;
+                if (!visitedCaps.has(capKey)) {
+                  foundFurtherCapture = true;
+
+                  // Kopia planszy do symulacji kolejnego skoku
+                  const nextBoard = currentBoard.map(row => [...row]);
+                  nextBoard[currR][currC] = EMPTY;
+                  nextBoard[midR][midC] = EMPTY;
+                  nextBoard[landR][landC] = piece;
+
+                  const nextVisited = new Set(visitedCaps);
+                  nextVisited.add(capKey);
+
+                  findCaptures(landR, landC, nextBoard, nextVisited, {
+                    fromR: r, fromC: c, toR: landR, toC: landC,
+                    captures: [...pathMove.captures, { r: midR, c: midC }]
+                  });
+                }
+              }
+            }
+          }
+        } else {
+          // Damka (Latająca) - bicie z dystansu
+          for (const [dr, dc] of directions) {
+            let step = 1;
+            let enemyFound = null;
+
+            while (true) {
+              const checkR = currR + dr * step;
+              const checkC = currC + dc * step;
+
+              if (checkR < 0 || checkR >= BOARD_SIZE || checkC < 0 || checkC >= BOARD_SIZE) break;
+
+              const targetPiece = currentBoard[checkR][checkC];
+
+              if (!enemyFound) {
+                if (isPlayerPiece(targetPiece, isWhite ? WHITE : BLACK)) break; // Własna figura blokuje
+                if (targetPiece) enemyFound = { r: checkR, c: checkC }; // Znaleziono wroga
+              } else {
+                if (targetPiece !== EMPTY) break; // Kolejna figura blokuje wolne lądowanie
+
+                const capKey = `${enemyFound.r},${enemyFound.c}`;
+                if (!visitedCaps.has(capKey)) {
+                  foundFurtherCapture = true;
+
+                  const nextBoard = currentBoard.map(row => [...row]);
+                  nextBoard[currR][currC] = EMPTY;
+                  nextBoard[enemyFound.r][enemyFound.c] = EMPTY;
+                  nextBoard[checkR][checkC] = piece;
+
+                  const nextVisited = new Set(visitedCaps);
+                  nextVisited.add(capKey);
+
+                  findCaptures(checkR, checkC, nextBoard, nextVisited, {
+                    fromR: r, fromC: c, toR: checkR, toC: checkC,
+                    captures: [...pathMove.captures, enemyFound]
+                  });
+                }
+              }
+              step++;
+            }
+          }
+        }
+
+        if (!foundFurtherCapture && pathMove.captures.length > 0) {
+          captures.push(pathMove);
+        }
+      }
+
+      findCaptures(r, c, board, new Set(), { fromR: r, fromC: c, toR: r, toC: c, captures: [] });
+
+      // Zwracamy bicia jeśli istnieją (przymus bicia ma priorytet)
+      if (captures.length > 0) {
+        // Wybieramy tylko najdłuższe bicia (warcaby polskie)
+        const maxCaps = Math.max(...captures.map(c => c.captures.length));
+        return captures.filter(c => c.captures.length === maxCaps);
+      }
+
+      // 2. Zwykłe ruchy (bez bicia)
+      if (!isPieceKing) {
+        const forwardDirs = isWhite ? [[-1, -1], [-1, 1]] : [[1, -1], [1, 1]];
+        for (const [dr, dc] of forwardDirs) {
+          const nr = r + dr;
+          const nc = c + dc;
+          if (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE) {
+            if (board[nr][nc] === EMPTY) {
+              simpleMoves.push({ fromR: r, fromC: c, toR: nr, toC: nc, captures: [] });
+            }
+          }
+        }
+      } else {
+        // Damka - ruch o dowolną liczbę pól
+        for (const [dr, dc] of directions) {
+          let step = 1;
+          while (true) {
+            const nr = r + dr * step;
+            const nc = c + dc * step;
+            if (nr < 0 || nr >= BOARD_SIZE || nc < 0 || nc >= BOARD_SIZE) break;
+            if (board[nr][nc] !== EMPTY) break;
+            simpleMoves.push({ fromR: r, fromC: c, toR: nr, toC: nc, captures: [] });
+            step++;
+          }
+        }
+      }
+
+      return simpleMoves;
+    }
+
+    function getAllMovesForPlayer(player, board) {
+      let moves = [];
+      for (let r = 0; r < BOARD_SIZE; r++) {
+        for (let c = 0; c < BOARD_SIZE; c++) {
+          if (isPlayerPiece(board[r][c], player)) {
+            moves = moves.concat(getMovesForPiece(r, c, board));
+          }
+        }
+      }
+
+      // Przymus bicia w skali całej planszy
+      const captureMoves = moves.filter(m => m.captures.length > 0);
+      if (captureMoves.length > 0) {
+        const maxCaps = Math.max(...captureMoves.map(m => m.captures.length));
+        return captureMoves.filter(m => m.captures.length === maxCaps);
+      }
+
+      return moves;
+    }
+
+    function switchTurn() {
+      currentPlayer = currentPlayer === WHITE ? BLACK : WHITE;
+      updateMustCaptureState();
+      updateStatus();
+    }
+
+    function updateStatus() {
+      if (isGameOver) return;
+      if (modeSelect.value === 'ai') {
+        statusEl.innerText = currentPlayer === WHITE ? 'Twoja tura (Białe)' : 'Komputer myśli...';
+      } else {
+        statusEl.innerText = currentPlayer === WHITE ? 'Tura: Gracz 1 (Białe)' : 'Tura: Gracz 2 (Czarne)';
+      }
+    }
+
+    // Warunki końca gry
+    function checkGameOver() {
+      const currentMoves = getAllMovesForPlayer(currentPlayer, boardState);
+      if (currentMoves.length === 0) {
+        isGameOver = true;
+        const winner = currentPlayer === WHITE ? 'Czarne' : 'Białe';
+        statusEl.innerText = modeSelect.value === 'ai' && winner === 'Czarne' ? '💻 Komputer wygrał!' : `🎉 Wygrywają ${winner}! 🎉`;
+        return true;
+      }
+      return false;
+    }
+
+    // --- LOGIKA AI ---
+
+    function triggerAIMove() {
+      if (isGameOver) return;
+
+      const difficulty = difficultySelect.value;
+      const availableMoves = getAllMovesForPlayer(BLACK, boardState);
+
+      if (availableMoves.length === 0) {
+        checkGameOver();
+        return;
+      }
+
+      let chosenMove;
+
+      if (difficulty === 'easy') {
+        chosenMove = availableMoves[Math.floor(Math.random() * availableMoves.length)];
+      } 
+      else if (difficulty === 'medium') {
+        // Faworyzuje bicia oraz awans na damkę
+        availableMoves.sort((a, b) => {
+          const scoreA = a.captures.length * 10 + (a.toR === 7 ? 5 : 0);
+          const scoreB = b.captures.length * 10 + (b.toR === 7 ? 5 : 0);
+          return scoreB - scoreA + (Math.random() * 0.4 - 0.2);
+        });
+        chosenMove = availableMoves[0];
+      } 
+      else if (difficulty === 'hard') {
+        // Algorytm oceny pozycji z analizą ruchów
+        let bestScore = -Infinity;
+        let bestMoves = [];
+
+        for (const move of availableMoves) {
+          // Symulacja
+          const savedFrom = boardState[move.fromR][move.fromC];
+          const savedTo = boardState[move.toR][move.toC];
+          const savedCaps = move.captures.map(c => ({ r: c.r, c: c.c, p: boardState[c.r][c.c] }));
+
+          executeMove(move);
+          const score = evaluateBoard(BLACK);
+
+          // Cofnięcie
+          boardState[move.fromR][move.fromC] = savedFrom;
+          boardState[move.toR][move.toC] = savedTo;
+          for (const c of savedCaps) boardState[c.r][c.c] = c.p;
+
+          if (score > bestScore) {
+            bestScore = score;
+            bestMoves = [move];
+          } else if (score === bestScore) {
+            bestMoves.push(move);
+          }
+        }
+        chosenMove = bestMoves[Math.floor(Math.random() * bestMoves.length)];
+      }
+
+      executeMove(chosenMove);
+
+      if (!checkGameOver()) {
+        switchTurn();
+      }
+      renderBoard();
+    }
+
+    // Ocena pozycji dla AI
+    function evaluateBoard(player) {
+      let score = 0;
+      for (let r = 0; r < BOARD_SIZE; r++) {
+        for (let c = 0; c < BOARD_SIZE; c++) {
+          const piece = boardState
