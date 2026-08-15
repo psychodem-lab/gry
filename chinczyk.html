@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chińczyk - Edycja Premium</title>
+  <style>
+    :root {
+      --bg-color: #1e1e2e;
+      --card-bg: #2b2b3d;
+      --accent-color: #e74c3c;
+      --highlight: rgba(241, 196, 15, 0.8);
+      --text-color: #ffffff;
+      
+      /* Kolory graczy */
+      --p0-color: #e74c3c; /* Czerwony */
+      --p1-color: #2ecc71; /* Zielony */
+      --p2-color: #f1c40f; /* Żółty */
+      --p3-color: #3498db; /* Niebieski */
+      
+      --cell-bg: #3b3b52;
+      --path-bg: #4a4a68;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    h1 {
+      margin-bottom: 15px;
+      font-size: 2.2rem;
+      text-align: center;
+      background: linear-gradient(135deg, #f1c40f, #e74c3c);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+      max-width: 550px;
+      width: 100%;
+    }
+
+    .controls {
+      background-color: var(--card-bg);
+      padding: 15px 20px;
+      border-radius: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    label {
+      font-size: 0.85rem;
+      color: #a0a0b0;
+      font-weight: bold;
+    }
+
+    select, button {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: none;
+      background-color: #3b3b52;
+      color: var(--text-color);
+      font-size: 0.95rem;
+      cursor: pointer;
+      outline: none;
+      transition: background 0.2s;
+    }
+
+    select:hover, button:hover {
+      background-color: #4a4a68;
+    }
+
+    button.primary {
+      background-color: var(--accent-color);
+      font-weight: bold;
+      padding: 10px 20px;
+    }
+
+    button.primary:hover {
+      background-color: #c0392b;
+    }
+
+    .dice-container {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      width: 100%;
+      justify-content: center;
+      margin-bottom: 5px;
+    }
+
+    .dice-btn {
+      font-size: 1.2rem;
+      padding: 12px 25px;
+      background-color: #8e44ad;
+      color: white;
+      font-weight: bold;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+
+    .dice-btn:hover:not(:disabled) {
+      background-color: #9b59b6;
+    }
+
+    .dice-btn:disabled {
+      background-color: #555;
+      color: #888;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .status-bar {
+      font-size: 1.2rem;
+      font-weight: bold;
+      padding: 12px 20px;
+      background-color: var(--card-bg);
+      border-radius: 8px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .turn-indicator {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid white;
+    }
+
+    .board-wrapper {
+      width: 100%;
+      max-width: 460px;
+      display: flex;
+      justify-content: center;
+      margin-top: 5px;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(15, 1fr);
+      grid-template-rows: repeat(15, 1fr);
+      width: 450px;
+      height: 450px;
+      background-color: var(--card-bg);
+      border: 5px solid #1a1a24;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+      gap: 2px;
+      padding: 2px;
+    }
+
+    .cell {
+      background-color: var(--cell-bg);
+      border-radius: 2px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    .cell.path { background-color: var(--path-bg); }
+    .cell.safe-0 { background-color: rgba(231, 76, 60, 0.2); }
+    .cell.safe-1 { background-color: rgba(46, 204, 113, 0.2); }
+    .cell.safe-2 { background-color: rgba(241, 196, 15, 0.2); }
+    .cell.safe-3 { background-color: rgba(52, 152, 219, 0.2); }
+    
+    .cell.base-0 { background-color: rgba(231, 76, 60, 0.1); border: 1px solid rgba(231,76,60,0.3); }
+    .cell.base-1 { background-color: rgba(46, 204, 113, 0.1); border: 1px solid rgba(46,204,113,0.3); }
+    .cell.base-2 { background-color: rgba(241, 196, 15, 0.1); border: 1px solid rgba(241,196,15,0.3); }
+    .cell.base-3 { background-color: rgba(52, 152, 219, 0.1); border: 1px solid rgba(52,152,219,0.3); }
+
+    .cell.start-0 { background-color: rgba(231, 76, 60, 0.5); }
+    .cell.start-1 { background-color: rgba(46, 204, 113, 0.5); }
+    .cell.start-2 { background-color: rgba(241, 196, 15, 0.5); }
+    .cell.start-3 { background-color: rgba(52, 152, 219, 0.5); }
+
+    .cell.center { background-color: #1a1a24; }
+
+    .piece {
+      width: 75%;
+      height: 75%;
+      border-radius: 50%;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.4);
+      z-index: 2;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      position: absolute;
+    }
+
+    .piece.p0 { background: radial-gradient(circle at 30% 30%, #ff7675, #c0392b); border: 2px solid #900; }
+    .piece.p1 { background: radial-gradient(circle at 30% 30%, #55efc4, #27ae60); border: 2px solid #060; }
+    .piece.p2 { background: radial-gradient(circle at 30% 30%, #ffeaa7, #f39c12); border: 2px solid #b8860b; }
+    .piece.p3 { background: radial-gradient(circle at 30% 30%, #74b9ff, #2980b9); border: 2px solid #00509e; }
+
+    .piece.selectable {
+      cursor: pointer;
+      box-shadow: 0 0 15px var(--highlight), inset 0 2px 4px rgba(255,255,255,0.6);
+      transform: scale(1.1);
+      z-index: 3;
+      animation: pulse 1s infinite alternate;
+    }
+
+    @keyframes pulse {
+      from { transform: scale(1.05); }
+      to { transform: scale(1.2); }
+    }
+
+    @media (max-width: 500px) {
+      .board {
+        width: 95vw;
+        height: 95vw;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Chińczyk</h1>
+
+    <div class="controls">
+      <div class="control-group">
+        <label for="mode">Tryb gry:</label>
+        <select id="mode">
+          <option value="1">1 Gracz (vs 3 AI)</option>
+          <option value="2">2 Graczy (vs 2 AI)</option>
+          <option value="4">4 Graczy (Gorące krzesła)</option>
+        </select>
+      </div>
+
+      <div class="control-group" id="difficulty-group">
+        <label for="difficulty">Poziom AI:</label>
+        <select id="difficulty">
+          <option value="easy">Łatwy (Losowy)</option>
+          <option value="medium" selected>Średni</option>
+          <option value="hard">Trudny (Strateg)</option>
+        </select>
+      </div>
+
+      <button class="primary" id="restart-btn">Nowa Gra</button>
+    </div>
+
+    <div class="status-bar" id="status">
+      <div class="turn-indicator" id="turn-color" style="background-color: var(--p0-color);"></div>
+      <span id="status-text">Przygotowanie gry...</span>
+    </div>
+
+    <div class="dice-container">
+      <button class="dice-btn" id="dice-btn" disabled>🎲 Rzuć kostką</button>
+    </div>
+
+    <div class="board-wrapper">
+      <div class="board" id="board"></div>
+    </div>
+  </div>
+
+  <script>
+    // Konfiguracja planszy i ścieżek
+    const PATH_COORDS = [];
+    // Generowanie głównej ścieżki (52 pola) zgodnie z ruchem wskazówek zegara
+    // Lewe ramię (góra)
+    for(let c=1; c<=5; c++) PATH_COORDS.push({r:6, c:c});
+    // Górne ramię (lewo)
+    for(let r=5; r>=0; r--) PATH_COORDS.push({r:r, c:6});
+    PATH_COORDS.push({r:0, c:7}); // Szczyt
+    // Górne ramię (prawo)
+    for(let r=0; r<=5; r++) PATH_COORDS.push({r:r, c:8});
+    // Prawe ramię (góra)
+    for(let c=9; c<=14; c++) PATH_COORDS.push({r:6, c:c});
+    PATH_COORDS.push({r:7, c:14}); // Skrajnie prawo
+    // Prawe ramię (dół)
+    for(let c=14; c>=9; c--) PATH_COORDS.push({r:8, c:c});
+    // Dolne ramię (prawo)
+    for(let r=9; r<=14; r++) PATH_COORDS.push({r:r, c:8});
+    PATH_COORDS.push({r:14, c:7}); // Dół
+    // Dolne ramię (lewo)
+    for(let r=14; r>=9; r--) PATH_COORDS.push({r:r, c:6});
+    // Lewe ramię (dół)
+    for(let c=5; c>=0; c--) PATH_COORDS.push({r:8, c:c});
+    PATH_COORDS.push({r:7, c:0}); // Skrajnie lewo
+    PATH_COORDS.push({r:6, c:0}); // Przed startem czerwonego
+
+    const HOME_COORDS = [
+      [{r:7, c:1}, {r:7, c:2}, {r:7, c:3}, {r:7, c:4}], // P0 (Czerwony)
+      [{r:1, c:7}, {r:2, c:7}, {r:3, c:7}, {r:4, c:7}], // P1 (Zielony)
+      [{r:7, c:13}, {r:7, c:12}, {r:7, c:11}, {r:7, c:10}], // P2 (Żółty)
+      [{r:13, c:7}, {r:12, c:7}, {r:11, c:7}, {r:10, c:7}]  // P3 (Niebieski)
+    ];
+
+    const BASE_COORDS = [
+      [{r:2, c:2}, {r:2, c:3}, {r:3, c:2}, {r:3, c:3}], // P0
+      [{r:2, c:11}, {r:2, c:12}, {r:3, c:11}, {r:3, c:12}], // P1
+      [{r:11, c:11}, {r:11, c:12}, {r:12, c:11}, {r:12, c:12}], // P2
+      [{r:11, c:2}, {r:11, c:3}, {r:12, c:2}, {r:12, c:3}]  // P3
+    ];
+
+    const START_IDXS = [0, 13, 26, 39];
+    const COLORS = ['Czerwonego', 'Zielonego', 'Żółtego', 'Niebieskiego'];
+    const CSS_COLORS = ['var(--p0-color)', 'var(--p1-color)', 'var(--p2-color)', 'var(--p3-color)'];
+
+    let players = [];
+    let currentPlayerIdx = 0;
+    let gameState = 'WAITING_DICE'; // WAITING_DICE, WAITING_MOVE, GAME_OVER
+    let currentRoll = 0;
+    let consecutiveSixes = 0;
+
+    const boardEl = document.getElementById('board');
+    const statusText = document.getElementById('status-text');
+    const turnIndicator = document.getElementById('turn-color');
+    const diceBtn = document.getElementById('dice-btn');
+    const modeSelect = document.getElementById('mode');
+    const difficultySelect = document.getElementById('difficulty');
+    const difficultyGroup = document.getElementById('difficulty-group');
+    const restartBtn = document.getElementById('restart-btn');
+
+    // --- INICJALIZACJA PLANSZY ---
+
+    function initGame() {
+      const mode = parseInt(modeSelect.value);
+      players = [
+        { id: 0, isAI: false, pieces: [-1, -1, -1, -1], finished: 0 },
+        { id: 1, isAI: mode < 2, pieces: [-1, -1, -1, -1], finished: 0 },
+        { id: 2, isAI: mode < 4, pieces: [-1, -1, -1, -1], finished: 0 },
+        { id: 3, isAI: mode < 4, pieces: [-1, -1, -1, -1], finished: 0 }
+      ];
+
+      currentPlayerIdx = 0;
+      gameState = 'WAITING_DICE';
+      consecutiveSixes = 0;
+      
+      renderBoard();
+      updateStatus();
+      processTurn();
+    }
+
+    function renderBoard() {
+      boardEl.innerHTML = '';
+      const grid = Array(15).fill(null).map(() => Array(15).fill('cell'));
+
+      // Oznaczanie bazy
+      for(let p=0; p<4; p++) {
+        for(let r = BASE_COORDS[p][0].r - 2; r <= BASE_COORDS[p][3].r + 2; r++) {
+          for(let c = BASE_COORDS[p][0].c - 2; c <= BASE_COORDS[p][3].c + 2; c++) {
+            if (r>=0 && r<15 && c>=0 && c<15) grid[r][c] += ` base-${p}`;
+          }
+        }
+      }
+
+      // Oznaczanie ścieżki i startów
+      PATH_COORDS.forEach((pos, idx) => {
+        grid[pos.r][pos.c] += ' path';
+        let isStart = START_IDXS.indexOf(idx);
+        if(isStart !== -1) grid[pos.r][pos.c] += ` start-${isStart}`;
+      });
+
+      // Oznaczanie domków
+      for(let p=0; p<4; p++) {
+        HOME_COORDS[p].forEach(pos => grid[pos.r][pos.c] += ` safe-${p}`);
+      }
+
+      grid[7][7] += ' center'; // Środek
+      
+      // Rysowanie siatki
+      for(let r=0; r<15; r++) {
+        for(let c=0; c<15; c++) {
+          const div = document.createElement('div');
+          div.className = grid[r][c];
+          div.dataset.r = r;
+          div.dataset.c = c;
+          boardEl.appendChild(div);
+        }
+      }
+
+      // Rysowanie pionków
+      players.forEach(player => {
+        // Zliczanie pionków na tych samych polach (dla drobnego przesunięcia wizualnego)
+        let posCounts = {};
+
+        player.pieces.forEach((step, pIdx) => {
+          if (step === 55) return; // Zakończył
+
+          let coords;
+          if (step === -1) coords = BASE_COORDS[player.id][pIdx];
+          else if (step <= 50) coords = PATH_COORDS[(START_IDXS[player.id] + step) % 52];
+          else coords = HOME_COORDS[player.id][step - 51];
+
+          const posKey = `${coords.r},${coords.c}`;
+          posCounts[posKey] = (posCounts[posKey] || 0) + 1;
+          
+          const targetCell = boardEl.querySelector(`[data-r='${coords.r}'][data-c='${coords.c}']`);
+          const pieceEl = document.createElement('div');
+          pieceEl.className = `piece p${player.id}`;
+          pieceEl.dataset.player = player.id;
+          pieceEl.dataset.piece = pIdx;
+          
+          // Drobne przesunięcie, jeśli wiele pionków stoi na tym samym polu
+          const offset = posCounts[posKey] > 1 ? (posCounts[posKey] * 3) : 0;
+          if (offset > 0) {
+            pieceEl.style.transform = `translate(${offset}px, ${-offset}px)`;
+            pieceEl.style.zIndex = 4;
+          }
+
+          pieceEl.addEventListener('click', () => handlePieceClick(player.id, pIdx));
+          targetCell.appendChild(pieceEl);
+        });
+      });
+    }
+
+    // --- LOGIKA RUCHU I ZASAD ---
+
+    function rollDice() {
+      return Math.floor(Math.random() * 6) + 1;
+    }
+
+    function processTurn() {
+      if (gameState === 'GAME_OVER') return;
+      const player = players[currentPlayerIdx];
+      updateStatus();
+
+      if (player.isAI) {
+        diceBtn.disabled = true;
+        setTimeout(() => {
+          currentRoll = rollDice();
+          executeTurnLogic();
+        }, 600);
+      } else {
+        diceBtn.disabled = false;
+        diceBtn.innerText = '🎲 Rzuć kostką';
+        diceBtn.onclick = () => {
+          diceBtn.disabled = true;
+          currentRoll = rollDice();
+          executeTurnLogic();
+        };
+      }
+    }
+
+    function executeTurnLogic() {
+      const player = players[currentPlayerIdx];
+      diceBtn.innerText = `🎲 Wyrzucono: ${currentRoll}`;
+      statusText.innerText = `Tura ${COLORS[currentPlayerIdx]} - Wyrzucono ${currentRoll}`;
+
+      const validMoves = getValidMoves(player.id, currentRoll);
+
+      if (validMoves.length === 0) {
+        setTimeout(nextTurn, 1200);
+        return;
+      }
+
+      gameState = 'WAITING_MOVE';
+
+      if (player.isAI) {
+        setTimeout(() => performAIMove(validMoves), 800);
+      } else {
+        highlightValidPieces(validMoves);
+      }
+    }
+
+    // Zwraca tablicę indeksów pionków (0-3), którymi można ruszyć
+    function getValidMoves(pId, roll) {
+      const player = players[pId];
+      const valid = [];
+
+      player.pieces.forEach((step, pIdx) => {
+        if (step === 55) return; // Już w mecie
+
+        // W bazie
+        if (step === -1) {
+          if (roll === 6) {
+            // Sprawdź czy pole startowe nie jest zablokowane przez NASZ własny pionek
+            if (!isOccupiedByOwn(pId, 0)) valid.push(pIdx);
+          }
+          return;
+        }
+
+        // Na ścieżce lub w domku
+        const nextStep = step + roll;
+        if (nextStep <= 50) {
+          if (!isOccupiedByOwn(pId, nextStep)) valid.push(pIdx);
+        } else if (nextStep <= 54) {
+          if (!isOccupiedByOwn(pId, nextStep)) valid.push(pIdx);
+        } else if (nextStep === 55) {
+          valid.push(pIdx); // Idealne wejście do mety
+        }
+      });
+
+      return valid;
+    }
+
+    function isOccupiedByOwn(pId, targetStep) {
+      const player = players[pId];
+      return player.pieces.some(step => step === targetStep && step !== 55);
+    }
+
+    function getAbsolutePos(pId, step) {
+      if (step < 0 || step > 50) return -1;
+      return (START_IDXS[pId] + step) % 52;
+    }
+
+    function executeMove(pId, pIdx) {
+      const player = players[pId];
+      let oldStep = player.pieces[pIdx];
+      let newStep = oldStep === -1 ? 0 : oldStep + currentRoll;
+
+      player.pieces[pIdx] = newStep;
+
+      // Sprawdzanie bicia
+      if (newStep <= 50) {
+        const absPos = getAbsolutePos(pId, newStep);
+        players.forEach(enemy => {
+          if (enemy.id !== pId) {
+            enemy.pieces.forEach((eStep, eIdx) => {
+              if (eStep >= 0 && eStep <= 50 && getAbsolutePos(enemy.id, eStep) === absPos) {
+                // Bicie!
+                enemy.pieces[eIdx] = -1;
+              }
+            });
+          }
+        });
+      }
+
+      if (newStep === 55) player.finished++;
+
+      renderBoard();
+
+      if (player.finished === 4) {
+        gameState = 'GAME_OVER';
+        statusText.innerText = `🎉 Gracz ${COLORS[pId]} wygrywa! 🎉`;
+        diceBtn.innerText = 'Koniec Gry';
+        return;
+      }
+
+      if (currentRoll === 6) {
+        consecutiveSixes++;
+        if(consecutiveSixes < 3) {
+          gameState = 'WAITING_DICE';
+          setTimeout(processTurn, 800);
+          return;
+        }
+      }
+      
+      nextTurn();
+    }
+
+    function nextTurn() {
+      consecutiveSixes = 0;
+      currentPlayerIdx = (currentPlayerIdx + 1) % 4;
+      gameState = 'WAITING_DICE';
+      processTurn();
+    }
+
+    function updateStatus() {
+      if(gameState === 'GAME_OVER') return;
+      turnIndicator.style.backgroundColor = CSS_COLORS[currentPlayerIdx];
+      statusText.innerText = `Tura: Gracz ${COLORS[currentPlayerIdx]}`;
+    }
+
+    // --- INTERAKCJA GRACZA ---
+
+    function highlightValidPieces(validPieceIdxs) {
+      const playerStr = currentPlayerIdx.toString();
+      validPieceIdxs.forEach(pIdx => {
+        const pieceEl = document.querySelector(`.piece[data-player="${playerStr}"][data-piece="${pIdx}"]`);
+        if (pieceEl) pieceEl.classList.add('selectable');
+      });
+    }
+
+    function handlePieceClick(pId, pIdx) {
+      if (gameState !== 'WAITING_MOVE' || pId !== currentPlayerIdx) return;
+      const pieceEl = document.querySelector(`.piece[data-player="${pId}"][data-piece="${pIdx}"]`);
+      if (!pieceEl.classList.contains('selectable')) return;
+
+      executeMove(pId, pIdx);
+    }
+
+    // --- SZTUCZNA INTELIGENCJA ---
+
+    function performAIMove(validMoves) {
+      const diff = difficultySelect.value;
+      const pId = currentPlayerIdx;
+      
+      if (diff === 'easy') {
+        const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
+        executeMove(pId, randomMove);
+        return;
+      }
+
+      let bestScore = -Infinity;
+      let bestMove = validMoves[0];
+
+      validMoves.forEach(pIdx => {
+        const score = evaluateMove(pId, pIdx, diff === 'hard');
+        if (score > bestScore) {
+          bestScore = score;
+          bestMove = pIdx;
+        } else if (score === bestScore && Math.random() > 0.5) {
+          bestMove = pIdx;
+        }
+      });
+
+      executeMove(pId, bestMove);
+    }
+
+    function evaluateMove(pId, pIdx, isHard) {
+      const player = players[pId];
+      const curStep = player.pieces[pIdx];
+      const nextStep = curStep === -1 ? 0 : curStep + currentRoll;
+      let score = 0;
+
+      // Nagrody podstawowe (Poziom Średni i Trudny)
+      if (curStep === -1) score += 40; // Wyjście z bazy
+      if (nextStep === 55) score += 100; // Dojście do mety
+      if (curStep <= 50 && nextStep > 50 && nextStep < 55) score += 30; // Wejście do domku (bezpiecznie)
+      if (curStep !== -1) score += (nextStep * 0.5); // Promowanie wysuniętych pionków
+
+      // Sprawdzanie potencjalnego bicia
+      if (nextStep <= 50) {
+        const nextAbsPos = getAbsolutePos(pId, nextStep);
+        let captures = false;
+        players.forEach(enemy => {
+          if (enemy.id !== pId) {
+            enemy.pieces.forEach(eStep => {
+              if (eStep >= 0 && eStep <= 50 && getAbsolutePos(enemy.id, eStep) === nextAbsPos) {
+                captures = true;
+              }
+            });
+          }
+        });
+        if (captures) score += 60; // Silna zachęta do bicia
+      }
+
+      // Analiza ryzyka (Tylko poziom Trudny)
+      if (isHard) {
+        if (nextStep <= 50) {
+          const nextAbsPos = getAbsolutePos(pId, nextStep);
+          // Czy stajemy na polu, które jest narażone na bicie w następnej turze? (1-6 pól przed przeciwnikiem)
+          let inDanger = false;
+          players.forEach(enemy => {
+            if (enemy.id !== pId) {
+              enemy.pieces.forEach(eStep => {
+                if (eStep >= 0 && eStep <= 50) {
+                  const enemyAbsPos = getAbsolutePos(enemy.id, eStep);
+                  // Dystans od wroga do nas
+                  const dist = (nextAbsPos - enemyAbsPos + 52) % 52;
+                  if (dist >= 1 && dist <= 6) inDanger = true;
+                }
+              });
+            }
+          });
+          if (inDanger) score -= 25;
+        }
+
+        // Czy uciekamy z zagrożonego pola?
+        if (curStep >= 0 && curStep <= 50) {
+          const curAbsPos = getAbsolutePos(pId, curStep);
+          let wasInDanger = false;
+          players.forEach(enemy => {
+            if (enemy.id !== pId) {
+              enemy.pieces.forEach(eStep => {
+                if (eStep >= 0 && eStep <= 50) {
+                  const enemyAbsPos = getAbsolutePos(enemy.id, eStep);
+                  const dist = (curAbsPos - enemyAbsPos + 52) % 52;
+                  if (dist >= 1 && dist <= 6) wasInDanger = true;
+                }
+              });
+            }
+          });
+          if (wasInDanger) score += 20; // Premia za ucieczkę
+        }
+      }
+
+      return score;
+    }
+
+    // --- ZDARZENIA UI ---
+
+    modeSelect.addEventListener('change', () => {
+      difficultyGroup.style.display = parseInt(modeSelect.value) === 4 ? 'none' : 'flex';
+      initGame();
+    });
+
+    difficultySelect.addEventListener('change', initGame);
+    restartBtn.addEventListener('click', initGame);
+
+    // Start
+    initGame();
+  </script>
+</body>
+</html>
