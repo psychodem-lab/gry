@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bystre Oko - Gra w stylu Dobble</title>
+  <style>
+    :root {
+      --bg-color: #1e1e2e;
+      --card-bg: #2b2b3d;
+      --accent-color: #e74c3c;
+      --highlight: rgba(241, 196, 15, 0.8);
+      --text-color: #ffffff;
+      
+      --p1-color: #3498db; /* Niebieski - Gracz 1 */
+      --p2-color: #e74c3c; /* Czerwony - Gracz 2 / AI */
+      --center-color: #f1c40f; /* Żółty - Środek */
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    h1 {
+      margin-bottom: 15px;
+      font-size: 2.2rem;
+      text-align: center;
+      background: linear-gradient(135deg, #f1c40f, #e74c3c);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+      max-width: 600px;
+      width: 100%;
+    }
+
+    .controls {
+      background-color: var(--card-bg);
+      padding: 15px 20px;
+      border-radius: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    label {
+      font-size: 0.85rem;
+      color: #a0a0b0;
+      font-weight: bold;
+    }
+
+    select, button {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: none;
+      background-color: #3b3b52;
+      color: var(--text-color);
+      font-size: 0.95rem;
+      cursor: pointer;
+      outline: none;
+      transition: background 0.2s;
+    }
+
+    select:hover, button:hover {
+      background-color: #4a4a68;
+    }
+
+    button.primary {
+      background-color: var(--accent-color);
+      font-weight: bold;
+      padding: 10px 20px;
+    }
+
+    button.primary:hover {
+      background-color: #c0392b;
+    }
+
+    .status-bar {
+      font-size: 1.2rem;
+      font-weight: bold;
+      padding: 12px 20px;
+      background-color: var(--card-bg);
+      border-radius: 8px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    /* Wygląd stołu i kart */
+    .game-board {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      width: 100%;
+      padding: 10px 0;
+    }
+
+    .player-zone {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 450px;
+      background-color: rgba(43, 43, 61, 0.5);
+      padding: 15px;
+      border-radius: 12px;
+      border: 2px solid transparent;
+      transition: border-color 0.3s;
+    }
+
+    .player-zone.p1 { border-bottom-color: var(--p1-color); }
+    .player-zone.p2 { border-top-color: var(--p2-color); }
+
+    .score-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+      width: 80px;
+    }
+
+    .score-box span {
+      font-size: 0.9rem;
+      color: #a0a0b0;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .card-wrapper {
+      position: relative;
+    }
+
+    .card {
+      width: 160px;
+      height: 160px;
+      background-color: #e2e2e2;
+      border-radius: 50%;
+      position: relative;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.5), inset 0 0 15px rgba(0,0,0,0.1);
+      border: 5px solid #fff;
+      transition: transform 0.2s, background-color 0.3s;
+      overflow: hidden;
+    }
+
+    .center-zone .card {
+      width: 190px;
+      height: 190px;
+      border-color: var(--center-color);
+      box-shadow: 0 0 30px rgba(241, 196, 15, 0.3);
+    }
+
+    .player-zone.p1 .card { border-color: var(--p1-color); }
+    .player-zone.p2 .card { border-color: var(--p2-color); }
+
+    .symbol-container {
+      position: absolute;
+      /* Centrowanie przy transformacjach w JS */
+      transform: translate(-50%, -50%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .symbol {
+      font-size: 2.2rem;
+      user-select: none;
+      transition: transform 0.1s ease;
+      filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.3));
+    }
+
+    .interactive .symbol {
+      cursor: pointer;
+    }
+
+    .interactive .symbol:hover {
+      transform: scale(1.3) !important;
+      filter: drop-shadow(0 0 8px rgba(0,0,0,0.8));
+      z-index: 10;
+    }
+
+    .flash-success { animation: flashGreen 0.4s ease-out; }
+    .flash-error { animation: shakeRed 0.4s ease-in-out; }
+
+    @keyframes flashGreen {
+      0% { background-color: #2ecc71; transform: scale(1); }
+      50% { background-color: #2ecc71; transform: scale(1.1); }
+      100% { background-color: #e2e2e2; transform: scale(1); }
+    }
+
+    @keyframes shakeRed {
+      0%, 100% { transform: translateX(0); background-color: #e2e2e2; }
+      20%, 60% { transform: translateX(-10px); background-color: #e74c3c; }
+      40%, 80% { transform: translateX(10px); background-color: #e74c3c; }
+    }
+
+    .pile-info {
+      text-align: center;
+      font-weight: bold;
+      color: var(--center-color);
+      margin-bottom: 5px;
+      font-size: 1.1rem;
+    }
+
+    @media (max-width: 500px) {
+      .card { width: 130px; height: 130px; }
+      .center-zone .card { width: 150px; height: 150px; }
+      .symbol { font-size: 1.8rem; }
+      .player-zone { padding: 10px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Bystre Oko</h1>
+
+    <div class="controls">
+      <div class="control-group">
+        <label for="mode">Tryb gry:</label>
+        <select id="mode">
+          <option value="ai">1 Gracz (vs Komputer)</option>
+          <option value="pvp">2 Graczy (1 ekran)</option>
+        </select>
+      </div>
+
+      <div class="control-group" id="difficulty-group">
+        <label for="difficulty">Poziom AI:</label>
+        <select id="difficulty">
+          <option value="easy">Łatwy</option>
+          <option value="medium" selected>Średni</option>
+          <option value="hard">Trudny (Szybki)</option>
+        </select>
+      </div>
+
+      <button class="primary" id="restart-btn">Rozpocznij Grę</button>
+    </div>
+
+    <div class="status-bar" id="status-text">
+      Wybierz tryb i naciśnij Rozpocznij!
+    </div>
+
+    <div class="game-board">
+      <!-- Strefa Gracza 2 / AI -->
+      <div class="player-zone p2">
+        <div class="score-box">
+          <span id="name-p2">Komputer</span>
+          <div id="score-p2">0</div>
+        </div>
+        <div class="card-wrapper">
+          <div class="card" id="card-p2"></div>
+        </div>
+      </div>
+
+      <!-- Strefa Centralna (Talia) -->
+      <div class="center-zone">
+        <div class="pile-info" id="pile-count">Karty w talii: 0</div>
+        <div class="card-wrapper">
+          <div class="card" id="card-center"></div>
+        </div>
+      </div>
+
+      <!-- Strefa Gracza 1 -->
+      <div class="player-zone p1">
+        <div class="card-wrapper">
+          <div class="card interactive" id="card-p1"></div>
+        </div>
+        <div class="score-box">
+          <span>Ty</span>
+          <div id="score-p1">0</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- BAZA SYMBOLI ---
+    const EMOJIS = [
+      "🍎", "🍌", "🍉", "🍇", "🍓", "🥕", "🥦", "🍕", 
+      "🍔", "🍟", "🍩", "🍦", "☕", "🚀", "🛸", "🚗", 
+      "🚲", "⛵", "⛺", "⌚", "📱", "⚽", "🏀", "🎾", 
+      "🎸", "🎺", "🎨", "🎭", "🎲", "🧩", "🧸"
+    ];
+
+    // --- ZMIENNE GRY ---
+    let fullDeck = [];
+    let pile = [];
+    let centerCard = [];
+    let playerCards = { p1: [], p2: [] };
+    let scores = { p1: 0, p2: 0 };
+    let isGameOver = true;
+    let aiTimer = null;
+    let locks = { p1: false, p2: false }; // Blokada po błędnym kliknięciu
+
+    const modeSelect = document.getElementById('mode');
+    const diffSelect = document.getElementById('difficulty');
+    const diffGroup = document.getElementById('difficulty-group');
+    const statusText = document.getElementById('status-text');
+    const restartBtn = document.getElementById('restart-btn');
+    
+    // UI Kart
+    const elCardCenter = document.getElementById('card-center');
+    const elCardP1 = document.getElementById('card-p1');
+    const elCardP2 = document.getElementById('card-p2');
+    const elPileCount = document.getElementById('pile-count');
+    const elScoreP1 = document.getElementById('score-p1');
+    const elScoreP2 = document.getElementById('score-p2');
+    const elNameP2 = document.getElementById('name-p2');
+
+    // --- GENERATOR KART (Płaszczyzna rzutowa rzędu N=5) ---
+    function generateDeck() {
+      const n = 5;
+      let deck = [];
+      
+      // Karta startowa (prosta w nieskończoności)
+      let card1 = [];
+      for (let i = 1; i <= n + 1; i++) card1.push(i);
+      deck.push(card1);
+
+      // Karty N
+      for (let j = 1; j <= n; j++) {
+        let card = [1];
+        for (let k = 1; k <= n; k++) {
+          card.push((n + 1) + (j - 1) * n + k);
+        }
+        deck.push(card);
+      }
+
+      // Karty N^2
+      for (let i = 1; i <= n; i++) {
+        for (let j = 1; j <= n; j++) {
+          let card = [i + 1];
+          for (let k = 1; k <= n; k++) {
+            let val = (n + 1) + (k - 1) * n + ((i - 1) * (k - 1) + (j - 1)) % n + 1;
+            card.push(val);
+          }
+          deck.push(card);
+        }
+      }
+
+      // Zamiana indeksów (1-31) na Emoji oraz tasowanie symboli na karcie
+      return deck.map(card => {
+        let mapped = card.map(idx => EMOJIS[idx - 1]);
+        return mapped.sort(() => Math.random() - 0.5); // Losowa kolejność symboli
+      });
+    }
+
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+
+    // --- LOGIKA GRY ---
+
+    function initGame() {
+      isGameOver = false;
+      clearTimeout(aiTimer);
+      locks = { p1: false, p2: false };
+      scores = { p1: 0, p2: 0 };
+      
+      const isPvP = modeSelect.value === 'pvp';
+      elNameP2.innerText = isPvP ? "Gracz 2" : "Komputer";
+      if (isPvP) {
+        elCardP2.classList.add('interactive');
+      } else {
+        elCardP2.classList.remove('interactive');
+      }
+
+      fullDeck = generateDeck();
+      shuffleArray(fullDeck);
+
+      // Rozdanie
+      pile = [...fullDeck];
+      playerCards.p1 = pile.pop();
+      playerCards.p2 = pile.pop();
+      centerCard = pile.pop();
+
+      updateUI();
+      statusText.innerText = "Znajdź wspólny symbol!";
+      
+      startAITurn();
+    }
+
+    function checkMatch(playerId, clickedSymbol) {
+      if (isGameOver || locks[playerId]) return;
+
+      const myCard = playerCards[playerId];
+      // Szukanie wspólnego symbolu
+      const commonSymbol = myCard.find(sym => centerCard.includes(sym));
+
+      const cardEl = playerId === 'p1' ? elCardP1 : elCardP2;
+
+      if (clickedSymbol === commonSymbol) {
+        // SUKCES
+        cardEl.classList.remove('flash-success');
+        void cardEl.offsetWidth; // reset animacji
+        cardEl.classList.add('flash-success');
+
+        scores[playerId]++;
+        // Karta ze środka wędruje do gracza
+        playerCards[playerId] = centerCard;
+        
+        if (pile.length > 0) {
+          centerCard = pile.pop();
+        } else {
+          endGame();
+          return;
+        }
+
+        updateUI();
+        startAITurn(); // Resetujemy czas sztucznej inteligencji
+      } else {
+        // BŁĄD - Kara czasowa
+        cardEl.classList.remove('flash-error');
+        void cardEl.offsetWidth;
+        cardEl.classList.add('flash-error');
+        
+        locks[playerId] = true;
+        setTimeout(() => { locks[playerId] = false; }, 1500);
+      }
+    }
+
+    function startAITurn() {
+      if (modeSelect.value !== 'ai' || isGameOver) return;
+      clearTimeout(aiTimer);
+
+      const diff = diffSelect.value;
+      let delay = 0;
+      // Czasy reakcji AI (w ms)
+      if (diff === 'easy') delay = Math.random() * 2000 + 4000; // 4s - 6s
+      else if (diff === 'medium') delay = Math.random() * 1500 + 2500; // 2.5s - 4s
+      else if (diff === 'hard') delay = Math.random() * 1000 + 1200; // 1.2s - 2.2s
+
+      aiTimer = setTimeout(() => {
+        if (!isGameOver) {
+          // AI zawsze znajduje poprawny symbol
+          const commonSymbol = playerCards.p2.find(sym => centerCard.includes(sym));
+          checkMatch('p2', commonSymbol);
+        }
+      }, delay);
+    }
+
+    function endGame() {
+      isGameOver = true;
+      clearTimeout(aiTimer);
+      updateUI();
+      
+      let winnerText = "";
+      if (scores.p1 > scores.p2) winnerText = "🎉 Gracz 1 Wygrywa!";
+      else if (scores.p2 > scores.p1) winnerText = modeSelect.value === 'ai' ? "🤖 Komputer Wygrywa!" : "🎉 Gracz 2 Wygrywa!";
+      else winnerText = "🤝 Remis!";
+
+      statusText.innerText = `Koniec gry! ${winnerText}`;
+      elCardCenter.innerHTML = '';
+    }
+
+    // --- RENDEROWANIE UI ---
+
+    function updateUI() {
+      elScoreP1.innerText = scores.p1;
+      elScoreP2.innerText = scores.p2;
+      elPileCount.innerText = `Karty w talii: ${pile.length}`;
+
+      if (!isGameOver) {
+        renderCard(elCardCenter, centerCard, false, null);
+      }
+      renderCard(elCardP1, playerCards.p1, true, 'p1');
+      
+      const isPvP = modeSelect.value === 'pvp';
+      renderCard(elCardP2, playerCards.p2, isPvP, 'p2');
+    }
+
+    function renderCard(container, symbols, isInteractive, playerId) {
+      container.innerHTML = '';
+      if (!symbols || symbols.length === 0) return;
+
+      // Konfiguracja rozłożenia symboli: 1 w środku, 5 na okręgu
+      const angles = [0, 72, 144, 216, 288];
+
+      symbols.forEach((sym, idx) => {
+        let wrapper = document.createElement('div');
+        wrapper.className = 'symbol-container';
+        
+        let el = document.createElement('span');
+        el.className = 'symbol';
+        el.innerText = sym;
+
+        // Losowa rotacja i skala dla każdego symbolu by przypominało fizyczne Dobble
+        let scale = (Math.random() * 0.6) + 0.8; // Skala 0.8 do 1.4
+        let rot = Math.random() * 360;
+        
+        el.style.transform = `scale(${scale}) rotate(${rot}deg)`;
+
+        // Pozycjonowanie wewnątrz okręgu (karty)
+        if (idx === 0) {
+          wrapper.style.left = '50%';
+          wrapper.style.top = '50%';
+        } else {
+          let radius = 32; // % odległości od środka
+          // Dodanie lekkiego szumu do pozycjonowania
+          let angleOffset = (Math.random() * 20 - 10);
+          let rad = (angles[idx - 1] + angleOffset) * (Math.PI / 180);
+          
+          wrapper.style.left = `calc(50% + ${radius * Math.cos(rad)}%)`;
+          wrapper.style.top = `calc(50% + ${radius * Math.sin(rad)}%)`;
+        }
+
+        if (isInteractive) {
+          el.onclick = () => checkMatch(playerId, sym);
+        }
+
+        wrapper.appendChild(el);
+        container.appendChild(wrapper);
+      });
+    }
+
+    // --- ZDARZENIA ---
+    modeSelect.addEventListener('change', () => {
+      diffGroup.style.display = modeSelect.value === 'pvp' ? 'none' : 'flex';
+      initGame();
+    });
+
+    diffSelect.addEventListener('change', initGame);
+    restartBtn.addEventListener('click', initGame);
+
+  </script>
+</body>
+</html>
