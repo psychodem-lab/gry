@@ -1933,7 +1933,7 @@ function gameLoop() {
         addTireSmoke(player.x + player.width - 4, player.y + player.height);
     } else {
         // Naturalna prędkość maksymalna wzrastająca z dystansem
-        const targetSpeed = Math.min(carStats.maxSpeed, gameBaseSpeed + distance / 4000);
+        const targetSpeed = Math.min(carStats.maxSpeed, gameBaseSpeed + distance / 6000);
         currentSpeed += (targetSpeed - currentSpeed) * 0.05;
     }
 
@@ -1996,7 +1996,7 @@ function gameLoop() {
     roadWidth += (targetRoadWidth - roadWidth) * 0.01;
 
     // Generowanie przeszkód i aut
-    const spawnRate = Math.max(35, 75 - Math.floor(distance / 500));
+        const spawnRate = Math.max(40, 85 - Math.floor(distance / 700));
     if (frames % spawnRate === 0) {
         const rand = Math.random();
         if (rand < 0.6) {
@@ -2497,12 +2497,12 @@ function resetGameVariables() {
 
     const car = CARS_DATABASE[selectedCarIndex];
     player.x = canvas.width / 2 - 22;
-    player.y = canvas.height - 130;
+    player.y = canvas.height - 220;
     player.speed = car.handling;
     player.dx = 0;
 
-    gameBaseSpeed = 5;
-    currentSpeed = 5;
+    gameBaseSpeed = 4.2;
+    currentSpeed = 4.2;
     playerHealth = car.maxHp;
     playerFuel = 100;
     playerNitro = 30;
