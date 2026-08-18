@@ -380,49 +380,6 @@
             gap: 10px;
             pointer-events: auto;
         }
-        .joystick-zone {
-            pointer-events: auto;
-            display: flex;
-            align-items: flex-end;
-            padding-bottom: 2px;
-        }
-        .joystick-base {
-            position: relative;
-            width: 92px;
-            height: 92px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.08);
-            border: 2px solid rgba(255,255,255,0.25);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
-            touch-action: none;
-            overflow: hidden;
-        }
-        .joystick-base::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 6px;
-            height: 6px;
-            margin: -3px 0 0 -3px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.3);
-        }
-        .joystick-thumb {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 44px;
-            height: 44px;
-            margin: -22px 0 0 -22px;
-            border-radius: 50%;
-            background: radial-gradient(circle at 35% 35%, #54a0ff, #2e86de);
-            box-shadow: 0 0 18px rgba(84,160,255,0.8);
-            transition: transform 0.05s linear;
-            pointer-events: none;
-        }
         .t-btn {
             width: 62px;
             height: 62px;
@@ -597,11 +554,10 @@
 
     <!-- Kontrolki dotykowe -->
     <div class="touch-controls" id="touchControls" style="display: none;">
-    <div class="joystick-zone">
-        <div class="joystick-base" id="joystickBase">
-            <div class="joystick-thumb" id="joystickThumb"></div>
+        <div class="touch-cluster-left">
+            <button class="t-btn" id="tBtnLeft">◀</button>
+            <button class="t-btn" id="tBtnRight">▶</button>
         </div>
-    </div>
         <div class="touch-cluster-right">
             <button class="t-btn" id="tBtnBrake" style="font-size: 18px;">🛑</button>
             <button class="t-btn t-btn-nitro" id="tBtnNitro">🔥</button>
@@ -2330,73 +2286,29 @@ function bindTouchBtn(id, onDown, onUp) {
     el.addEventListener('mouseleave', end);
 }
 
+bindTouchBtn('tBtnLeft', () => { player.dx = -player.speed; triggerHaptic(10); }, () => { player.dx = 0; });
+bindTouchBtn('tBtnRight', () => { player.dx = player.speed; triggerHaptic(10); }, () => { player.dx = 0; });
 bindTouchBtn('tBtnNitro', () => { activateNitro(); }, () => { isNitroActive = false; });
 bindTouchBtn('tBtnBrake', () => { isBraking = true; triggerHaptic(10); }, () => { isBraking = false; });
 
-// Joystick wirtualny (sterowanie jedną ręką)
-const joyBase = document.getElementById('joystickBase');
-const joyThumb = document.getElementById('joystickThumb');
-let joyActive = false;
-let joyId = null;
-const joyRadius = 36;
+// Sterowanie przeciąganiem palca na Canvasie
+canvas.addEventListener('touchstart', handleCanvasTouch, { passive: false });
+canvas.addEventListener('touchmove', handleCanvasTouch, { passive: false });
+canvas.addEventListener('touchend', () => { player.dx = 0; }, { passive: false });
 
-function joyStart(e) {
+function handleCanvasTouch(e) {
+    if (gameState !== 'PLAYING') return;
     e.preventDefault();
-    const t = e.changedTouches ? e.changedTouches[0] : e;
-    joyId = t.identifier !== undefined ? t.identifier : 'mouse';
-    joyActive = true;
-    joyMove(e);
-}
-function joyMove(e) {
-    if (!joyActive) return;
-    e.preventDefault();
-    let t = null;
-    if (e.changedTouches) {
-        for (const ct of e.changedTouches) {
-            if (ct.identifier === joyId) { t = ct; break; }
-        }
-        if (!t) return;
+    const rect = canvas.getBoundingClientRect();
+    const touchX = ((e.touches ? e.touches[0].clientX : e.clientX) - rect.left) * (canvas.width / rect.width);
+    const center = player.x + player.width / 2;
+    const diff = touchX - center;
+    if (Math.abs(diff) > 8) {
+        player.dx = Math.sign(diff) * player.speed;
     } else {
-        t = e;
+        player.dx = 0;
     }
-    const rect = joyBase.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    let dx = t.clientX - cx;
-    let dy = t.clientY - cy;
-    const dist = Math.hypot(dx, dy);
-    if (dist > joyRadius) {
-        dx = (dx / dist) * joyRadius;
-        dy = (dy / dist) * joyRadius;
-    }
-    joyThumb.style.transform = `translate(${dx}px, ${dy}px)`;
-    const norm = Math.max(-1, Math.min(1, dx / joyRadius));
-    player.dx = norm * player.speed;
 }
-function joyEnd(e) {
-    if (!joyActive) return;
-    if (e.changedTouches) {
-        let found = false;
-        for (const ct of e.changedTouches) {
-            if (ct.identifier === joyId) found = true;
-        }
-        if (!found) return;
-    }
-    joyActive = false;
-    joyId = null;
-    player.dx = 0;
-    joyThumb.style.transform = 'translate(0px, 0px)';
-}
-
-joyBase.addEventListener('touchstart', joyStart, { passive: false });
-joyBase.addEventListener('touchmove', joyMove, { passive: false });
-joyBase.addEventListener('touchend', joyEnd, { passive: false });
-joyBase.addEventListener('touchcancel', joyEnd, { passive: false });
-joyBase.addEventListener('mousedown', joyStart);
-window.addEventListener('mousemove', (e) => { if (joyActive && joyId === 'mouse') joyMove(e); });
-window.addEventListener('mouseup', (e) => { if (joyActive && joyId === 'mouse') joyEnd(e); });
-
-// Sterowanie odbywa się za pomocą joysticka (lewa strona) oraz przycisków (prawa strona)
 
 /* =========================================================================
    13. ZARZĄDZANIE EKRANAMI (MENU, GARAŻ, WYBÓR, PAUZA, GAMEOVER)
