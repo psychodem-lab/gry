@@ -718,7 +718,11 @@
       checkEvolution();
     }
 
-    setInterval(() => { gameState.careTimeSeconds += 1; checkEvolution(); }, 1000);
+    setInterval(() => {
+      const cared = ['hunger','energy','happiness','cleanliness','wisdom'].every(s => gameState[s] >= 70);
+      if (cared) gameState.careTimeSeconds += 1;
+      checkEvolution();
+    }, 1000);
 
     setInterval(() => {
       const t = TRAITS[gameState.trait] || TRAITS['Śpioch'];
