@@ -334,8 +334,13 @@
       const charInfo = CHARACTERS[gameState.character] || CHARACTERS.lumi;
       
       if (previousStage !== -1 && previousStage !== evo.stage) {
-        spawnParticles(canvas.offsetWidth / 2, canvas.offsetHeight / 2, '⭐', 20);
-        showSpeech("Ewoluowałem! 🎉");
+        if (evo.stage < previousStage) {
+          spawnParticles(canvas.offsetWidth / 2, canvas.offsetHeight / 2, '💔', 15);
+          showSpeech("Och, cofnąłem się do poprzedniej formy... 😢");
+        } else {
+          spawnParticles(canvas.offsetWidth / 2, canvas.offsetHeight / 2, '⭐', 20);
+          showSpeech("Ewoluowałem! 🎉");
+        }
       }
       previousStage = evo.stage;
       document.getElementById('pet-name').textContent = charInfo.name;
@@ -719,8 +724,13 @@
     }
 
     setInterval(() => {
+      const evo = getEvolutionStage(gameState.careTimeSeconds);
       const cared = ['hunger','energy','happiness','cleanliness','wisdom'].every(s => gameState[s] >= 70);
-      if (cared) gameState.careTimeSeconds += 1;
+      if (cared) {
+        gameState.careTimeSeconds += 1;
+      } else if (evo.stage === 3) {
+        gameState.careTimeSeconds = 600;
+      }
       checkEvolution();
     }, 1000);
 
