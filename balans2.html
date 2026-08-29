@@ -12,8 +12,10 @@
             height: 100vh;
             background: linear-gradient(to bottom, #ffffff 50%, #000000 50%);
             overflow: hidden;
-            cursor: crosshair;
+            cursor: default;
             touch-action: none; /* Blokuje domyślne gesty przeglądarki */
+            user-select: none;
+            -webkit-user-select: none;
         }
         
         .paper-texture {
@@ -97,6 +99,13 @@
             mix-blend-mode: difference;
             z-index: 100;
             touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            cursor: grab;
+        }
+
+        #joystick-container:active {
+            cursor: grabbing;
         }
 
         #joystick-stick {
@@ -109,6 +118,7 @@
             border-radius: 50%;
             transform: translate(-50%, -50%);
             pointer-events: none;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
         }
 
         .explosion-particle {
@@ -184,11 +194,11 @@
         const joystickContainer = document.getElementById('joystick-container');
         const joystickStick = document.getElementById('joystick-stick');
 
-        let targetX = window.innerWidth / 2;
-        let targetY = window.innerHeight / 2;
-        let currentX = targetX;
-        let currentY = targetY;
-        let previousY = targetY; 
+        let currentX = window.innerWidth / 2;
+        let currentY = window.innerHeight / 2;
+        let previousY = currentY; 
+        let vx = 0;
+        let vy = 0;
 
         let currentAngle1 = 0;
         let currentAngle2 = 0;
@@ -201,65 +211,68 @@
         
         // Zmienne joysticka
         let isJoystickActive = false;
+        let activePointerId = null;
         let joystickDeltaX = 0;
         let joystickDeltaY = 0;
-        const joystickMaxDistance = 50;
-        const moveSensitivity = 12; // Prędkość ryb przy maksymalnym wychyleniu
+        const joystickMaxDistance = 42;
+        const moveSensitivity = 8; // Prędkość ryb przy maksymalnym wychyleniu
 
         // Zmienne do licznika czasu
         let balanceTimeMs = 0;
         let lastTimestamp = 0;
         let gameWon = false;
 
-        // --- OBSŁUGA JOYSTICKA ---
-        joystickContainer.addEventListener('touchstart', (e) => {
-            isJoystickActive = true;
-            handleJoystick(e);
-        }, { passive: false });
-
-        window.addEventListener('touchmove', (e) => {
-            if (isJoystickActive) {
-                e.preventDefault();
-                handleJoystick(e);
-            }
-        }, { passive: false });
-
-        window.addEventListener('touchend', () => {
-            isJoystickActive = false;
-            joystickDeltaX = 0;
-            joystickDeltaY = 0;
-            joystickStick.style.transform = `translate(-50%, -50%)`;
-        });
-
-        function handleJoystick(e) {
+        // --- OBSŁUGA JOYSTICKA (Pointer Events - mysz i dotyk) ---
+        function handleJoystick(clientX, clientY) {
             const rect = joystickContainer.getBoundingClientRect();
             const centerX = rect.left + rect.width / 2;
             const centerY = rect.top + rect.height / 2;
-            const touch = e.touches[0];
 
-            let dx = touch.clientX - centerX;
-            let dy = touch.clientY - centerY;
-            const distance = Math.sqrt(dx * dx + dy * dy);
+            let dx = clientX - centerX;
+            let dy = clientY - centerY;
+            const distance = Math.hypot(dx, dy);
 
             if (distance > joystickMaxDistance) {
                 dx = (dx / distance) * joystickMaxDistance;
                 dy = (dy / distance) * joystickMaxDistance;
             }
 
-            joystickStick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+            joystickStick.style.transform = `translate(calc(-50% + ${dx.toFixed(1)}px), calc(-50% + ${dy.toFixed(1)}px))`;
             
             // Normalizacja delty do zakresu -1 do 1
             joystickDeltaX = dx / joystickMaxDistance;
             joystickDeltaY = dy / joystickMaxDistance;
         }
 
-        // Mousemove zachowujemy dla desktopa
-        window.addEventListener('mousemove', (e) => {
-            if (!isJoystickActive) {
-                targetX = e.clientX;
-                targetY = e.clientY;
+        joystickContainer.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            isJoystickActive = true;
+            activePointerId = e.pointerId;
+            try {
+                joystickContainer.setPointerCapture(e.pointerId);
+            } catch (err) {}
+            handleJoystick(e.clientX, e.clientY);
+        });
+
+        window.addEventListener('pointermove', (e) => {
+            if (isJoystickActive && (activePointerId === null || e.pointerId === activePointerId)) {
+                e.preventDefault();
+                handleJoystick(e.clientX, e.clientY);
             }
         });
+
+        function stopJoystick(e) {
+            if (isJoystickActive && (activePointerId === null || e.pointerId === activePointerId)) {
+                isJoystickActive = false;
+                activePointerId = null;
+                joystickDeltaX = 0;
+                joystickDeltaY = 0;
+                joystickStick.style.transform = `translate(-50%, -50%)`;
+            }
+        }
+
+        window.addEventListener('pointerup', stopJoystick);
+        window.addEventListener('pointercancel', stopJoystick);
 
         // Funkcje pomocnicze do geometrii ryb (Twoje oryginalne)
         function getBentPath(angleHistory, wavePhase) {
@@ -330,21 +343,34 @@
             const deltaTime = timestamp - lastTimestamp;
             lastTimestamp = timestamp;
 
-            // AKUALIZACJA TARGETU PRZEZ JOYSTICK
+            // Ruch ryb kontrolowany wyłącznie przez joystick
+            let targetVx = 0;
+            let targetVy = 0;
+
             if (isJoystickActive) {
-                targetX += joystickDeltaX * moveSensitivity;
-                targetY += joystickDeltaY * moveSensitivity;
+                targetVx = joystickDeltaX * moveSensitivity;
+                targetVy = joystickDeltaY * moveSensitivity;
             }
 
-            targetX = Math.max(0, Math.min(targetX, window.innerWidth));
-            targetY = Math.max(0, Math.min(targetY, window.innerHeight));
+            // Płynne przyspieszanie i szybkie zatrzymywanie po puszczeniu
+            vx += (targetVx - vx) * 0.15;
+            vy += (targetVy - vy) * 0.15;
 
-            let dx = targetX - currentX;
-            let dy = targetY - currentY;
-            let dist = Math.sqrt(dx * dx + dy * dy);
+            if (!isJoystickActive && Math.abs(vx) < 0.02 && Math.abs(vy) < 0.02) {
+                vx = 0;
+                vy = 0;
+            }
 
-            currentX += dx * 0.015;
-            currentY += dy * 0.015;
+            currentX += vx;
+            currentY += vy;
+
+            // Ograniczenie do granic ekranu
+            const padX = 30;
+            const padY = 30;
+            if (currentX < padX) { currentX = padX; vx = 0; }
+            if (currentX > window.innerWidth - padX) { currentX = window.innerWidth - padX; vx = 0; }
+            if (currentY < padY) { currentY = padY; vy = 0; }
+            if (currentY > window.innerHeight - padY) { currentY = window.innerHeight - padY; vy = 0; }
             
             let actualDy = currentY - previousY;
             splitPercentage += actualDy * 0.03; 
@@ -369,23 +395,23 @@
                 }
             }
 
+            let speed = Math.hypot(vx, vy);
             let targetAngle1 = currentAngle1;
             let targetAngle2 = currentAngle2;
-            if (dist > 1) {
-                targetAngle1 = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
-                targetAngle2 = Math.atan2(-dy, dx) * (180 / Math.PI) + 90;
+            if (speed > 0.05) {
+                targetAngle1 = Math.atan2(vy, vx) * (180 / Math.PI) + 90;
+                targetAngle2 = Math.atan2(-vy, vx) * (180 / Math.PI) + 90;
             }
 
-            currentAngle1 = smoothAngle(currentAngle1, targetAngle1, 0.08);
-            currentAngle2 = smoothAngle(currentAngle2, targetAngle2, 0.08);
+            currentAngle1 = smoothAngle(currentAngle1, targetAngle1, 0.1);
+            currentAngle2 = smoothAngle(currentAngle2, targetAngle2, 0.1);
 
             angleHistory1.unshift(currentAngle1);
             if (angleHistory1.length > HISTORY_LENGTH) angleHistory1.pop();
             angleHistory2.unshift(currentAngle2);
             if (angleHistory2.length > HISTORY_LENGTH) angleHistory2.pop();
             
-            let speed = Math.min(dist * 0.012, 10);
-            wavePhase += 0.15 + speed * 0.05;
+            wavePhase += 0.04 + speed * 0.03;
 
             f1Body.setAttribute('d', getBentPath(angleHistory1, wavePhase));
             f1Tail.setAttribute('d', getBentTail(angleHistory1, wavePhase));
@@ -421,8 +447,8 @@
         requestAnimationFrame(animate);
 
         window.addEventListener('resize', () => {
-            targetX = window.innerWidth / 2;
-            targetY = window.innerHeight / 2;
+            currentX = Math.max(30, Math.min(currentX, window.innerWidth - 30));
+            currentY = Math.max(30, Math.min(currentY, window.innerHeight - 30));
         });
     </script>
 </body>
