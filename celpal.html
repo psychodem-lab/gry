@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Miodowy Bubble Shooter</title>
+    <title>Szlachetny Miodowy Shooter</title>
     <style>
         * {
             box-sizing: border-box;
@@ -15,8 +15,8 @@
         }
 
         body {
-            background-color: #161412;
-            color: #F7FAF2;
+            background-color: #0F1115;
+            color: #F4F1DE;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             display: flex;
             flex-direction: column;
@@ -44,57 +44,63 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 18px;
-            background: rgba(255, 255, 255, 0.04);
-            border-radius: 16px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 18px;
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         }
 
         .score-board {
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 500;
-            letter-spacing: 0.5px;
-            color: #A0AEC0;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            color: #A0AAB5;
         }
 
         .score-board span {
-            color: #F6AD55;
+            color: #F4A261;
             font-weight: 700;
-            font-size: 18px;
+            font-size: 19px;
+            margin-left: 4px;
         }
 
         button {
-            background: rgba(246, 173, 85, 0.15);
-            border: 1px solid rgba(246, 173, 85, 0.3);
-            color: #F6AD55;
-            padding: 8px 16px;
+            background: rgba(244, 162, 97, 0.12);
+            border: 1px solid rgba(244, 162, 97, 0.35);
+            color: #F4A261;
+            padding: 8px 18px;
             border-radius: 12px;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
+            letter-spacing: 0.5px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.25s ease;
         }
 
         button:active {
-            background: rgba(246, 173, 85, 0.3);
+            background: rgba(244, 162, 97, 0.25);
+            transform: scale(0.96);
         }
 
         canvas {
-            background: #1C1917;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            background: #161920;
+            border-radius: 24px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
             width: 100%;
             height: auto;
             flex-grow: 1;
-            margin: 10px 0;
+            margin: 12px 0;
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         footer {
             font-size: 12px;
-            color: #718096;
+            color: #6C7A89;
             text-align: center;
+            letter-spacing: 0.3px;
         }
     </style>
 </head>
@@ -102,14 +108,14 @@
 
 <div id="game-container">
     <header>
-        <div class="score-board">Miód: <span id="score">0</span></div>
-        <button id="reset-btn">Nowa Gra</button>
+        <div class="score-board">Punkty: <span id="score">0</span></div>
+        <button id="reset-btn">Od nowa</button>
     </header>
 
     <canvas id="canvas"></canvas>
 
     <footer>
-        Przeciągnij palcem, aby wycelować plaster miodu
+        Przeciągnij i puść, aby celować
     </footer>
 </div>
 
@@ -128,18 +134,18 @@ canvas.height = HEIGHT;
 const COLS = 8;
 const ROWS = 11;
 
-// Geometria sześciokąta foremnego
+// Geometria sześciokąta
 const HEX_WIDTH = WIDTH / COLS;
 const HEX_RADIUS = HEX_WIDTH / Math.sqrt(3);
 const HEX_ROW_HEIGHT = 1.5 * HEX_RADIUS;
 
-// Paleta ciepłych, stonowanych kolorów miodu i natury
+// Ponadczasowa, szlachetna paleta "Japandi & Velvet Earth"
 const COLORS = [
-    '#F6AD55', // Złocisty miód
-    '#FC8181', // Bursztynowy róż
-    '#68D391', // Szałwiowa zieleń
-    '#63B3ED', // Ciepły błękit
-    '#F6E05E'  // Jasny pyłek
+    '#2A9D8F', // Szałwiowy Szmaragd
+    '#F4A261', // Złocisty Bursztyn
+    '#E76F51', // Ciepły Koral
+    '#3A86FF', // Szafirowy Morski
+    '#7209B7'  // Głęboka Ametystowa Lawenda
 ];
 
 let grid = [];
@@ -172,21 +178,31 @@ function playSound(type) {
 
     if (type === 'pop') {
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(320, now);
-        osc.frequency.exponentialRampToValueAtTime(640, now + 0.09);
-        gain.gain.setValueAtTime(0.15, now);
+        osc.frequency.setValueAtTime(280, now);
+        osc.frequency.exponentialRampToValueAtTime(560, now + 0.08);
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+        osc.start(now);
+        osc.stop(now + 0.08);
+    } else if (type === 'shoot') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.exponentialRampToValueAtTime(65, now + 0.09);
+        gain.gain.setValueAtTime(0.07, now);
         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.09);
         osc.start(now);
         osc.stop(now + 0.09);
-    } else if (type === 'shoot') {
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(160, now);
-        osc.frequency.exponentialRampToValueAtTime(70, now + 0.1);
-        gain.gain.setValueAtTime(0.08, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-        osc.start(now);
-        osc.stop(now + 0.1);
     }
+}
+
+// Funkcja pomocnicza do rozjaśniania koloru (gradienty)
+function adjustColor(hex, percent) {
+    let num = parseInt(hex.replace('#',''), 16),
+        amt = Math.round(2.55 * percent),
+        R = (num >> 16) + amt,
+        G = (num >> 8 & 0x00FF) + amt,
+        B = (num & 0x0000FF) + amt;
+    return '#' + (0x1000000 + (R<255?R<1?0:R:255)*0x10000 + (G<255?G<1?0:G:255)*0x100 + (B<255?B<1?0:B:255)).toString(16).slice(1);
 }
 
 function initGrid() {
@@ -229,13 +245,12 @@ function startNewGame() {
     createShooterHexes();
 }
 
-// Rysowanie sześciokąta foremnego
+// Rysowanie trójwymiarowego sześciokąta ze szlachetnym wykończeniem
 function drawHexagon(x, y, r, color, scale = 1.0) {
     const radius = r * scale;
     ctx.save();
-    ctx.beginPath();
     
-    // Rysowanie 6 wierzchołków
+    ctx.beginPath();
     for (let i = 0; i < 6; i++) {
         const angle = (Math.PI / 3) * i - Math.PI / 6;
         const hx = x + radius * Math.cos(angle);
@@ -245,26 +260,34 @@ function drawHexagon(x, y, r, color, scale = 1.0) {
     }
     ctx.closePath();
 
-    ctx.fillStyle = color;
+    // Promienisty gradient dla efektu polerowanego kamienia
+    const grad = ctx.createRadialGradient(
+        x - radius * 0.25, y - radius * 0.25, radius * 0.1,
+        x, y, radius
+    );
+    grad.addColorStop(0, adjustColor(color, 28));
+    grad.addColorStop(1, color);
+
+    ctx.fillStyle = grad;
     ctx.fill();
 
-    // Zewnętrzna krawędź plastra miodu
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
-    ctx.lineWidth = 1.5;
+    // Delikatne obramowanie
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+    ctx.lineWidth = 1.2;
     ctx.stroke();
 
-    // Wewnętrzny blik świetlny (efekt głębi komórki miodowej)
+    // Akcent świetlny na górnych krawędziach
     ctx.beginPath();
-    for (let i = 0; i < 6; i++) {
+    for (let i = 3; i <= 5; i++) {
         const angle = (Math.PI / 3) * i - Math.PI / 6;
-        const hx = x + (radius * 0.65) * Math.cos(angle);
-        const hy = y + (radius * 0.65) * Math.sin(angle);
-        if (i === 0) ctx.moveTo(hx, hy);
+        const hx = x + (radius - 1) * Math.cos(angle);
+        const hy = y + (radius - 1) * Math.sin(angle);
+        if (i === 3) ctx.moveTo(hx, hy);
         else ctx.lineTo(hx, hy);
     }
-    ctx.closePath();
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
-    ctx.fill();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.32)';
+    ctx.lineWidth = 1.8;
+    ctx.stroke();
 
     ctx.restore();
 }
@@ -272,7 +295,7 @@ function drawHexagon(x, y, r, color, scale = 1.0) {
 function draw() {
     ctx.clearRect(0, 0, WIDTH, HEIGHT);
 
-    // Rysowanie siatki plastra miodu
+    // Rysowanie siatki
     for (let r = 0; r < ROWS; r++) {
         const colsInRow = (r % 2 === 0) ? COLS : COLS - 1;
         for (let c = 0; c < colsInRow; c++) {
@@ -284,22 +307,22 @@ function draw() {
         }
     }
 
-    // Celownik
+    // Linia celownicza
     if (isAiming && !shotHex) {
         drawAimLine();
     }
 
-    // Wystrzelony plaster
+    // Wystrzelony element
     if (shotHex) {
         drawHexagon(shotHex.x, shotHex.y, HEX_RADIUS, shotHex.color);
     }
 
-    // Plaster w wyrzutni
+    // Wyrzutnia
     if (currentHex) {
         drawHexagon(WIDTH / 2, HEIGHT - HEX_RADIUS * 2, HEX_RADIUS, currentHex);
     }
 
-    // Podgląd następnego
+    // Podgląd następnego elementu
     if (nextHex) {
         drawHexagon(WIDTH / 2 - HEX_WIDTH * 2, HEIGHT - HEX_RADIUS * 1.8, HEX_RADIUS, nextHex, 0.65);
     }
@@ -308,8 +331,8 @@ function draw() {
 function drawAimLine() {
     ctx.save();
     ctx.beginPath();
-    ctx.setLineDash([5, 5]);
-    ctx.strokeStyle = 'rgba(246, 173, 85, 0.5)';
+    ctx.setLineDash([6, 6]);
+    ctx.strokeStyle = 'rgba(244, 162, 97, 0.55)';
     ctx.lineWidth = 2;
 
     let currX = WIDTH / 2;
@@ -323,14 +346,12 @@ function drawAimLine() {
         currX += dirX * 3;
         currY += dirY * 3;
 
-        // Odbicia od ścian
         if (currX - HEX_WIDTH / 2 <= 0 || currX + HEX_WIDTH / 2 >= WIDTH) {
             dirX = -dirX;
         }
 
         if (currY - HEX_RADIUS <= 0) break;
 
-        // Detekcja przedłużenia do przeszkody
         let hit = false;
         for (let r = 0; r < ROWS; r++) {
             const colsInRow = (r % 2 === 0) ? COLS : COLS - 1;
@@ -360,7 +381,6 @@ function update() {
         shotHex.x += shotHex.vx;
         shotHex.y += shotHex.vy;
 
-        // Odbicia od ścian bocznych
         if (shotHex.x - HEX_WIDTH / 2 <= 0) {
             shotHex.x = HEX_WIDTH / 2;
             shotHex.vx = -shotHex.vx;
@@ -369,13 +389,11 @@ function update() {
             shotHex.vx = -shotHex.vx;
         }
 
-        // Sufit
         if (shotHex.y - HEX_RADIUS <= 0) {
             snapHexToGrid();
             return;
         }
 
-        // Kolizje z istniejącymi plastrami
         for (let r = 0; r < ROWS; r++) {
             const colsInRow = (r % 2 === 0) ? COLS : COLS - 1;
             for (let c = 0; c < colsInRow; c++) {
@@ -544,7 +562,7 @@ function checkGameOver() {
 
     if (reachedBottom) {
         setTimeout(() => {
-            alert('Udało Ci się zebrać dużo miodu! Wynik: ' + score);
+            alert('Koniec gry! Twój wynik: ' + score);
             startNewGame();
         }, 100);
     }
