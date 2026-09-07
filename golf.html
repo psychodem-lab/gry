@@ -1,56 +1,50 @@
+
 <!DOCTYPE html>
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <!-- Blokada przybliżania i dostosowanie do ekranów mobilnych -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Paper Apps™ GOLF - Mobilny Prototyp</title>
+    <title>Paper Apps™ GOLF - Kliknij i Graj</title>
     <style>
         body {
             font-family: 'Courier New', Courier, monospace;
             background-color: #e0e0e0;
             display: flex;
-            justify-content: center;
-            align-items: flex-start;
+            flex-direction: column;
+            align-items: center;
             padding: 10px;
             margin: 0;
             color: #333;
-            touch-action: manipulation; /* Optymalizacja dotyku */
+            user-select: none;
+            -webkit-user-select: none;
         }
         #game-container {
             background-color: #f4f6f5;
             border: 1px solid #ccc;
             box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
             display: flex;
-            flex-direction: column; /* Układ pionowy dla mobile */
-            padding: 15px;
+            flex-direction: column;
+            padding: 10px;
             border-radius: 5px;
             width: 100%;
-            max-width: 450px; /* Limit szerokości dla tabletów/PC */
+            max-width: 400px;
             box-sizing: border-box;
         }
-        .canvas-wrapper {
-            width: 100%;
-            position: relative;
-            padding-bottom: 150%; /* Proporcje siatki 18x27 (2/3) */
-            height: 0;
-            overflow: hidden;
-        }
         canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
             border: 1px solid #aaa;
             background-color: transparent;
+            width: 100%;
+            height: auto;
+            aspect-ratio: 2 / 3;
+            margin-bottom: 10px;
+            touch-action: none;
+            cursor: pointer;
         }
         #controls {
-            width: 100%;
             display: flex;
             flex-direction: column;
             gap: 10px;
-            margin-top: 15px;
+            width: 100%;
         }
         .panel {
             background: #fff;
@@ -58,170 +52,168 @@
             border: 1px solid #ccc;
             border-radius: 4px;
         }
-        .panel h3 { margin-top: 0; font-size: 15px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .panel h3 { margin-top: 0; font-size: 15px; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 8px;}
         button {
             font-family: 'Courier New', Courier, monospace;
             background: #eee;
             border: 1px solid #999;
-            padding: 12px 8px; /* Większe obszary dotykowe (mobilne) */
+            padding: 12px 8px;
             font-size: 14px;
             font-weight: bold;
             cursor: pointer;
             width: 100%;
             margin-bottom: 5px;
+            touch-action: manipulation;
             border-radius: 4px;
         }
         button:active { background: #ddd; transform: scale(0.98); }
-        button:disabled { background: #e0e0e0; cursor: not-allowed; color: #999; border-color: #ccc; }
-        #d-pad {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
+        button:disabled { background: #ccc; cursor: not-allowed; color: #888; transform: none; }
+        .info { font-weight: bold; margin-bottom: 3px; font-size: 14px; }
+        .flex-info { display: flex; justify-content: space-between; flex-wrap: wrap; }
+        #instruction {
+            font-size: 13px;
+            color: #2e7d32;
+            font-weight: bold;
+            text-align: center;
+            min-height: 18px;
         }
-        #d-pad button { height: 50px; margin: 0; font-size: 16px; }
-        .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 5px;
-            font-size: 14px;
-        }
-        .info { font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div id="game-container">
-    <div class="canvas-wrapper">
-        <!-- Zdefiniowana logiczna rozdzielczość 360x540 (18x27 siatka co 20px) -->
-        <canvas id="golfCanvas" width="360" height="540"></canvas>
-    </div>
+    <canvas id="golfCanvas" width="360" height="540"></canvas>
     
     <div id="controls">
         <div class="panel">
-            <div class="info-grid">
+            <h3>Status</h3>
+            <div class="flex-info">
                 <div class="info" id="holeDisplay">Dołek: 1</div>
-                <div class="info" id="totalStrokesDisplay">Suma: 0</div>
                 <div class="info" id="strokesDisplay">Uderzenia: 0</div>
-                <div class="info" id="terrainDisplay">Teren: Rough</div>
             </div>
+            <div class="info" id="terrainDisplay">Teren: Rough</div>
+            <div id="instruction">Wybierz ruch poniżej</div>
         </div>
 
         <div class="panel">
-            <h3>1. Wybierz ruch</h3>
+            <h3>1. Wybierz uderzenie</h3>
             <button id="btnRoll" onclick="rollDice()">Dice GOLF (Rzuć k6)</button>
-            <div style="text-align: center; margin: 5px 0; font-weight: bold; color: #444;" id="diceResult">-</div>
+            <div style="text-align: center; margin: 3px 0; font-weight: bold; font-size: 13px;" id="diceResult">-</div>
+            <hr style="border:0; border-top:1px solid #eee; margin:8px 0;">
             <div style="display: flex; gap: 5px;">
-                <button id="btnDriver" onclick="setSpeedGolf(6)">D(6)</button>
-                <button id="btnIron" onclick="setSpeedGolf(3)">I(3)</button>
-                <button id="btnPutter" onclick="setSpeedGolf(1)">P(1)</button>
+                <button id="btnDriver" onclick="setSpeedGolf(6)">Driver (6)</button>
+                <button id="btnIron" onclick="setSpeedGolf(3)">Iron (3)</button>
+                <button id="btnPutter" onclick="setSpeedGolf(1)">Putt (1)</button>
             </div>
         </div>
 
-        <div class="panel">
-            <h3>2. Kierunek uderzenia</h3>
-            <div id="d-pad">
-                <button onclick="move(-1, -1)" id="dir-nw">NW</button>
-                <button onclick="move(0, -1)" id="dir-n">N</button>
-                <button onclick="move(1, -1)" id="dir-ne">NE</button>
-                <button onclick="move(-1, 0)" id="dir-w">W</button>
-                <button disabled style="visibility: hidden;">-</button>
-                <button onclick="move(1, 0)" id="dir-e">E</button>
-                <button onclick="move(-1, 1)" id="dir-sw">SW</button>
-                <button onclick="move(0, 1)" id="dir-s">S</button>
-                <button onclick="move(1, 1)" id="dir-se">SE</button>
-            </div>
-        </div>
+        <button onclick="resetHoleCurrent()">Resetuj ten dołek (Mulligan)</button>
     </div>
 </div>
 
 <script>
     const canvas = document.getElementById('golfCanvas');
     const ctx = canvas.getContext('2d');
-    const gridSize = 20;
-    const cols = canvas.width / gridSize;  // 18
+    const gridSize = 20; 
+    const cols = canvas.width / gridSize; // 18
     const rows = canvas.height / gridSize; // 27
 
-    let currentHoleNumber = 1;
-    let totalGameStrokes = 0;
+    let currentHole = 1;
     let strokes = 0;
-    
     let path = [];
-    let startPos = {x: 9, y: 24};
-    let holePos = {x: 9, y: 3};
-    let currentPos = { ...startPos };
+    let startPos = {x: 0, y: 0};
+    let holePos = {x: 0, y: 0};
+    let currentPos = {x: 0, y: 0};
     let currentDistance = 0;
     let gameOver = false;
-
+    
     let terrainZones = [];
     let trees = [];
+    let validTargets = []; // Podświetlone zielone punkty
 
-    // Generator logicznych losowych liczb całkowitych z przedziału
-    function rnd(min, max) {
-        return Math.floor(Math.random() * (max - min + 1)) + min;
-    }
+    const directions = [
+        {dx: 0, dy: -1},  // N
+        {dx: 1, dy: -1},  // NE
+        {dx: 1, dy: 0},   // E
+        {dx: 1, dy: 1},   // SE
+        {dx: 0, dy: 1},   // S
+        {dx: -1, dy: 1},  // SW
+        {dx: -1, dy: 0},  // W
+        {dx: -1, dy: -1}  // NW
+    ];
 
-    // Algorytm proceduralnego generowania pola
-    function generateNewHole() {
+    function generateProceduralLevel() {
         terrainZones = [];
         trees = [];
 
-        // Losowa pozycja startowa na dole planszy
-        startPos = { x: rnd(3, 14), y: rnd(23, 25) };
-        // Losowa pozycja dołka na górze planszy
-        holePos = { x: rnd(3, 14), y: rnd(2, 5) };
+        startPos = { x: Math.floor(Math.random() * 12) + 3, y: Math.floor(Math.random() * 3) + 22 };
+        holePos = { x: Math.floor(Math.random() * 12) + 3, y: Math.floor(Math.random() * 4) + 3 };
 
-        // 1. Generowanie 3 do 5 losowych sekcji Fairway
-        let numFairways = rnd(3, 5);
-        for(let i = 0; i < numFairways; i++) {
+        // Fairway
+        let numFairways = Math.floor(Math.random() * 3) + 2;
+        for (let i = 0; i < numFairways; i++) {
             terrainZones.push({
                 type: 1,
-                x: rnd(1, 12),
-                y: rnd(3, 21),
-                w: rnd(4, 7),
-                h: rnd(4, 8)
+                x: Math.floor(Math.random() * 10) + 2,
+                y: Math.floor(Math.random() * 18) + 4,
+                w: Math.floor(Math.random() * 6) + 3,
+                h: Math.floor(Math.random() * 7) + 4
             });
         }
 
-        // 2. Generowanie 2 do 4 bunkrów (Sand)
-        let numBunkers = rnd(2, 4);
-        for(let i = 0; i < numBunkers; i++) {
+        // Bunkry
+        let numSand = Math.floor(Math.random() * 3) + 1;
+        for (let i = 0; i < numSand; i++) {
             terrainZones.push({
                 type: 2,
-                x: rnd(2, 13),
-                y: rnd(6, 18),
-                w: rnd(3, 5),
-                h: rnd(3, 4)
+                x: Math.floor(Math.random() * 12) + 2,
+                y: Math.floor(Math.random() * 18) + 4,
+                w: Math.floor(Math.random() * 4) + 2,
+                h: Math.floor(Math.random() * 4) + 2
             });
         }
 
-        // 3. Generowanie drzew jako przeszkód (od 8 do 15)
-        let numTrees = rnd(8, 15);
-        let failsafe = 0;
-        while(trees.length < numTrees && failsafe < 50) {
-            let tx = rnd(1, 16);
-            let ty = rnd(2, 25);
+        // Drzewa
+        let numTrees = Math.floor(Math.random() * 11) + 10;
+        for (let i = 0; i < numTrees; i++) {
+            let tx = Math.floor(Math.random() * 14) + 2;
+            let ty = Math.floor(Math.random() * 23) + 2;
             
-            // Empiryczny warunek braku blokowania startu/dołka bezpośrednio - minimalny dystans Manhattan > 3
-            let distToStart = Math.abs(tx - startPos.x) + Math.abs(ty - startPos.y);
-            let distToHole = Math.abs(tx - holePos.x) + Math.abs(ty - holePos.y);
-            
-            if (distToStart > 3 && distToHole > 3) {
+            let safeFromStart = Math.abs(tx - startPos.x) > 1 || Math.abs(ty - startPos.y) > 1;
+            let safeFromHole = Math.abs(tx - holePos.x) > 1 || Math.abs(ty - holePos.y) > 1;
+
+            if (safeFromStart && safeFromHole) {
                 trees.push({x: tx, y: ty});
             }
-            failsafe++;
         }
-
-        resetHoleState();
     }
 
-    function resetHoleState() {
+    function initGame() {
+        currentHole = 1;
+        generateProceduralLevel();
+        resetHoleData();
+    }
+
+    function nextHole() {
+        currentHole++;
+        generateProceduralLevel();
+        resetHoleData();
+    }
+
+    function resetHoleCurrent() {
+        resetHoleData();
+    }
+
+    function resetHoleData() {
         strokes = 0;
         currentPos = { ...startPos };
         path = [ { ...currentPos } ];
         currentDistance = 0;
+        validTargets = [];
         gameOver = false;
-        document.getElementById('diceResult').innerText = 'Wybierz ruch...';
-        enableDirections(false);
+        document.getElementById('diceResult').innerText = '-';
+        document.getElementById('holeDisplay').innerText = `Dołek: ${currentHole}`;
+        document.getElementById('instruction').innerText = 'Wybierz ruch poniżej';
         updateUI();
         draw();
     }
@@ -230,7 +222,6 @@
         for(let t of trees) {
             if(t.x === x && t.y === y) return 'Trees';
         }
-        // Sprawdzanie stref od tyłu (mniejsze na wierzchu)
         for (let i = terrainZones.length - 1; i >= 0; i--) {
             let z = terrainZones[i];
             if (x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h) {
@@ -241,9 +232,37 @@
         return 'Rough';
     }
 
+    function calculateValidTargets() {
+        validTargets = [];
+        if (currentDistance <= 0 || gameOver) return;
+
+        let startTerrain = getTerrainAt(currentPos.x, currentPos.y);
+
+        directions.forEach(dir => {
+            let tx = currentPos.x + dir.dx * currentDistance;
+            let ty = currentPos.y + dir.dy * currentDistance;
+
+            // Sprawdzenie krawędzi planszy
+            if (tx > 0 && tx < cols - 1 && ty > 0 && ty < rows - 1) {
+                let targetTerrain = getTerrainAt(tx, ty);
+                
+                // Drzewa: Zakaz lądowania na drzewie (chyba że ruch z Fairway pozwala na przelot, ale nie lądowanie)
+                if (targetTerrain !== 'Trees') {
+                    validTargets.push({ x: tx, y: ty });
+                }
+            }
+        });
+
+        if (validTargets.length > 0) {
+            document.getElementById('instruction').innerText = 'Kliknij zieloną kropkę na planszy!';
+        } else {
+            document.getElementById('instruction').innerText = 'Brak możliwości ruchu! Zrób Mulligan.';
+        }
+    }
+
     function rollDice() {
-        if (gameOver || currentDistance > 0) return;
-        let roll = rnd(1, 6);
+        if (gameOver) return;
+        let roll = Math.floor(Math.random() * 6) + 1;
         let terrain = getTerrainAt(currentPos.x, currentPos.y);
         
         let mod = 0;
@@ -251,119 +270,111 @@
         if (terrain === 'Sand') mod = -1;
         
         currentDistance = Math.max(1, roll + mod);
-        document.getElementById('diceResult').innerText = `Rzut: ${roll} ${mod !== 0 ? (mod>0?'+1 (F)':'-1 (S)') : ''} = Ruch o ${currentDistance}`;
-        enableDirections(true);
+        document.getElementById('diceResult').innerText = `Rzut: ${roll} ${mod !== 0 ? (mod>0?'+1':'-1') : ''} = Zasięg: ${currentDistance}`;
+        
+        calculateValidTargets();
+        draw();
     }
 
     function setSpeedGolf(dist) {
-        if (gameOver || currentDistance > 0) return;
+        if (gameOver) return;
         let terrain = getTerrainAt(currentPos.x, currentPos.y);
         
         if (dist === 6 && terrain !== 'Fairway') {
-            alert('Driver (6) wymaga terenu Fairway.');
+            alert('Driver (6) tylko z pola Fairway!');
             return;
         }
         if (dist === 3 && terrain === 'Sand') {
-            dist = 2; // Zgodnie z zasadą - max 2 pola w piasku dla Iron
+            dist = 2;
+            alert('W bunkrze Iron ma zasięg ograniczenie do 2 pól.');
         }
 
         currentDistance = dist;
-        document.getElementById('diceResult').innerText = `Speed GOLF: Ruch o ${dist}`;
-        enableDirections(true);
-    }
-
-    function enableDirections(enable) {
-        const buttons = document.querySelectorAll('#d-pad button');
-        buttons.forEach(btn => btn.disabled = !enable);
-    }
-
-    // Detekcja przelotu piłki nad dołkiem (Overshooting rule)
-    function isPointOnSegment(p, a, b) {
-        let cross = (p.y - a.y) * (b.x - a.x) - (p.x - a.x) * (b.y - a.y);
-        if (cross !== 0) return false; // Nie leży na prostej
-        let dot = (p.x - a.x) * (b.x - a.x) + (p.y - a.y) * (b.y - a.y);
-        if (dot < 0) return false; // Punkt p znajduje się przed a
-        let lengthSquared = (b.x - a.x)*(b.x - a.x) + (b.y - a.y)*(b.y - a.y);
-        if (dot > lengthSquared) return false; // Punkt p znajduje się za b
-        return true;
-    }
-
-    function move(dx, dy) {
-        if (currentDistance === 0 || gameOver) return;
+        document.getElementById('diceResult').innerText = `Kij: ${dist} pól`;
         
-        let targetX = currentPos.x + (dx * currentDistance);
-        let targetY = currentPos.y + (dy * currentDistance);
-        let targetTerrain = getTerrainAt(targetX, targetY);
+        calculateValidTargets();
+        draw();
+    }
 
-        if (targetTerrain === 'Trees') {
-            alert('Kolizja z drzewami! Wybierz inny kierunek.');
-            return;
-        }
-        
-        if (targetX < 0 || targetX >= cols || targetY < 0 || targetY >= rows) {
-            alert('Piłka poza planszą (O.B.)!');
-            return;
-        }
+    // Klikanie / dotykanie planszy
+    function handleCanvasClick(e) {
+        if (validTargets.length === 0 || gameOver) return;
 
-        // Zapis ruchu
-        let previousPos = { ...currentPos };
-        currentPos = { x: targetX, y: targetY };
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+
+        const clickX = (e.clientX - rect.left) * scaleX;
+        const clickY = (e.clientY - rect.top) * scaleY;
+
+        // Znalezienie najbliższego celu
+        let selectedTarget = null;
+        validTargets.forEach(target => {
+            let targetCanvasX = target.x * gridSize;
+            let targetCanvasY = target.y * gridSize;
+            let dist = Math.hypot(clickX - targetCanvasX, clickY - targetCanvasY);
+            
+            // Margines kliknięcia (promień 15px)
+            if (dist < 15) {
+                selectedTarget = target;
+            }
+        });
+
+        if (selectedTarget) {
+            makeMove(selectedTarget);
+        }
+    }
+
+    function makeMove(target) {
+        currentPos = { x: target.x, y: target.y };
         path.push({ ...currentPos });
         strokes++;
-        totalGameStrokes++;
-        
-        // Sprawdzanie czy po drodze przelecieliśmy przez dołek lub czy w nim wylądowaliśmy
-        let inHole = isPointOnSegment(holePos, previousPos, currentPos);
-
         currentDistance = 0;
-        document.getElementById('diceResult').innerText = 'Wybierz ruch...';
-        enableDirections(false);
+        validTargets = [];
+        
+        document.getElementById('diceResult').innerText = '-';
+        document.getElementById('instruction').innerText = 'Wybierz następny ruch';
+        
         updateUI();
         draw();
+        checkWinCondition();
+    }
 
-        if (inHole) {
+    function checkWinCondition() {
+        if (currentPos.x === holePos.x && currentPos.y === holePos.y) {
             gameOver = true;
-            // Nadpisz pozycję na interfejsie graficznym, by wizualnie zamknąć w dołku
-            path[path.length - 1] = { ...holePos };
-            draw(); 
-            
+            document.getElementById('instruction').innerText = 'DOŁEK ZALICZONY!';
             setTimeout(() => {
-                alert(`Dołek wpadł! Wynik na tym dołku: ${strokes}`);
-                currentHoleNumber++;
-                generateNewHole();
-            }, 300);
+                alert(`Gratulacje! Wbiłeś piłkę do dołka w ${strokes} uderzeniach. Ładowanie kolejnego dołka...`);
+                nextHole();
+            }, 50);
         }
     }
 
     function updateUI() {
-        document.getElementById('holeDisplay').innerText = `Dołek: ${currentHoleNumber}`;
         document.getElementById('strokesDisplay').innerText = `Uderzenia: ${strokes}`;
-        document.getElementById('totalStrokesDisplay').innerText = `Suma: ${totalGameStrokes}`;
         document.getElementById('terrainDisplay').innerText = `Teren: ${getTerrainAt(currentPos.x, currentPos.y)}`;
     }
 
     function draw() {
-        // Skala responsywna jest obsługiwana w CSS (canvas stretch), 
-        // wewnętrznie rysujemy na sztywnym wymiarze 360x540.
         ctx.fillStyle = '#f4f6f5';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Teren
+        // Strefy
         terrainZones.forEach(z => {
             if (z.type === 1) ctx.fillStyle = '#dbe3df'; // Fairway
             if (z.type === 2) ctx.fillStyle = '#a0a5a3'; // Sand
-            
             ctx.beginPath();
-            ctx.roundRect(z.x * gridSize, z.y * gridSize, z.w * gridSize, z.h * gridSize, 10);
+            ctx.roundRect(z.x * gridSize - gridSize/2, z.y * gridSize - gridSize/2, z.w * gridSize, z.h * gridSize, 10);
             ctx.fill();
         });
 
-        // Siatka punktowa (Grid)
-        ctx.fillStyle = '#999';
+        // Siatka punktowa
+        ctx.fillStyle = '#aaa';
         for (let i = 1; i < cols; i++) {
             for (let j = 1; j < rows; j++) {
                 ctx.beginPath();
-                ctx.arc(i * gridSize, j * gridSize, 1.5, 0, Math.PI * 2);
+                ctx.arc(i * gridSize, j * gridSize, 1, 0, Math.PI * 2);
                 ctx.fill();
             }
         }
@@ -377,13 +388,14 @@
             ctx.fillText('🌲', t.x * gridSize, t.y * gridSize);
         });
 
-        // Dołek z wizualizacją
+        // Dołek
         ctx.strokeStyle = '#000';
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.arc(holePos.x * gridSize, holePos.y * gridSize, 6, 0, Math.PI * 2);
         ctx.stroke();
         
+        // Flaga
         ctx.beginPath();
         ctx.moveTo(holePos.x * gridSize, holePos.y * gridSize);
         ctx.lineTo(holePos.x * gridSize, (holePos.y - 1.5) * gridSize);
@@ -395,19 +407,32 @@
         ctx.lineTo(holePos.x * gridSize, (holePos.y - 0.9) * gridSize);
         ctx.fill();
 
-        // Linia ścieżki (Ruchy)
+        // Ścieżka uderzeń
         if (path.length > 1) {
-            ctx.strokeStyle = '#333';
+            ctx.strokeStyle = '#555';
             ctx.lineWidth = 1.5;
+            ctx.setLineDash([3, 3]);
             ctx.beginPath();
             ctx.moveTo(path[0].x * gridSize, path[0].y * gridSize);
             for (let i = 1; i < path.length; i++) {
                 ctx.lineTo(path[i].x * gridSize, path[i].y * gridSize);
             }
             ctx.stroke();
+            ctx.setLineDash([]);
         }
 
-        // Punkty uderzeń (Nodes) i obecna pozycja piłki
+        // Podświetlanie dostępnych ruchów (Zielone kropki)
+        validTargets.forEach(target => {
+            ctx.fillStyle = '#2e7d32';
+            ctx.strokeStyle = '#a5d6a7';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(target.x * gridSize, target.y * gridSize, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+        });
+
+        // Rysowanie piłki i poprzednich ruchów
         path.forEach((p, index) => {
             ctx.fillStyle = index === path.length - 1 ? '#000' : '#fff';
             ctx.strokeStyle = '#000';
@@ -419,8 +444,16 @@
         });
     }
 
-    // Inicjalizacja pierwszej mapy po załadowaniu
-    window.onload = generateNewHole;
+    // Nasłuchiwanie dotyku i kliknięć
+    canvas.addEventListener('click', handleCanvasClick);
+    canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        if (e.touches.length > 0) {
+            handleCanvasClick(e.touches[0]);
+        }
+    }, { passive: false });
+
+    initGame();
 </script>
 </body>
 </html>
