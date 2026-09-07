@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Spokojny Bubble Shooter</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #12131C;
+            color: #E2E8F0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #game-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 420px;
+            height: 100vh;
+            max-height: 800px;
+            justify-content: space-between;
+            padding: 12px 8px;
+        }
+
+        header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+        }
+
+        .score-board {
+            font-size: 16px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            color: #A0AEC0;
+        }
+
+        .score-board span {
+            color: #FFFFFF;
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        button {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: #FFF;
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:active {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        canvas {
+            background: #1A1C29;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            width: 100%;
+            height: auto;
+            flex-grow: 1;
+            margin: 10px 0;
+        }
+
+        footer {
+            font-size: 12px;
+            color: #718096;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <header>
+        <div class="score-board">Punkty: <span id="score">0</span></div>
+        <button id="reset-btn">Nowa Gra</button>
+    </header>
+
+    <canvas id="canvas"></canvas>
+
+    <footer>
+        Przeciągnij palcem, aby wycelować, puść, aby wystrzelić
+    </footer>
+</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const scoreEl = document.getElementById('score');
+const resetBtn = document.getElementById('reset-btn');
+
+// Konfiguracja wymiarów
+const WIDTH = 380;
+const HEIGHT = 560;
+canvas.width = WIDTH;
+canvas.height = HEIGHT;
+
+const COLS = 8;
+const ROWS = 11;
+const RADIUS = WIDTH / (COLS * 2);
+const ROW_HEIGHT = RADIUS * Math.sqrt(3);
+
+// Paleta uspokajających pastelowych kolorów
+const COLORS = [
+    '#FF7675', // Ciepły róż
+    '#74B9FF', // Spokojny błękit
+    '#55EFC4', // Pastelowa mieta
+    '#FFEAA7', // Łagodny żółty
+    '#A29BFE'  // Lawenda
+];
+
+let grid = [];
+let currentBubble = null;
+let nextBubble = null;
+let shotBubble = null;
+let aimAngle = -Math.PI / 2;
+let isAiming = false;
+let score = 0;
+let misses = 0;
+const MAX_MISSES = 5;
+
+// Syntetyzator dźwięku (Web Audio API) dla braku zewnętrznych zasobów
+let audioCtx = null;
+
+function playSound(type) {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    const now = audioCtx.currentTime;
+
+    if (type === 'pop') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.exponentialRampToValueAtTime(800, now + 0.08);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+        osc.start(now);
+        osc.stop(now + 0.08);
+    } else if (type === 'shoot') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(180, now);
+        osc.frequency.exponentialRampToValueAtTime(60, now + 0.1);
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+        osc.start(now);
+        osc.stop(now + 0.1);
+    }
+}
+
+// Inicjalizacja siatki kulek
+function initGrid() {
+    grid = [];
+    for (let r = 0; r < ROWS; r++) {
+        grid[r] = [];
+        const colsInRow = (r % 2 === 0) ? COLS : COLS - 1;
+        for (let c = 0; c < colsInRow; c++) {
+            if (r < 4) {
+                grid[r][c] = getRandomColor();
+            } else {
+                grid[r][c] = null;
+            }
+        }
+    }
+}
+
+function getRandomColor() {
+    return COLORS[Math.floor(Math.random() * COLORS.length)];
+}
+
+function getBubbleCenter(r, c) {
+    const isOdd = (r % 2 !== 0);
+    const x = isOdd ? RADIUS * 2 + c * RADIUS * 2 : RADIUS + c * RADIUS * 2;
+    const y = RADIUS + r * ROW_HEIGHT;
+    return { x, y };
+}
+
+function createShooterBubbles() {
+    currentBubble = nextBubble || getRandomColor();
+    nextBubble = getRandomColor();
+}
+
+function startNewGame() {
+    score = 0;
+    misses = 0;
+    scoreEl.textContent = score;
+    initGrid();
+    nextBubble = null;
+    createShooterBubbles();
+}
+
+// Rysowanie
+function draw() {
+    ctx.clearRect(0, 0, WIDTH, HEIGHT);
+
+    // Rysowanie kulek w siatce
+    for (let r = 0; r < ROWS; r++) {
+        const colsInRow = (r % 2 === 0) ? COLS : COLS - 1;
+        for (let c = 0; c < colsInRow; c++) {
+            const color = grid[r][c];
+            if (color) {
+                const { x, y } = getBubbleCenter(r, c);
+                drawBubble(x, y, color);
+            }
+        }
+    }
+
+    // Linia celownicza
+    if (isAiming && !shotBubble) {
+        drawAimLine();
+    }
+
+    // Wystrzelona kulka
+    if (shotBubble) {
+        drawBubble(shotBubble.x, shotBubble.y, shotBubble.color);
+    }
+
+    // Kulka w wyrzutni
+    if (currentBubble) {
+        drawBubble(WIDTH / 2, HEIGHT - RADIUS * 2, currentBubble);
+    }
+
+    // Kolejna kulka (podgląd)
+    if (nextBubble) {
+        drawBubble(WIDTH / 2 - RADIUS * 3, HEIGHT - RADIUS * 1.5, nextBubble, RADIUS * 0.6);
+    }
+}
+
+function drawBubble(x, y, color, r = RADIUS - 1) {
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+
+    // Delikatne odblaskowe światło dla trójwymiarowości
+    ctx.beginPath();
+    ctx.arc(x - r * 0.3, y - r * 0.3, r * 0.25, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+    ctx.fill();
+}
+
+function drawAimLine() {
+    ctx.save();
+    ctx.beginPath();
+    ctx.setLineDash([6, 6]);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.lineWidth = 2;
+
+    let startX = WIDTH / 2;
+    let startY = HEIGHT - RADIUS * 2;
+    let currX = startX;
+    let currY = startY;
+    let dirX = Math.cos(aimAngle);
+    let dirY = Math.sin(aimAngle);
+
+    ctx.moveTo(currX, currY);
+
+    for (let step = 0; step < 300; step++) {
+        currX += dirX * 3;
+        currY += dirY * 3;
+
+        if (currX - RADIUS <= 0 || currX + RADIUS >= WIDTH) {
+            dirX = -dirX;
+        }
+
+        if (currY - RADIUS <= 0) break;
+
+        // Przerwanie linii przy kolizji z istniejącą kulką
+        let hit = false;
+        for (let r = 0; r < ROWS; r++) {
+            const colsInRow = (r % 2 === 0) ? COLS : COLS - 1;
+            for (let c = 0; c < colsInRow; c++) {
+                if (grid[r][c]) {
+                    const pos = getBubbleCenter(r, c);
+                    const dist = Math.hypot(currX - pos.x, currY - pos.y);
+                    if (dist < RADIUS * 2) {
+                        hit = true;
+                        break;
+                    }
+                }
+            }
+            if (hit) break;
+        }
+
+        if (hit) break;
+    }
+
+    ctx.lineTo(currX, currY);
+    ctx.stroke();
+    ctx.restore();
+}
+
+// Fizyka i Mechanika
+function update() {
+    if (shotBubble) {
+        shotBubble.x += shotBubble.vx;
+        shotBubble.y += shotBubble.vy;
+
+        // Odbicie od ścian bocznych
+        if (shotBubble.x - RADIUS <= 0) {
+            shotBubble.x = RADIUS;
+            shotBubble.vx = -shotBubble.vx;
+        } else if (shotBubble.x + RADIUS >= WIDTH) {
+            shotBubble.x = WIDTH - RADIUS;
+            shotBubble.vx = -shotBubble.vx;
+        }
+
+        // Odbicie / zatrzymanie na suficie
+        if (shotBubble.y - RADIUS <= 0) {
+            snapBubbleToGrid();
+            return;
+        }
+
+        // Sprawdzenie kolizji z kulkami w siatce
+        for (let r = 0; r < ROWS; r++) {
+            const colsInRow = (r % 2 === 0) ? COLS : COLS - 1;
+            for (let c = 0; c < colsInRow; c++) {
+                if (grid[r][c]) {
+                    const pos = getBubbleCenter(r, c);
+                    const dist = Math.hypot(shotBubble.x - pos.x, shotBubble.y - pos.y);
+                    if (dist < RADIUS * 1.8) {
+                        snapBubbleToGrid();
+                        return;
+                    }
+                }
+            }
+        }
+    }
+}
+
+function snapBubbleToGrid() {
+    let closestR = 0;
+    let closestC = 0;
+    let minDist = Infinity;
+
+    for (let r = 0; r < ROWS; r++) {
+        const colsInRow = (r % 2 === 0) ? COLS : COLS - 1;
+        for (let c = 0; c < colsInRow; c++) {
+            if (!grid[r][c]) {
+                const pos = getBubbleCenter(r, c);
+                const dist = Math.hypot(shotBubble.x - pos.x, shotBubble.y - pos.y);
+                if (dist < minDist) {
+                    minDist = dist;
+                    closestR = r;
+                    closestC = c;
+                }
+            }
+        }
+    }
+
+    grid[closestR][closestC] = shotBubble.color;
+    const color = shotBubble.color;
+    shotBubble = null;
+
+    // Logika dopasowania 3 lub więcej kulek
+    const matches = getMatches(closestR, closestC, color);
+
+    if (matches.length >= 3) {
+        playSound('pop');
+        matches.forEach(({ r, c }) => {
+            grid[r][c] = null;
+        });
+        score += matches.length * 10;
+
+        // Usuwanie wiszących kulek bez połączenia z sufitem
+        const floatingCount = removeFloatingBubbles();
+        if (floatingCount > 0) {
+            score += floatingCount * 20;
+        }
+
+        scoreEl.textContent = score;
+    } else {
+        misses++;
+        if (misses >= MAX_MISSES) {
+            shiftGridDown();
+            misses = 0;
+        }
+    }
+
+    // Sprawdzenie końca gry / czyszczenia
+    checkGameOver();
+    createShooterBubbles();
+}
+
+function getNeighbors(r, c) {
+    const isOdd = (r % 2 !== 0);
+    const neighbors = [];
+
+    const offsets = isOdd ? [
+        [-1, 0], [-1, 1],
+        [0, -1], [0, 1],
+        [1, 0], [1, 1]
+    ] : [
+        [-1, -1], [-1, 0],
+        [0, -1], [0, 1],
+        [1, -1], [1, 0]
+    ];
+
+    for (const [dr, dc] of offsets) {
+        const nr = r + dr;
+        const nc = c + dc;
+        if (nr >= 0 && nr < ROWS) {
+            const colsInRow = (nr % 2 === 0) ? COLS : COLS - 1;
+            if (nc >= 0 && nc < colsInRow) {
+                neighbors.push({ r: nr, c: nc });
+            }
+        }
+    }
+
+    return neighbors;
+}
+
+function getMatches(startR, startC, targetColor) {
+    const matches = [];
+    const visited = Array.from({ length: ROWS }, () => []);
+    const queue = [{ r: startR, c: startC }];
+    visited[startR][startC] = true;
+
+    while (queue.length > 0) {
+        const { r, c } = queue.shift();
+        matches.push({ r, c });
+
+        for (const n of getNeighbors(r, c)) {
+            if (grid[n.r][n.c] === targetColor && !visited[n.r][n.c]) {
+                visited[n.r][n.c] = true;
+                queue.push(n);
+            }
+        }
+    }
+
+    return matches;
+}
+
+function removeFloatingBubbles() {
+    const connected = Array.from({ length: ROWS }, () => []);
+    const queue = [];
+
+    // Dodanie wszystkich kulek z pierwszego rzędu
+    const topCols = COLS;
+    for (let c = 0; c < topCols; c++) {
+        if (grid[0][c]) {
+            connected[0][c] = true;
+            queue.push({ r: 0, c });
+        }
+    }
+
+    while (queue.length > 0) {
+        const { r, c } = queue.shift();
+
+        for (const n of getNeighbors(r, c)) {
+            if (grid[n.r][n.c] && !connected[n.r][n.c]) {
+                connected[n.r][n.c] = true;
+                queue.push(n);
+            }
+        }
+    }
+
+    let removed = 0;
+    for (let r = 0; r < ROWS; r++) {
+        const colsInRow = (r % 2 === 0) ? COLS : COLS - 1;
+        for (let c = 0; c < colsInRow; c++) {
+            if (grid[r][c] && !connected[r][c]) {
+                grid[r][c] = null;
+                removed++;
+            }
+        }
+    }
+
+    return removed;
+}
+
+function shiftGridDown() {
+    for (let r = ROWS - 1; r > 0; r--) {
+        grid[r] = [...grid[r - 1]];
+    }
+    grid[0] = [];
+    for (let c = 0; c < COLS; c++) {
+        grid[0][c] = getRandomColor();
+    }
+}
+
+function checkGameOver() {
+    // Jeśli kulki dotkną dolnego rzędu, restartuj spokojnie planszę
+    const lastRow = grid[ROWS - 2];
+    let reachedBottom = lastRow.some(cell => cell !== null);
+
+    if (reachedBottom) {
+        setTimeout(() => {
+            alert('Koniec gry! Twój wynik: ' + score);
+            startNewGame();
+        }, 100);
+    }
+}
+
+function shootBubble() {
+    if (shotBubble) return;
+
+    playSound('shoot');
+    const speed = 11;
+    shotBubble = {
+        x: WIDTH / 2,
+        y: HEIGHT - RADIUS * 2,
+        vx: Math.cos(aimAngle) * speed,
+        vy: Math.sin(aimAngle) * speed,
+        color: currentBubble
+    };
+    currentBubble = null;
+}
+
+// Obsługa sterowania (Dotyk & Myszka)
+function handlePointerMove(e) {
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+    const scaleX = WIDTH / rect.width;
+    const scaleY = HEIGHT / rect.height;
+
+    const touchX = (clientX - rect.left) * scaleX;
+    const touchY = (clientY - rect.top) * scaleY;
+
+    const shooterX = WIDTH / 2;
+    const shooterY = HEIGHT - RADIUS * 2;
+
+    let angle = Math.atan2(touchY - shooterY, touchX - shooterX);
+
+    // Ograniczenie kąta wystrzału (żeby nie strzelać w dół)
+    if (angle > -0.2) angle = -0.2;
+    if (angle < -Math.PI + 0.2) angle = -Math.PI + 0.2;
+
+    aimAngle = angle;
+    isAiming = true;
+}
+
+function handlePointerEnd() {
+    if (isAiming && !shotBubble) {
+        shootBubble();
+    }
+    isAiming = false;
+}
+
+canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handlePointerMove(e); }, { passive: false });
+canvas.addEventListener('touchmove', (e) => { e.preventDefault(); handlePointerMove(e); }, { passive: false });
+canvas.addEventListener('touchend', (e) => { e.preventDefault(); handlePointerEnd(); }, { passive: false });
+
+canvas.addEventListener('mousedown', (e) => handlePointerMove(e));
+canvas.addEventListener('mousemove', (e) => { if (isAiming) handlePointerMove(e); });
+canvas.addEventListener('mouseup', () => handlePointerEnd());
+
+resetBtn.addEventListener('click', startNewGame);
+
+// Główna pętla gry
+function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+// Start
+startNewGame();
+gameLoop();
+</script>
+</body>
+</html>
