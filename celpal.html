@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Spokojny Bubble Shooter</title>
+    <title>Miodowy Bubble Shooter</title>
     <style>
         * {
             box-sizing: border-box;
@@ -15,8 +15,8 @@
         }
 
         body {
-            background-color: #12131C;
-            color: #E2E8F0;
+            background-color: #161412;
+            color: #F7FAF2;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             display: flex;
             flex-direction: column;
@@ -44,48 +44,51 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 16px;
-            background: rgba(255, 255, 255, 0.05);
+            padding: 10px 18px;
+            background: rgba(255, 255, 255, 0.04);
             border-radius: 16px;
             backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         .score-board {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 500;
             letter-spacing: 0.5px;
             color: #A0AEC0;
         }
 
         .score-board span {
-            color: #FFFFFF;
+            color: #F6AD55;
             font-weight: 700;
             font-size: 18px;
         }
 
         button {
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
-            color: #FFF;
+            background: rgba(246, 173, 85, 0.15);
+            border: 1px solid rgba(246, 173, 85, 0.3);
+            color: #F6AD55;
             padding: 8px 16px;
             border-radius: 12px;
             font-size: 14px;
+            font-weight: 600;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.2s;
         }
 
         button:active {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(246, 173, 85, 0.3);
         }
 
         canvas {
-            background: #1A1C29;
+            background: #1C1917;
             border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
             width: 100%;
             height: auto;
             flex-grow: 1;
             margin: 10px 0;
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         footer {
@@ -99,14 +102,14 @@
 
 <div id="game-container">
     <header>
-        <div class="score-board">Punkty: <span id="score">0</span></div>
+        <div class="score-board">Miód: <span id="score">0</span></div>
         <button id="reset-btn">Nowa Gra</button>
     </header>
 
     <canvas id="canvas"></canvas>
 
     <footer>
-        Przeciągnij palcem, aby wycelować, puść, aby wystrzelić
+        Przeciągnij palcem, aby wycelować plaster miodu
     </footer>
 </div>
 
@@ -116,7 +119,7 @@ const ctx = canvas.getContext('2d');
 const scoreEl = document.getElementById('score');
 const resetBtn = document.getElementById('reset-btn');
 
-// Konfiguracja wymiarów
+// Wymiary planszy
 const WIDTH = 380;
 const HEIGHT = 560;
 canvas.width = WIDTH;
@@ -124,29 +127,32 @@ canvas.height = HEIGHT;
 
 const COLS = 8;
 const ROWS = 11;
-const RADIUS = WIDTH / (COLS * 2);
-const ROW_HEIGHT = RADIUS * Math.sqrt(3);
 
-// Paleta uspokajających pastelowych kolorów
+// Geometria sześciokąta foremnego
+const HEX_WIDTH = WIDTH / COLS;
+const HEX_RADIUS = HEX_WIDTH / Math.sqrt(3);
+const HEX_ROW_HEIGHT = 1.5 * HEX_RADIUS;
+
+// Paleta ciepłych, stonowanych kolorów miodu i natury
 const COLORS = [
-    '#FF7675', // Ciepły róż
-    '#74B9FF', // Spokojny błękit
-    '#55EFC4', // Pastelowa mieta
-    '#FFEAA7', // Łagodny żółty
-    '#A29BFE'  // Lawenda
+    '#F6AD55', // Złocisty miód
+    '#FC8181', // Bursztynowy róż
+    '#68D391', // Szałwiowa zieleń
+    '#63B3ED', // Ciepły błękit
+    '#F6E05E'  // Jasny pyłek
 ];
 
 let grid = [];
-let currentBubble = null;
-let nextBubble = null;
-let shotBubble = null;
+let currentHex = null;
+let nextHex = null;
+let shotHex = null;
 let aimAngle = -Math.PI / 2;
 let isAiming = false;
 let score = 0;
 let misses = 0;
 const MAX_MISSES = 5;
 
-// Syntetyzator dźwięku (Web Audio API) dla braku zewnętrznych zasobów
+// Syntetyzator dźwięku
 let audioCtx = null;
 
 function playSound(type) {
@@ -166,24 +172,23 @@ function playSound(type) {
 
     if (type === 'pop') {
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(300, now);
-        osc.frequency.exponentialRampToValueAtTime(800, now + 0.08);
+        osc.frequency.setValueAtTime(320, now);
+        osc.frequency.exponentialRampToValueAtTime(640, now + 0.09);
         gain.gain.setValueAtTime(0.15, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.09);
         osc.start(now);
-        osc.stop(now + 0.08);
+        osc.stop(now + 0.09);
     } else if (type === 'shoot') {
         osc.type = 'triangle';
-        osc.frequency.setValueAtTime(180, now);
-        osc.frequency.exponentialRampToValueAtTime(60, now + 0.1);
-        gain.gain.setValueAtTime(0.1, now);
+        osc.frequency.setValueAtTime(160, now);
+        osc.frequency.exponentialRampToValueAtTime(70, now + 0.1);
+        gain.gain.setValueAtTime(0.08, now);
         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
         osc.start(now);
         osc.stop(now + 0.1);
     }
 }
 
-// Inicjalizacja siatki kulek
 function initGrid() {
     grid = [];
     for (let r = 0; r < ROWS; r++) {
@@ -203,16 +208,16 @@ function getRandomColor() {
     return COLORS[Math.floor(Math.random() * COLORS.length)];
 }
 
-function getBubbleCenter(r, c) {
+function getHexCenter(r, c) {
     const isOdd = (r % 2 !== 0);
-    const x = isOdd ? RADIUS * 2 + c * RADIUS * 2 : RADIUS + c * RADIUS * 2;
-    const y = RADIUS + r * ROW_HEIGHT;
+    const x = isOdd ? (c + 1) * HEX_WIDTH : (c + 0.5) * HEX_WIDTH;
+    const y = HEX_RADIUS + r * HEX_ROW_HEIGHT;
     return { x, y };
 }
 
-function createShooterBubbles() {
-    currentBubble = nextBubble || getRandomColor();
-    nextBubble = getRandomColor();
+function createShooterHexes() {
+    currentHex = nextHex || getRandomColor();
+    nextHex = getRandomColor();
 }
 
 function startNewGame() {
@@ -220,71 +225,95 @@ function startNewGame() {
     misses = 0;
     scoreEl.textContent = score;
     initGrid();
-    nextBubble = null;
-    createShooterBubbles();
+    nextHex = null;
+    createShooterHexes();
 }
 
-// Rysowanie
+// Rysowanie sześciokąta foremnego
+function drawHexagon(x, y, r, color, scale = 1.0) {
+    const radius = r * scale;
+    ctx.save();
+    ctx.beginPath();
+    
+    // Rysowanie 6 wierzchołków
+    for (let i = 0; i < 6; i++) {
+        const angle = (Math.PI / 3) * i - Math.PI / 6;
+        const hx = x + radius * Math.cos(angle);
+        const hy = y + radius * Math.sin(angle);
+        if (i === 0) ctx.moveTo(hx, hy);
+        else ctx.lineTo(hx, hy);
+    }
+    ctx.closePath();
+
+    ctx.fillStyle = color;
+    ctx.fill();
+
+    // Zewnętrzna krawędź plastra miodu
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Wewnętrzny blik świetlny (efekt głębi komórki miodowej)
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+        const angle = (Math.PI / 3) * i - Math.PI / 6;
+        const hx = x + (radius * 0.65) * Math.cos(angle);
+        const hy = y + (radius * 0.65) * Math.sin(angle);
+        if (i === 0) ctx.moveTo(hx, hy);
+        else ctx.lineTo(hx, hy);
+    }
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+    ctx.fill();
+
+    ctx.restore();
+}
+
 function draw() {
     ctx.clearRect(0, 0, WIDTH, HEIGHT);
 
-    // Rysowanie kulek w siatce
+    // Rysowanie siatki plastra miodu
     for (let r = 0; r < ROWS; r++) {
         const colsInRow = (r % 2 === 0) ? COLS : COLS - 1;
         for (let c = 0; c < colsInRow; c++) {
             const color = grid[r][c];
             if (color) {
-                const { x, y } = getBubbleCenter(r, c);
-                drawBubble(x, y, color);
+                const { x, y } = getHexCenter(r, c);
+                drawHexagon(x, y, HEX_RADIUS, color);
             }
         }
     }
 
-    // Linia celownicza
-    if (isAiming && !shotBubble) {
+    // Celownik
+    if (isAiming && !shotHex) {
         drawAimLine();
     }
 
-    // Wystrzelona kulka
-    if (shotBubble) {
-        drawBubble(shotBubble.x, shotBubble.y, shotBubble.color);
+    // Wystrzelony plaster
+    if (shotHex) {
+        drawHexagon(shotHex.x, shotHex.y, HEX_RADIUS, shotHex.color);
     }
 
-    // Kulka w wyrzutni
-    if (currentBubble) {
-        drawBubble(WIDTH / 2, HEIGHT - RADIUS * 2, currentBubble);
+    // Plaster w wyrzutni
+    if (currentHex) {
+        drawHexagon(WIDTH / 2, HEIGHT - HEX_RADIUS * 2, HEX_RADIUS, currentHex);
     }
 
-    // Kolejna kulka (podgląd)
-    if (nextBubble) {
-        drawBubble(WIDTH / 2 - RADIUS * 3, HEIGHT - RADIUS * 1.5, nextBubble, RADIUS * 0.6);
+    // Podgląd następnego
+    if (nextHex) {
+        drawHexagon(WIDTH / 2 - HEX_WIDTH * 2, HEIGHT - HEX_RADIUS * 1.8, HEX_RADIUS, nextHex, 0.65);
     }
-}
-
-function drawBubble(x, y, color, r = RADIUS - 1) {
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.fillStyle = color;
-    ctx.fill();
-
-    // Delikatne odblaskowe światło dla trójwymiarowości
-    ctx.beginPath();
-    ctx.arc(x - r * 0.3, y - r * 0.3, r * 0.25, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
-    ctx.fill();
 }
 
 function drawAimLine() {
     ctx.save();
     ctx.beginPath();
-    ctx.setLineDash([6, 6]);
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.setLineDash([5, 5]);
+    ctx.strokeStyle = 'rgba(246, 173, 85, 0.5)';
     ctx.lineWidth = 2;
 
-    let startX = WIDTH / 2;
-    let startY = HEIGHT - RADIUS * 2;
-    let currX = startX;
-    let currY = startY;
+    let currX = WIDTH / 2;
+    let currY = HEIGHT - HEX_RADIUS * 2;
     let dirX = Math.cos(aimAngle);
     let dirY = Math.sin(aimAngle);
 
@@ -294,21 +323,22 @@ function drawAimLine() {
         currX += dirX * 3;
         currY += dirY * 3;
 
-        if (currX - RADIUS <= 0 || currX + RADIUS >= WIDTH) {
+        // Odbicia od ścian
+        if (currX - HEX_WIDTH / 2 <= 0 || currX + HEX_WIDTH / 2 >= WIDTH) {
             dirX = -dirX;
         }
 
-        if (currY - RADIUS <= 0) break;
+        if (currY - HEX_RADIUS <= 0) break;
 
-        // Przerwanie linii przy kolizji z istniejącą kulką
+        // Detekcja przedłużenia do przeszkody
         let hit = false;
         for (let r = 0; r < ROWS; r++) {
             const colsInRow = (r % 2 === 0) ? COLS : COLS - 1;
             for (let c = 0; c < colsInRow; c++) {
                 if (grid[r][c]) {
-                    const pos = getBubbleCenter(r, c);
+                    const pos = getHexCenter(r, c);
                     const dist = Math.hypot(currX - pos.x, currY - pos.y);
-                    if (dist < RADIUS * 2) {
+                    if (dist < HEX_WIDTH * 0.9) {
                         hit = true;
                         break;
                     }
@@ -325,36 +355,35 @@ function drawAimLine() {
     ctx.restore();
 }
 
-// Fizyka i Mechanika
 function update() {
-    if (shotBubble) {
-        shotBubble.x += shotBubble.vx;
-        shotBubble.y += shotBubble.vy;
+    if (shotHex) {
+        shotHex.x += shotHex.vx;
+        shotHex.y += shotHex.vy;
 
-        // Odbicie od ścian bocznych
-        if (shotBubble.x - RADIUS <= 0) {
-            shotBubble.x = RADIUS;
-            shotBubble.vx = -shotBubble.vx;
-        } else if (shotBubble.x + RADIUS >= WIDTH) {
-            shotBubble.x = WIDTH - RADIUS;
-            shotBubble.vx = -shotBubble.vx;
+        // Odbicia od ścian bocznych
+        if (shotHex.x - HEX_WIDTH / 2 <= 0) {
+            shotHex.x = HEX_WIDTH / 2;
+            shotHex.vx = -shotHex.vx;
+        } else if (shotHex.x + HEX_WIDTH / 2 >= WIDTH) {
+            shotHex.x = WIDTH - HEX_WIDTH / 2;
+            shotHex.vx = -shotHex.vx;
         }
 
-        // Odbicie / zatrzymanie na suficie
-        if (shotBubble.y - RADIUS <= 0) {
-            snapBubbleToGrid();
+        // Sufit
+        if (shotHex.y - HEX_RADIUS <= 0) {
+            snapHexToGrid();
             return;
         }
 
-        // Sprawdzenie kolizji z kulkami w siatce
+        // Kolizje z istniejącymi plastrami
         for (let r = 0; r < ROWS; r++) {
             const colsInRow = (r % 2 === 0) ? COLS : COLS - 1;
             for (let c = 0; c < colsInRow; c++) {
                 if (grid[r][c]) {
-                    const pos = getBubbleCenter(r, c);
-                    const dist = Math.hypot(shotBubble.x - pos.x, shotBubble.y - pos.y);
-                    if (dist < RADIUS * 1.8) {
-                        snapBubbleToGrid();
+                    const pos = getHexCenter(r, c);
+                    const dist = Math.hypot(shotHex.x - pos.x, shotHex.y - pos.y);
+                    if (dist < HEX_WIDTH * 0.88) {
+                        snapHexToGrid();
                         return;
                     }
                 }
@@ -363,7 +392,7 @@ function update() {
     }
 }
 
-function snapBubbleToGrid() {
+function snapHexToGrid() {
     let closestR = 0;
     let closestC = 0;
     let minDist = Infinity;
@@ -372,8 +401,8 @@ function snapBubbleToGrid() {
         const colsInRow = (r % 2 === 0) ? COLS : COLS - 1;
         for (let c = 0; c < colsInRow; c++) {
             if (!grid[r][c]) {
-                const pos = getBubbleCenter(r, c);
-                const dist = Math.hypot(shotBubble.x - pos.x, shotBubble.y - pos.y);
+                const pos = getHexCenter(r, c);
+                const dist = Math.hypot(shotHex.x - pos.x, shotHex.y - pos.y);
                 if (dist < minDist) {
                     minDist = dist;
                     closestR = r;
@@ -383,11 +412,10 @@ function snapBubbleToGrid() {
         }
     }
 
-    grid[closestR][closestC] = shotBubble.color;
-    const color = shotBubble.color;
-    shotBubble = null;
+    grid[closestR][closestC] = shotHex.color;
+    const color = shotHex.color;
+    shotHex = null;
 
-    // Logika dopasowania 3 lub więcej kulek
     const matches = getMatches(closestR, closestC, color);
 
     if (matches.length >= 3) {
@@ -397,8 +425,7 @@ function snapBubbleToGrid() {
         });
         score += matches.length * 10;
 
-        // Usuwanie wiszących kulek bez połączenia z sufitem
-        const floatingCount = removeFloatingBubbles();
+        const floatingCount = removeFloatingHexes();
         if (floatingCount > 0) {
             score += floatingCount * 20;
         }
@@ -412,9 +439,8 @@ function snapBubbleToGrid() {
         }
     }
 
-    // Sprawdzenie końca gry / czyszczenia
     checkGameOver();
-    createShooterBubbles();
+    createShooterHexes();
 }
 
 function getNeighbors(r, c) {
@@ -466,13 +492,11 @@ function getMatches(startR, startC, targetColor) {
     return matches;
 }
 
-function removeFloatingBubbles() {
+function removeFloatingHexes() {
     const connected = Array.from({ length: ROWS }, () => []);
     const queue = [];
 
-    // Dodanie wszystkich kulek z pierwszego rzędu
-    const topCols = COLS;
-    for (let c = 0; c < topCols; c++) {
+    for (let c = 0; c < COLS; c++) {
         if (grid[0][c]) {
             connected[0][c] = true;
             queue.push({ r: 0, c });
@@ -515,34 +539,32 @@ function shiftGridDown() {
 }
 
 function checkGameOver() {
-    // Jeśli kulki dotkną dolnego rzędu, restartuj spokojnie planszę
     const lastRow = grid[ROWS - 2];
     let reachedBottom = lastRow.some(cell => cell !== null);
 
     if (reachedBottom) {
         setTimeout(() => {
-            alert('Koniec gry! Twój wynik: ' + score);
+            alert('Udało Ci się zebrać dużo miodu! Wynik: ' + score);
             startNewGame();
         }, 100);
     }
 }
 
-function shootBubble() {
-    if (shotBubble) return;
+function shootHex() {
+    if (shotHex) return;
 
     playSound('shoot');
     const speed = 11;
-    shotBubble = {
+    shotHex = {
         x: WIDTH / 2,
-        y: HEIGHT - RADIUS * 2,
+        y: HEIGHT - HEX_RADIUS * 2,
         vx: Math.cos(aimAngle) * speed,
         vy: Math.sin(aimAngle) * speed,
-        color: currentBubble
+        color: currentHex
     };
-    currentBubble = null;
+    currentHex = null;
 }
 
-// Obsługa sterowania (Dotyk & Myszka)
 function handlePointerMove(e) {
     const rect = canvas.getBoundingClientRect();
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -555,11 +577,10 @@ function handlePointerMove(e) {
     const touchY = (clientY - rect.top) * scaleY;
 
     const shooterX = WIDTH / 2;
-    const shooterY = HEIGHT - RADIUS * 2;
+    const shooterY = HEIGHT - HEX_RADIUS * 2;
 
     let angle = Math.atan2(touchY - shooterY, touchX - shooterX);
 
-    // Ograniczenie kąta wystrzału (żeby nie strzelać w dół)
     if (angle > -0.2) angle = -0.2;
     if (angle < -Math.PI + 0.2) angle = -Math.PI + 0.2;
 
@@ -568,8 +589,8 @@ function handlePointerMove(e) {
 }
 
 function handlePointerEnd() {
-    if (isAiming && !shotBubble) {
-        shootBubble();
+    if (isAiming && !shotHex) {
+        shootHex();
     }
     isAiming = false;
 }
@@ -584,14 +605,12 @@ canvas.addEventListener('mouseup', () => handlePointerEnd());
 
 resetBtn.addEventListener('click', startNewGame);
 
-// Główna pętla gry
 function gameLoop() {
     update();
     draw();
     requestAnimationFrame(gameLoop);
 }
 
-// Start
 startNewGame();
 gameLoop();
 </script>
