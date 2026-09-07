@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paper Apps™ GOLF - Prototyp</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+            margin: 0;
+            color: #333;
+        }
+        #game-container {
+            background-color: #f4f6f5; /* Kolor papieru */
+            border: 1px solid #ccc;
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        canvas {
+            border: 1px solid #aaa;
+            background-color: transparent;
+        }
+        #controls {
+            margin-left: 20px;
+            width: 250px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .panel {
+            background: #fff;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .panel h3 { margin-top: 0; font-size: 16px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        button {
+            font-family: 'Courier New', Courier, monospace;
+            background: #eee;
+            border: 1px solid #999;
+            padding: 8px;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 5px;
+        }
+        button:hover { background: #ddd; }
+        button:disabled { background: #ccc; cursor: not-allowed; color: #888; }
+        #d-pad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+        }
+        #d-pad button { width: 100%; height: 40px; margin: 0; }
+        .info { font-weight: bold; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="golfCanvas" width="360" height="540"></canvas>
+    
+    <div id="controls">
+        <div class="panel">
+            <h3>Status</h3>
+            <div class="info">Dołek: 1 (Par: 6)</div>
+            <div class="info" id="strokesDisplay">Uderzenia: 0</div>
+            <div class="info" id="terrainDisplay">Teren: Rough</div>
+        </div>
+
+        <div class="panel">
+            <h3>1. Wybierz ruch</h3>
+            <button id="btnRoll" onclick="rollDice()">Dice GOLF (Rzuć k6)</button>
+            <div style="text-align: center; margin: 5px 0;" id="diceResult">-</div>
+            <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
+            <button id="btnDriver" onclick="setSpeedGolf(6)">Driver (6) [Tylko Fairway]</button>
+            <button id="btnIron" onclick="setSpeedGolf(3)">Iron (3)</button>
+            <button id="btnPutter" onclick="setSpeedGolf(1)">Putter (1)</button>
+        </div>
+
+        <div class="panel">
+            <h3>2. Wybierz kierunek</h3>
+            <div id="d-pad">
+                <button onclick="move(-1, -1)" id="dir-nw">NW</button>
+                <button onclick="move(0, -1)" id="dir-n">N</button>
+                <button onclick="move(1, -1)" id="dir-ne">NE</button>
+                <button onclick="move(-1, 0)" id="dir-w">W</button>
+                <button disabled style="visibility: hidden;">-</button>
+                <button onclick="move(1, 0)" id="dir-e">E</button>
+                <button onclick="move(-1, 1)" id="dir-sw">SW</button>
+                <button onclick="move(0, 1)" id="dir-s">S</button>
+                <button onclick="move(1, 1)" id="dir-se">SE</button>
+            </div>
+        </div>
+
+        <button onclick="resetHole()">Resetuj dołek</button>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('golfCanvas');
+    const ctx = canvas.getContext('2d');
+    const gridSize = 20; // Odstęp między kropkami
+    const cols = canvas.width / gridSize; // 18
+    const rows = canvas.height / gridSize; // 27
+
+    // Stan gry
+    let strokes = 0;
+    let path = [];
+    let startPos = {x: 5, y: 23};
+    let holePos = {x: 12, y: 4};
+    let currentPos = { ...startPos };
+    let currentDistance = 0;
+    let gameOver = false;
+
+    // Definicja terenu (uproszczona)
+    // 0: Rough (Domyślny), 1: Fairway (Jasny), 2: Sand (Ciemny), 3: Trees
+    const terrainZones = [
+        { type: 1, x: 4, y: 16, w: 7, h: 8 },  // Fairway dół
+        { type: 1, x: 7, y: 8, w: 7, h: 8 },   // Fairway środek/góra
+        { type: 1, x: 10, y: 2, w: 6, h: 6 },  // Fairway góra (green)
+        { type: 2, x: 3, y: 10, w: 4, h: 4 },  // Bunkier lewy
+        { type: 2, x: 12, y: 18, w: 4, h: 5 }  // Bunkier prawy dół
+    ];
+
+    const trees = [
+        {x: 4, y: 9}, {x: 5, y: 9}, {x: 6, y: 9}, 
+        {x: 14, y: 14}, {x: 15, y: 14}, {x: 14, y: 15}
+    ];
+
+    function init() {
+        resetHole();
+    }
+
+    function resetHole() {
+        strokes = 0;
+        currentPos = { ...startPos };
+        path = [ { ...currentPos } ];
+        currentDistance = 0;
+        gameOver = false;
+        document.getElementById('diceResult').innerText = '-';
+        updateUI();
+        draw();
+    }
+
+    function getTerrainAt(x, y) {
+        // Sprawdź drzewa
+        for(let t of trees) {
+            if(t.x === x && t.y === y) return 'Trees';
+        }
+        // Sprawdź strefy (od tyłu, żeby mniejsze nadpisywały większe, jeśli się nakładają)
+        for (let i = terrainZones.length - 1; i >= 0; i--) {
+            let z = terrainZones[i];
+            if (x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h) {
+                if (z.type === 1) return 'Fairway';
+                if (z.type === 2) return 'Sand';
+            }
+        }
+        return 'Rough';
+    }
+
+    function rollDice() {
+        if (gameOver || currentDistance > 0) return;
+        let roll = Math.floor(Math.random() * 6) + 1;
+        let terrain = getTerrainAt(currentPos.x, currentPos.y);
+        
+        let mod = 0;
+        if (terrain === 'Fairway') mod = 1;
+        if (terrain === 'Sand') mod = -1;
+        
+        currentDistance = Math.max(1, roll + mod);
+        document.getElementById('diceResult').innerText = `Rzut: ${roll} ${mod !== 0 ? (mod>0?'+1':'-1') : ''} = Cel: ${currentDistance}`;
+        enableDirections(true);
+    }
+
+    function setSpeedGolf(dist) {
+        if (gameOver || currentDistance > 0) return;
+        let terrain = getTerrainAt(currentPos.x, currentPos.y);
+        
+        if (dist === 6 && terrain !== 'Fairway') {
+            alert('Drivery (6) mogą być używane tylko z Fairway!');
+            return;
+        }
+        if (dist === 3 && terrain === 'Sand') {
+            dist = 2; // Zgodnie z zasadami: Iron w piasku to tylko 2 pola
+            alert('W bunkrze Iron przemieszcza się tylko o 2 pola.');
+        }
+
+        currentDistance = dist;
+        document.getElementById('diceResult').innerText = `Speed GOLF: ${dist}`;
+        enableDirections(true);
+    }
+
+    function enableDirections(enable) {
+        const buttons = document.querySelectorAll('#d-pad button');
+        buttons.forEach(btn => btn.disabled = !enable);
+    }
+
+    function move(dx, dy) {
+        if (currentDistance === 0 || gameOver) return;
+        
+        let startTerrain = getTerrainAt(currentPos.x, currentPos.y);
+        let targetX = currentPos.x + (dx * currentDistance);
+        let targetY = currentPos.y + (dy * currentDistance);
+        let targetTerrain = getTerrainAt(targetX, targetY);
+
+        // Uproszczona logika kolizji z drzewami
+        if (targetTerrain === 'Trees') {
+            alert('Nie możesz wylądować na drzewach! Wybierz inny kierunek lub zrób Mulligan (w tym prototypie zresetuj ruch).');
+            return;
+        }
+        
+        if (targetX < 0 || targetX >= cols || targetY < 0 || targetY >= rows) {
+            alert('Poza planszą (O.B.)!');
+            return;
+        }
+
+        // Wykonaj ruch
+        currentPos = { x: targetX, y: targetY };
+        path.push({ ...currentPos });
+        strokes++;
+        currentDistance = 0;
+        
+        document.getElementById('diceResult').innerText = '-';
+        enableDirections(false);
+        updateUI();
+        draw();
+
+        checkWinCondition();
+    }
+
+    function checkWinCondition() {
+        if (currentPos.x === holePos.x && currentPos.y === holePos.y) {
+            gameOver = true;
+            setTimeout(() => alert(`Wbiłeś piłkę do dołka! Wynik: ${strokes} (Par: 6)`), 100);
+        }
+    }
+
+    function updateUI() {
+        document.getElementById('strokesDisplay').innerText = `Uderzenia: ${strokes}`;
+        document.getElementById('terrainDisplay').innerText = `Teren: ${getTerrainAt(currentPos.x, currentPos.y)}`;
+        
+        // Zabezpieczenie przed niewybraniem dystansu
+        if (currentDistance === 0) {
+            enableDirections(false);
+        }
+    }
+
+    function draw() {
+        // Czyszczenie tła
+        ctx.fillStyle = '#f4f6f5';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Rysowanie stref
+        terrainZones.forEach(z => {
+            if (z.type === 1) ctx.fillStyle = '#dbe3df'; // Fairway (jasny szary/niebieskawy)
+            if (z.type === 2) ctx.fillStyle = '#a0a5a3'; // Sand (ciemniejszy szary)
+            
+            ctx.beginPath();
+            ctx.roundRect(z.x * gridSize, z.y * gridSize, z.w * gridSize, z.h * gridSize, 10);
+            ctx.fill();
+        });
+
+        // Rysowanie kropek (siatka)
+        ctx.fillStyle = '#999';
+        for (let i = 1; i < cols; i++) {
+            for (let j = 1; j < rows; j++) {
+                ctx.beginPath();
+                ctx.arc(i * gridSize, j * gridSize, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Rysowanie drzew
+        ctx.fillStyle = '#333';
+        ctx.font = '16px Courier New';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        trees.forEach(t => {
+            ctx.fillText('🌲', t.x * gridSize, t.y * gridSize);
+        });
+
+        // Rysowanie dołka
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(holePos.x * gridSize, holePos.y * gridSize, 6, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // Flaga
+        ctx.beginPath();
+        ctx.moveTo(holePos.x * gridSize, holePos.y * gridSize);
+        ctx.lineTo(holePos.x * gridSize, (holePos.y - 1.5) * gridSize);
+        ctx.stroke();
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.moveTo(holePos.x * gridSize, (holePos.y - 1.5) * gridSize);
+        ctx.lineTo(holePos.x * gridSize + 8, (holePos.y - 1.2) * gridSize);
+        ctx.lineTo(holePos.x * gridSize, (holePos.y - 0.9) * gridSize);
+        ctx.fill();
+
+        // Rysowanie ścieżki
+        if (path.length > 1) {
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(path[0].x * gridSize, path[0].y * gridSize);
+            for (let i = 1; i < path.length; i++) {
+                ctx.lineTo(path[i].x * gridSize, path[i].y * gridSize);
+            }
+            ctx.stroke();
+        }
+
+        // Rysowanie piłki i węzłów
+        path.forEach((p, index) => {
+            ctx.fillStyle = index === path.length - 1 ? '#000' : '#fff';
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(p.x * gridSize, p.y * gridSize, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+        });
+    }
+
+    // Inicjalizacja gry
+    init();
+</script>
+</body>
+</html>
