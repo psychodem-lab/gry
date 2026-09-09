@@ -133,8 +133,8 @@
         }
 
         .card-avatar {
-            width: 85px;
-            height: 85px;
+            width: 90px;
+            height: 90px;
             margin-bottom: 6px;
         }
 
@@ -210,7 +210,6 @@
             color: #4b5563;
         }
 
-        /* Modal popup */
         .modal-overlay {
             position: fixed;
             top:0; left:0; right:0; bottom:0;
@@ -262,14 +261,11 @@
 </head>
 <body>
 
-<div class="game-container" id="app">
-    <!-- Dynamiczny widok JS -->
-</div>
+<div class="game-container" id="app"></div>
 
 <script>
-    // Baza 16 dopracowanych postaci (z informacjami do generatora grafiki SVG)
     const CHARACTERS = [
-        { id: 1, name: "Mei", desc: "Kobieta | Azjatycka<br>Ciemne włosy | 👓 Okulary", skin: "#f3d19e", eyeShape: "asian", glasses: true, hairStyle: "straight-dark", hairColor: "#111827" },
+        { id: 1, name: "Mei", desc: "Kobieta | Azjatycka<br>Ciemne włosy | 👓 Okulary", skin: "#f3d19e", eyeShape: "asian", glasses: true, hairStyle: "long-dark", hairColor: "#111827" },
         { id: 2, name: "Kenji", desc: "Mężczyzna | Azjatycki<br>Ciemne włosy | 🚫 Bez okularów", skin: "#f3d19e", eyeShape: "asian", glasses: false, hairStyle: "short-dark", hairColor: "#111827" },
         { id: 3, name: "Amara", desc: "Kobieta | Afrykańska<br>Ciemne kręcone | 👓 Okulary", skin: "#583219", eyeShape: "round", glasses: true, hairStyle: "afro-dark", hairColor: "#0f172a" },
         { id: 4, name: "Kofi", desc: "Mężczyzna | Afrykański<br>Ciemne krótkie | 🚫 Bez okularów", skin: "#4a2a15", eyeShape: "round", glasses: false, hairStyle: "short-dark", hairColor: "#0f172a" },
@@ -287,106 +283,98 @@
         { id: 16, name: "Anna", desc: "Kobieta | Europejska<br>Ciemne proste | 🚫 Bez okularów", skin: "#fcd5ce", eyeShape: "round", glasses: false, hairStyle: "long-dark", hairColor: "#18181b" }
     ];
 
-    // Generator wektorowej twarzy SVG (Tylko głowa/twarz - brak torsu)
     function createFaceSVG(char) {
         const skin = char.skin;
         const isAsian = char.eyeShape === 'asian';
         const hasGlasses = char.glasses;
         const hairStyle = char.hairStyle;
         const hairColor = char.hairColor;
-        
+        const hasBeard = char.beard || false;
+
         let svg = `<svg viewBox="0 0 100 100" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">`;
         
-        // Tło kółka dla ładnego kadru
         svg += `<circle cx="50" cy="50" r="48" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/>`;
-        
-        // Uszy
-        svg += `<ellipse cx="18" cy="52" rx="5" ry="8" fill="${skin}" />`;
-        svg += `<ellipse cx="82" cy="52" rx="5" ry="8" fill="${skin}" />`;
 
-        // Tłowe włosy (dla długich fryzur i afro)
-        if (hairStyle === 'long-dark' || hairStyle === 'long-red' || hairStyle === 'long-blond' || hairStyle === 'curly-dark' || hairStyle === 'afro-dark') {
-            if (hairStyle === 'afro-dark') {
-                svg += `<circle cx="50" cy="46" r="37" fill="${hairColor}" />`;
-            } else if (hairStyle === 'curly-dark') {
-                svg += `<circle cx="28" cy="42" r="16" fill="${hairColor}" />`;
-                svg += `<circle cx="72" cy="42" r="16" fill="${hairColor}" />`;
-                svg += `<circle cx="50" cy="28" r="22" fill="${hairColor}" />`;
-            } else {
-                svg += `<path d="M 18 45 C 15 75, 25 86, 32 86 L 68 86 C 75 86, 85 75, 82 45 Z" fill="${hairColor}" />`;
-            }
+        // 1. Włosy z tyłu głowy
+        if (hairStyle === 'long-dark' || hairStyle === 'long-red' || hairStyle === 'long-blond') {
+            svg += `<path d="M 16 45 C 12 88, 28 92, 35 92 L 65 92 C 72 92, 88 88, 84 45 C 84 15, 16 15, 16 45 Z" fill="${hairColor}" />`;
+        } else if (hairStyle === 'afro-dark') {
+            svg += `<circle cx="50" cy="40" r="38" fill="${hairColor}" />`;
+        } else if (hairStyle === 'curly-dark') {
+            svg += `<circle cx="26" cy="38" r="18" fill="${hairColor}" />`;
+            svg += `<circle cx="74" cy="38" r="18" fill="${hairColor}" />`;
+            svg += `<circle cx="50" cy="22" r="24" fill="${hairColor}" />`;
+            svg += `<circle cx="34" cy="20" r="18" fill="${hairColor}" />`;
+            svg += `<circle cx="66" cy="20" r="18" fill="${hairColor}" />`;
         }
 
-        // Głowa / Twarz
-        svg += `<ellipse cx="50" cy="52" rx="30" ry="36" fill="${skin}" />`;
+        // 2. Uszy
+        svg += `<ellipse cx="22" cy="54" rx="4.5" ry="7.5" fill="${skin}" />`;
+        svg += `<ellipse cx="78" cy="54" rx="4.5" ry="7.5" fill="${skin}" />`;
 
-        // Oczy
+        // 3. Głowa
+        svg += `<ellipse cx="50" cy="54" rx="27" ry="33" fill="${skin}" />`;
+
+        // 4. Broda i Wąsy
+        if (hasBeard) {
+            svg += `<path d="M 23 52 C 23 91, 77 91, 77 52 C 66 77, 34 77, 23 52 Z" fill="${hairColor}" />`;
+            svg += `<path d="M 37 66 Q 50 61 63 66 Q 50 72 37 66 Z" fill="${hairColor}" />`;
+        }
+
+        // 5. Oczy i Brwi
         if (isAsian) {
-            // Oczy skośne (migdałowe)
-            svg += `<path d="M 32 47 Q 40 42 46 47 Q 40 49 32 47 Z" fill="#1f2937" />`;
-            svg += `<path d="M 54 47 Q 60 42 68 47 Q 60 49 54 47 Z" fill="#1f2937" />`;
-            // Brwi
-            svg += `<path d="M 32 41 Q 39 37 46 42" stroke="${hairColor !== 'none' ? hairColor : '#333'}" stroke-width="2.2" fill="none" stroke-linecap="round"/>`;
-            svg += `<path d="M 54 42 Q 61 37 68 41" stroke="${hairColor !== 'none' ? hairColor : '#333'}" stroke-width="2.2" fill="none" stroke-linecap="round"/>`;
+            svg += `<path d="M 32 48 Q 40 43 46 48 Q 40 50 32 48 Z" fill="#1f2937" />`;
+            svg += `<path d="M 54 48 Q 60 43 68 48 Q 60 50 54 48 Z" fill="#1f2937" />`;
+            svg += `<path d="M 31 42 Q 39 37 46 42" stroke="${hairColor !== 'none' ? hairColor : '#333'}" stroke-width="2.2" fill="none" stroke-linecap="round"/>`;
+            svg += `<path d="M 54 42 Q 61 37 69 42" stroke="${hairColor !== 'none' ? hairColor : '#333'}" stroke-width="2.2" fill="none" stroke-linecap="round"/>`;
         } else {
-            // Oczy okrągłe
-            svg += `<circle cx="37" cy="47" r="4" fill="#1f2937" />`;
-            svg += `<circle cx="63" cy="47" r="4" fill="#1f2937" />`;
-            svg += `<circle cx="38.5" cy="45.5" r="1.3" fill="#ffffff" />`;
-            svg += `<circle cx="64.5" cy="45.5" r="1.3" fill="#ffffff" />`;
-            // Brwi
-            svg += `<path d="M 30 40 Q 37 36 44 40" stroke="${hairColor !== 'none' ? hairColor : '#333'}" stroke-width="2.2" fill="none" stroke-linecap="round"/>`;
-            svg += `<path d="M 56 40 Q 63 36 70 40" stroke="${hairColor !== 'none' ? hairColor : '#333'}" stroke-width="2.2" fill="none" stroke-linecap="round"/>`;
+            svg += `<circle cx="37" cy="48" r="3.8" fill="#1f2937" />`;
+            svg += `<circle cx="63" cy="48" r="3.8" fill="#1f2937" />`;
+            svg += `<circle cx="38.5" cy="46.5" r="1.2" fill="#ffffff" />`;
+            svg += `<circle cx="64.5" cy="46.5" r="1.2" fill="#ffffff" />`;
+            svg += `<path d="M 30 41 Q 37 36 44 41" stroke="${hairColor !== 'none' ? hairColor : '#333'}" stroke-width="2.2" fill="none" stroke-linecap="round"/>`;
+            svg += `<path d="M 56 41 Q 63 36 70 41" stroke="${hairColor !== 'none' ? hairColor : '#333'}" stroke-width="2.2" fill="none" stroke-linecap="round"/>`;
         }
 
-        // Nos
-        svg += `<path d="M 48 56 Q 50 59 52 56" stroke="rgba(0,0,0,0.25)" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
+        // 6. Nos
+        svg += `<path d="M 48 57 Q 50 60 52 57" stroke="rgba(0,0,0,0.25)" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
 
-        // Usta
-        svg += `<path d="M 42 68 Q 50 75 58 68" stroke="#a23b38" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+        // 7. Usta
+        svg += `<path d="M 42 69 Q 50 75 58 69" stroke="#a23b38" stroke-width="3" fill="none" stroke-linecap="round"/>`;
 
-        // Broda (jeśli dotyczy)
-        if (char.beard) {
-            svg += `<path d="M 23 58 C 23 85, 77 85, 77 58 C 68 76, 32 76, 23 58 Z" fill="${hairColor}" />`;
-        }
-
-        // Włosy przednie / Grzywka
+        // 8. Włosy z przodu / Grzywka
         if (hairStyle === 'short-dark' || hairStyle === 'short-red') {
-            svg += `<path d="M 20 50 C 20 20, 80 20, 80 50 C 72 32, 28 32, 20 50 Z" fill="${hairColor}" />`;
-        } else if (hairStyle === 'straight-dark' || hairStyle === 'long-dark' || hairStyle === 'long-red' || hairStyle === 'long-blond') {
-            svg += `<path d="M 20 45 C 20 20, 80 20, 80 45 C 68 30, 32 30, 20 45 Z" fill="${hairColor}" />`;
+            svg += `<path d="M 22 52 C 18 16, 82 16, 78 52 C 68 38, 58 42, 50 36 C 42 42, 32 38, 22 52 Z" fill="${hairColor}" />`;
+        } else if (hairStyle === 'long-dark' || hairStyle === 'long-red' || hairStyle === 'long-blond') {
+            svg += `<path d="M 22 48 C 18 16, 82 16, 78 48 C 66 34, 34 34, 22 48 Z" fill="${hairColor}" />`;
+            svg += `<path d="M 21 45 C 20 60, 23 75, 27 86 C 32 86, 29 65, 31 45 Z" fill="${hairColor}" />`;
+            svg += `<path d="M 79 45 C 80 60, 77 75, 73 86 C 68 86, 71 65, 69 45 Z" fill="${hairColor}" />`;
         } else if (hairStyle === 'curly-dark' || hairStyle === 'afro-dark') {
-            svg += `<circle cx="38" cy="25" r="12" fill="${hairColor}" />`;
-            svg += `<circle cx="50" cy="21" r="13" fill="${hairColor}" />`;
-            svg += `<circle cx="62" cy="25" r="12" fill="${hairColor}" />`;
+            svg += `<circle cx="36" cy="24" r="10" fill="${hairColor}" />`;
+            svg += `<circle cx="50" cy="21" r="11" fill="${hairColor}" />`;
+            svg += `<circle cx="64" cy="24" r="10" fill="${hairColor}" />`;
+            svg += `<path d="M 23 46 C 22 32, 78 32, 77 46 C 65 38, 35 38, 23 46 Z" fill="${hairColor}" />`;
         } else if (hairStyle === 'bald') {
-            // Blask na łysinie
-            svg += `<path d="M 35 25 Q 45 20 55 24" stroke="rgba(255,255,255,0.4)" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+            svg += `<path d="M 36 26 Q 50 18 64 26" stroke="rgba(255,255,255,0.4)" stroke-width="3" fill="none" stroke-linecap="round"/>`;
         }
 
-        // RYSOWANIE OKULARÓW (Jeśli postać ma okulary)
+        // 9. Okulary
         if (hasGlasses) {
-            // Lewa soczewka
-            svg += `<rect x="25" y="38" width="21" height="17" rx="4" fill="rgba(255,255,255,0.3)" stroke="#0f172a" stroke-width="3"/>`;
-            // Prawa soczewka
-            svg += `<rect x="54" y="38" width="21" height="17" rx="4" fill="rgba(255,255,255,0.3)" stroke="#0f172a" stroke-width="3"/>`;
-            // Mostek
-            svg += `<line x1="46" y1="45" x2="54" y2="45" stroke="#0f172a" stroke-width="3"/>`;
-            // Zauszniki
-            svg += `<line x1="18" y1="44" x2="25" y2="44" stroke="#0f172a" stroke-width="2.5"/>`;
-            svg += `<line x1="75" y1="44" x2="82" y2="44" stroke="#0f172a" stroke-width="2.5"/>`;
-            // Błysk/odbicie na szkle
-            svg += `<line x1="28" y1="41" x2="35" y2="52" stroke="rgba(255,255,255,0.8)" stroke-width="2" stroke-linecap="round"/>`;
-            svg += `<line x1="57" y1="41" x2="64" y2="52" stroke="rgba(255,255,255,0.8)" stroke-width="2" stroke-linecap="round"/>`;
+            svg += `<rect x="25" y="39" width="21" height="17" rx="4" fill="rgba(255,255,255,0.35)" stroke="#0f172a" stroke-width="3"/>`;
+            svg += `<rect x="54" y="39" width="21" height="17" rx="4" fill="rgba(255,255,255,0.35)" stroke="#0f172a" stroke-width="3"/>`;
+            svg += `<line x1="46" y1="46" x2="54" y2="46" stroke="#0f172a" stroke-width="3"/>`;
+            svg += `<line x1="18" y1="45" x2="25" y2="45" stroke="#0f172a" stroke-width="2.5"/>`;
+            svg += `<line x1="75" y1="45" x2="82" y2="45" stroke="#0f172a" stroke-width="2.5"/>`;
+            svg += `<line x1="28" y1="42" x2="35" y2="53" stroke="rgba(255,255,255,0.8)" stroke-width="2" stroke-linecap="round"/>`;
+            svg += `<line x1="57" y1="42" x2="64" y2="53" stroke="rgba(255,255,255,0.8)" stroke-width="2" stroke-linecap="round"/>`;
         }
 
         svg += `</svg>`;
         return svg;
     }
 
-    // Stan gry
     let state = {
-        step: 'P1_SELECT', // P1_SELECT, PASS_TO_P2, P2_SELECT, PASS_TO_GAME, PLAY_TURN, PASS_TURN, WIN
+        step: 'P1_SELECT',
         p1Secret: null,
         p2Secret: null,
         p1Eliminated: [],
@@ -431,16 +419,13 @@
             app.appendChild(renderWinScreen());
         }
 
-        // Renderowanie okna modalnego potwierdzenia zgadnięcia
         if (state.guessConfirmCard) {
             app.appendChild(renderGuessModal());
         }
     }
 
-    // Ekran wyboru tajnej postaci
     function renderSelectScreen(playerNum) {
         const container = document.createElement('div');
-        
         const header = document.createElement('header');
         header.innerHTML = `
             <h1>Gracz ${playerNum}: Wybierz swoją postać</h1>
@@ -470,7 +455,6 @@
 
         const controls = document.createElement('div');
         controls.className = 'controls';
-        
         const btn = document.createElement('button');
         btn.className = 'btn';
         btn.innerText = 'Zatwierdź wybór';
@@ -488,11 +472,9 @@
 
         controls.appendChild(btn);
         container.appendChild(controls);
-
         return container;
     }
 
-    // Ekran przejściowy (zasłona)
     function renderPassScreen(title, btnText, onConfirm) {
         const div = document.createElement('div');
         div.className = 'pass-screen';
@@ -508,14 +490,12 @@
         return div;
     }
 
-    // Główna plansza do gry
     function renderBoard() {
         const container = document.createElement('div');
         const activeP = state.activePlayer;
         const mySecret = activeP === 1 ? state.p1Secret : state.p2Secret;
         const eliminatedList = activeP === 1 ? state.p1Eliminated : state.p2Eliminated;
 
-        // Pasek statusu
         const statusBar = document.createElement('div');
         statusBar.className = 'status-bar';
         statusBar.innerHTML = `
@@ -533,7 +513,6 @@
         instruction.innerHTML = `💡 <b>Jak grać:</b> Zadaj pytanie na żywo (np. <i>"Czy Twoja postać ma okulary?"</i> lub <i>"Czy ma ciemne włosy?"</i>). Na podstawie odpowiedzi klikaj postacie, aby je <b>odrzucić</b>. Gdy jesteś pewny – kliknij <b>"Zgadnij!"</b>.`;
         container.appendChild(instruction);
 
-        // Siatka postaci
         const grid = document.createElement('div');
         grid.className = 'grid';
 
@@ -548,7 +527,6 @@
                 <div class="card-desc">${char.desc}</div>
             `;
 
-            // Kliknięcie w kartę eliminuje / przywraca ją
             card.onclick = () => {
                 if (isEliminated) {
                     const idx = eliminatedList.indexOf(char.id);
@@ -559,7 +537,6 @@
                 render();
             };
 
-            // Przycisk "Zgadnij"
             const guessBtn = document.createElement('button');
             guessBtn.className = 'btn-guess';
             guessBtn.innerText = 'Zgadnij!';
@@ -575,10 +552,8 @@
 
         container.appendChild(grid);
 
-        // Kontrolki na dole
         const controls = document.createElement('div');
         controls.className = 'controls';
-        
         const endTurnBtn = document.createElement('button');
         endTurnBtn.className = 'btn';
         endTurnBtn.innerText = 'Zakończ swoją turę ➡️';
@@ -589,15 +564,12 @@
 
         controls.appendChild(endTurnBtn);
         container.appendChild(controls);
-
         return container;
     }
 
-    // Modal potwierdzenia zgadywania
     function renderGuessModal() {
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay';
-
         const modal = document.createElement('div');
         modal.className = 'modal';
 
@@ -644,15 +616,12 @@
         btns.appendChild(cancelBtn);
         modal.appendChild(btns);
         overlay.appendChild(modal);
-
         return overlay;
     }
 
-    // Ekran wygranej
     function renderWinScreen() {
         const div = document.createElement('div');
         div.className = 'win-screen';
-
         div.innerHTML = `
             <h2>🏆 Gracz ${state.winner} Wygrywa!</h2>
             <p>${state.winReason}</p>
@@ -694,7 +663,6 @@
         return div;
     }
 
-    // Pierwsze uruchomienie
     render();
 </script>
 
