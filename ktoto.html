@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zgadnij Kto To! - Gra 2 Graczy</title>
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #1d4ed8;
+            --accent: #ef4444;
+            --accent-hover: #dc2626;
+            --bg: #f3f4f6;
+            --card-bg: #ffffff;
+            --text: #1f2937;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 900px;
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: var(--primary-dark);
+            margin-bottom: 5px;
+        }
+
+        .status-bar {
+            background: #e0f2fe;
+            border: 2px solid #bae6fd;
+            padding: 12px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-weight: 600;
+        }
+
+        .my-secret {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #fff;
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid #cbd5e1;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 3px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            user-select: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            border-color: var(--primary);
+        }
+
+        .card.selected {
+            border-color: var(--primary);
+            background-color: #eff6ff;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+        }
+
+        .card.eliminated {
+            opacity: 0.3;
+            filter: grayscale(100%);
+            background: #e2e8f0;
+        }
+
+        .card.eliminated::after {
+            content: "✖";
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3.5rem;
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        .card-icon {
+            font-size: 3.5rem;
+            margin-bottom: 5px;
+            line-height: 1;
+        }
+
+        .card-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 4px;
+        }
+
+        .card-desc {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-bottom: 8px;
+        }
+
+        .btn-guess {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.8rem;
+            width: 100%;
+            transition: background 0.2s;
+        }
+
+        .btn-guess:hover {
+            background: var(--accent-hover);
+        }
+
+        .controls {
+            text-align: center;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+        }
+
+        .pass-screen, .win-screen {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .pass-screen h2, .win-screen h2 {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            color: var(--primary-dark);
+        }
+
+        .pass-screen p, .win-screen p {
+            font-size: 1.2rem;
+            margin-bottom: 25px;
+            color: #4b5563;
+        }
+
+        /* Modal popup */
+        .modal-overlay {
+            position: fixed;
+            top:0; left:0; right:0; bottom:0;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .modal {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .modal h3 {
+            margin-bottom: 15px;
+        }
+
+        .modal-btns {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .btn-secondary {
+            background: #64748b;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        .instruction {
+            background: #fffbe3;
+            border: 1px solid #fde047;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-container" id="app">
+    <!-- Widok renderowany dynamicznie przez JS -->
+</div>
+
+<script>
+    // Lista postaci z cechami
+    const CHARACTERS = [
+        { id: 1, name: "Adam", icon: "🧔‍♂️", desc: "Mężczyzna, Brunet, Broda" },
+        { id: 2, name: "Ania", icon: "👩‍🦰", desc: "Kobieta, Rude, Okulary" },
+        { id: 3, name: "Bartek", icon: "👱‍♂️", desc: "Mężczyzna, Blond, Czapka" },
+        { id: 4, name: "Celina", icon: "👩‍🦳", desc: "Kobieta, Siwe, Okulary" },
+        { id: 5, name: "Darek", icon: "👨‍🦲", desc: "Mężczyzna, Łysy, Broda" },
+        { id: 6, name: "Ewa", icon: "👩", desc: "Kobieta, Brunetka, Kolczyki" },
+        { id: 7, name: "Filip", icon: "👨‍🦱", desc: "Mężczyzna, Kręcone włosy" },
+        { id: 8, name: "Grażyna", icon: "👵", desc: "Kobieta, Siwe, Kapelusz" },
+        { id: 9, name: "Igor", icon: "🧑‍🦰", desc: "Mężczyzna, Rude" },
+        { id: 10, name: "Julita", icon: "👱‍♀️", desc: "Kobieta, Blond, Opaska" },
+        { id: 11, name: "Kamil", icon: "👨", desc: "Mężczyzna, Brunet, Okulary" },
+        { id: 12, name: "Lena", icon: "👩‍🦱", desc: "Kobieta, Kręcone włosy" }
+    ];
+
+    // Stan gry
+    let state = {
+        step: 'P1_SELECT', // P1_SELECT, PASS_TO_P2, P2_SELECT, PASS_TO_GAME, PLAY_TURN, PASS_TURN, WIN
+        p1Secret: null,
+        p2Secret: null,
+        p1Eliminated: [],
+        p2Eliminated: [],
+        activePlayer: 1,
+        tempSelectedId: null,
+        guessConfirmCard: null,
+        winner: null,
+        winReason: ''
+    };
+
+    function render() {
+        const app = document.getElementById('app');
+        app.innerHTML = '';
+
+        if (state.step === 'P1_SELECT') {
+            app.appendChild(renderSelectScreen(1));
+        } else if (state.step === 'PASS_TO_P2') {
+            app.appendChild(renderPassScreen('Przekaż urządzenie Graczowi 2', 'Jestem Graczem 2', () => {
+                state.step = 'P2_SELECT';
+                state.tempSelectedId = null;
+                render();
+            }));
+        } else if (state.step === 'P2_SELECT') {
+            app.appendChild(renderSelectScreen(2));
+        } else if (state.step === 'PASS_TO_GAME') {
+            app.appendChild(renderPassScreen('Wszystko gotowe! Przekaż urządzenie Graczowi 1', 'Rozpocznij Grę (Tura Gracza 1)', () => {
+                state.activePlayer = 1;
+                state.step = 'PLAY_TURN';
+                render();
+            }));
+        } else if (state.step === 'PLAY_TURN') {
+            app.appendChild(renderBoard());
+        } else if (state.step === 'PASS_TURN') {
+            const nextPlayer = state.activePlayer === 1 ? 2 : 1;
+            app.appendChild(renderPassScreen(`Koniec tury. Przekaż urządzenie Graczowi ${nextPlayer}`, `Rozpocznij Turę Gracza ${nextPlayer}`, () => {
+                state.activePlayer = nextPlayer;
+                state.step = 'PLAY_TURN';
+                render();
+            }));
+        } else if (state.step === 'WIN') {
+            app.appendChild(renderWinScreen());
+        }
+
+        // Renderowanie modalu potwierdzenia zgadnięcia
+        if (state.guessConfirmCard) {
+            app.appendChild(renderGuessModal());
+        }
+    }
+
+    // Ekran wyboru tajnej postaci
+    function renderSelectScreen(playerNum) {
+        const container = document.createElement('div');
+        
+        const header = document.createElement('header');
+        header.innerHTML = `
+            <h1>Gracz ${playerNum}: Wybierz swoją postać</h1>
+            <p>Drugi gracz nie może patrzeć! Kliknij postać, którą przeciwnik będzie musiał odgadnąć.</p>
+        `;
+        container.appendChild(header);
+
+        const grid = document.createElement('div');
+        grid.className = 'grid';
+
+        CHARACTERS.forEach(char => {
+            const card = document.createElement('div');
+            card.className = `card ${state.tempSelectedId === char.id ? 'selected' : ''}`;
+            card.innerHTML = `
+                <div class="card-icon">${char.icon}</div>
+                <div class="card-name">${char.name}</div>
+                <div class="card-desc">${char.desc}</div>
+            `;
+            card.onclick = () => {
+                state.tempSelectedId = char.id;
+                render();
+            };
+            grid.appendChild(card);
+        });
+
+        container.appendChild(grid);
+
+        const controls = document.createElement('div');
+        controls.className = 'controls';
+        
+        const btn = document.createElement('button');
+        btn.className = 'btn';
+        btn.innerText = 'Zatwierdź wybór';
+        btn.disabled = !state.tempSelectedId;
+        btn.onclick = () => {
+            if (playerNum === 1) {
+                state.p1Secret = CHARACTERS.find(c => c.id === state.tempSelectedId);
+                state.step = 'PASS_TO_P2';
+            } else {
+                state.p2Secret = CHARACTERS.find(c => c.id === state.tempSelectedId);
+                state.step = 'PASS_TO_GAME';
+            }
+            render();
+        };
+
+        controls.appendChild(btn);
+        container.appendChild(controls);
+
+        return container;
+    }
+
+    // Ekran przejściowy (zasłona)
+    function renderPassScreen(title, btnText, onConfirm) {
+        const div = document.createElement('div');
+        div.className = 'pass-screen';
+        div.innerHTML = `
+            <h2>🙈 Zasłoń ekran!</h2>
+            <p>${title}</p>
+        `;
+        const btn = document.createElement('button');
+        btn.className = 'btn';
+        btn.innerText = btnText;
+        btn.onclick = onConfirm;
+        div.appendChild(btn);
+        return div;
+    }
+
+    // Główne boisko/plansza do gry
+    function renderBoard() {
+        const container = document.createElement('div');
+        const activeP = state.activePlayer;
+        const mySecret = activeP === 1 ? state.p1Secret : state.p2Secret;
+        const eliminatedList = activeP === 1 ? state.p1Eliminated : state.p2Eliminated;
+
+        // Pasek statusu
+        const statusBar = document.createElement('div');
+        statusBar.className = 'status-bar';
+        statusBar.innerHTML = `
+            <div>Tura: <strong style="color: var(--primary-dark)">Gracz ${activeP}</strong></div>
+            <div class="my-secret">
+                <span>Twoja postać:</span>
+                <strong>${mySecret.icon} ${mySecret.name}</strong>
+            </div>
+        `;
+        container.appendChild(statusBar);
+
+        const instruction = document.createElement('div');
+        instruction.className = 'instruction';
+        instruction.innerHTML = `💡 <strong>Jak grać:</strong> Zadaj pytanie drugiemu graczowi na żywo (np. <i>"Czy Twoja postać ma okulary?"</i>). Na podstawie odpowiedzi kliknij kartę, aby ją <b>odrzucić</b>. Gdy jesteś pewny – kliknij <b>"Zgadnij!"</b>.`;
+        container.appendChild(instruction);
+
+        // Grid postaci
+        const grid = document.createElement('div');
+        grid.className = 'grid';
+
+        CHARACTERS.forEach(char => {
+            const isEliminated = eliminatedList.includes(char.id);
+            const card = document.createElement('div');
+            card.className = `card ${isEliminated ? 'eliminated' : ''}`;
+            
+            card.innerHTML = `
+                <div class="card-icon">${char.icon}</div>
+                <div class="card-name">${char.name}</div>
+                <div class="card-desc">${char.desc}</div>
+            `;
+
+            // Kliknięcie w kartę eliminuje / przywraca ją
+            card.onclick = () => {
+                if (isEliminated) {
+                    const idx = eliminatedList.indexOf(char.id);
+                    eliminatedList.splice(idx, 1);
+                } else {
+                    eliminatedList.push(char.id);
+                }
+                render();
+            };
+
+            // Przycisk "Zgadnij"
+            const guessBtn = document.createElement('button');
+            guessBtn.className = 'btn-guess';
+            guessBtn.innerText = 'Zgadnij!';
+            guessBtn.onclick = (e) => {
+                e.stopPropagation(); // Żeby nie kliknąć karty pod spodem
+                state.guessConfirmCard = char;
+                render();
+            };
+
+            card.appendChild(guessBtn);
+            grid.appendChild(card);
+        });
+
+        container.appendChild(grid);
+
+        // Kontrolki na dole
+        const controls = document.createElement('div');
+        controls.className = 'controls';
+        
+        const endTurnBtn = document.createElement('button');
+        endTurnBtn.className = 'btn';
+        endTurnBtn.innerText = 'Zakończ swoją turę ➡️';
+        endTurnBtn.onclick = () => {
+            state.step = 'PASS_TURN';
+            render();
+        };
+
+        controls.appendChild(endTurnBtn);
+        container.appendChild(controls);
+
+        return container;
+    }
+
+    // Modal potwierdzenia zgadywania
+    function renderGuessModal() {
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+
+        const char = state.guessConfirmCard;
+        const opponentP = state.activePlayer === 1 ? 2 : 1;
+        const opponentSecret = state.activePlayer === 1 ? state.p2Secret : state.p1Secret;
+
+        modal.innerHTML = `
+            <h3>Czy na pewno typujesz?</h3>
+            <p>Uważasz, że tajemnicza postać Gracza ${opponentP} to:</p>
+            <div style="font-size: 3rem; margin: 10px 0;">${char.icon}</div>
+            <h2>${char.name}</h2>
+            <p style="font-size:0.85rem; color:#ef4444; margin-top:10px;">⚠️ Uwaga! Jeśli się pomylisz, natychmiast przegrywasz!</p>
+        `;
+
+        const btns = document.createElement('div');
+        btns.className = 'modal-btns';
+
+        const confirmBtn = document.createElement('button');
+        confirmBtn.className = 'btn';
+        confirmBtn.innerText = 'Tak, to ta postać!';
+        confirmBtn.onclick = () => {
+            if (char.id === opponentSecret.id) {
+                state.winner = state.activePlayer;
+                state.winReason = `Gracz ${state.activePlayer} poprawnie zgadł postać ${char.name}!`;
+            } else {
+                state.winner = opponentP;
+                state.winReason = `Gracz ${state.activePlayer} wytypował błędnie (${char.name}). Postacią Gracza ${opponentP} był(a) ${opponentSecret.name}!`;
+            }
+            state.guessConfirmCard = null;
+            state.step = 'WIN';
+            render();
+        };
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'btn btn-secondary';
+        cancelBtn.innerText = 'Anuluj';
+        cancelBtn.onclick = () => {
+            state.guessConfirmCard = null;
+            render();
+        };
+
+        btns.appendChild(confirmBtn);
+        btns.appendChild(cancelBtn);
+        modal.appendChild(btns);
+        overlay.appendChild(modal);
+
+        return overlay;
+    }
+
+    // Ekran wygranej
+    function renderWinScreen() {
+        const div = document.createElement('div');
+        div.className = 'win-screen';
+
+        div.innerHTML = `
+            <h2>🏆 Gracz ${state.winner} Wygrywa!</h2>
+            <p>${state.winReason}</p>
+            
+            <div style="display: flex; justify-content: center; gap: 30px; margin: 30px 0;">
+                <div>
+                    <h4>Postać Gracza 1:</h4>
+                    <div style="font-size:3rem">${state.p1Secret.icon}</div>
+                    <strong>${state.p1Secret.name}</strong>
+                </div>
+                <div>
+                    <h4>Postać Gracza 2:</h4>
+                    <div style="font-size:3rem">${state.p2Secret.icon}</div>
+                    <strong>${state.p2Secret.name}</strong>
+                </div>
+            </div>
+        `;
+
+        const btn = document.createElement('button');
+        btn.className = 'btn';
+        btn.innerText = 'Zagraj ponownie 🔄';
+        btn.onclick = () => {
+            // Reset stanu
+            state = {
+                step: 'P1_SELECT',
+                p1Secret: null,
+                p2Secret: null,
+                p1Eliminated: [],
+                p2Eliminated: [],
+                activePlayer: 1,
+                tempSelectedId: null,
+                guessConfirmCard: null,
+                winner: null,
+                winReason: ''
+            };
+            render();
+        };
+
+        div.appendChild(btn);
+        return div;
+    }
+
+    // Pierwsze wywołanie
+    render();
+</script>
+
+</body>
+</html>
