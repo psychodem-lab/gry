@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Łamigłówki z Zapałkami</title>
+  <style>
+    :root {
+      --bg-color: #1a1a24;
+      --card-bg: #262838;
+      --text-color: #f0f2f5;
+      --accent-color: #e63946;
+      --match-wood-start: #f4a261;
+      --match-wood-end: #e76f51;
+      --match-head: #d90429;
+      --slot-empty: rgba(255, 255, 255, 0.07);
+      --slot-empty-hover: rgba(255, 183, 3, 0.25);
+      --highlight: #ffb703;
+      --success: #2a9d8f;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background-color: var(--card-bg);
+      border-radius: 20px;
+      padding: 30px;
+      max-width: 900px;
+      width: 100%;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    header {
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      color: var(--highlight);
+      margin-bottom: 8px;
+    }
+
+    p.subtitle {
+      color: #a0a5b5;
+      font-size: 1rem;
+    }
+
+    .level-bar {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 10px 20px;
+      border-radius: 30px;
+    }
+
+    select, button {
+      font-family: inherit;
+      font-size: 1rem;
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    select {
+      background: #383b52;
+      color: #fff;
+      font-weight: bold;
+    }
+
+    button.btn {
+      background: #383b52;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    button.btn:hover {
+      background: #4a4e6d;
+      transform: translateY(-2px);
+    }
+
+    button.btn-primary {
+      background: var(--accent-color);
+      color: #fff;
+    }
+
+    button.btn-primary:hover {
+      background: #b8001f;
+    }
+
+    button.btn-success {
+      background: var(--success);
+      color: #fff;
+    }
+
+    button.btn-success:hover {
+      background: #218377;
+    }
+
+    .status-panel {
+      display: flex;
+      gap: 20px;
+      font-size: 1.05rem;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 10px 25px;
+      border-radius: 12px;
+    }
+
+    .status-item span {
+      font-weight: bold;
+      color: var(--highlight);
+    }
+
+    /* Game Board Layout */
+    .game-board {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      padding: 40px 20px;
+      background: #191b26;
+      border-radius: 16px;
+      width: 100%;
+      overflow-x: auto;
+      border: 2px solid #32354a;
+    }
+
+    /* Digit & Operator Containers */
+    .digit-container {
+      position: relative;
+      width: 80px;
+      height: 140px;
+    }
+
+    .op-container {
+      position: relative;
+      width: 60px;
+      height: 140px;
+    }
+
+    .eq-container {
+      position: relative;
+      width: 50px;
+      height: 140px;
+    }
+
+    /* Segment Base Styling */
+    .segment {
+      position: absolute;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s, box-shadow 0.2s;
+      background-color: var(--slot-empty);
+    }
+
+    .segment:hover {
+      background-color: var(--slot-empty-hover);
+    }
+
+    /* Segment Positions for 7-Segment Display */
+    .seg-h {
+      height: 12px;
+      width: 52px;
+    }
+
+    .seg-v {
+      width: 12px;
+      height: 52px;
+    }
+
+    /* Digit Segments (0 to 6) */
+    .digit-container .seg-0 { top: 4px; left: 14px; }         /* Top */
+    .digit-container .seg-1 { top: 14px; left: 54px; }        /* Top-Right */
+    .digit-container .seg-2 { top: 74px; left: 54px; }        /* Bottom-Right */
+    .digit-container .seg-3 { top: 124px; left: 14px; }       /* Bottom */
+    .digit-container .seg-4 { top: 74px; left: 14px; }        /* Bottom-Left */
+    .digit-container .seg-5 { top: 14px; left: 14px; }        /* Top-Left */
+    .digit-container .seg-6 { top: 64px; left: 14px; }        /* Middle */
+
+    /* Operator + / - Segments */
+    .op-container .seg-0 { top: 64px; left: 4px; width: 52px; height: 12px; } /* Horizontal */
+    .op-container .seg-1 { top: 44px; left: 24px; width: 12px; height: 52px; } /* Vertical */
+
+    /* Equals = Segments */
+    .eq-container .seg-0 { top: 50px; left: 0px; width: 50px; height: 12px; }
+    .eq-container .seg-1 { top: 78px; left: 0px; width: 50px; height: 12px; }
+
+    /* Active Matchstick Visuals */
+    .segment.active {
+      background: linear-gradient(135deg, var(--match-wood-start), var(--match-wood-end));
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+    }
+
+    .segment.active::before {
+      content: '';
+      position: absolute;
+      background: radial-gradient(circle at 30% 30%, #ff6b6b, var(--match-head));
+      border-radius: 50%;
+      box-shadow: 0 0 4px rgba(0,0,0,0.5);
+    }
+
+    /* Match Head Orientations */
+    .seg-h.active::before {
+      width: 14px;
+      height: 14px;
+      left: -2px;
+      top: -1px;
+    }
+
+    .seg-v.active::before {
+      width: 14px;
+      height: 14px;
+      top: -2px;
+      left: -1px;
+    }
+
+    .segment.source-highlight {
+      outline: 2px dashed var(--highlight);
+      animation: pulse 1.2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.6; }
+      50% { opacity: 1; }
+      100% { opacity: 0.6; }
+    }
+
+    .controls {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .message-box {
+      min-height: 28px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .message-box.error { color: #ff6b6b; }
+    .message-box.success { color: #4ea8de; }
+    .message-box.info { color: var(--highlight); }
+
+    .hint-box {
+      background: rgba(255, 183, 3, 0.1);
+      border: 1px solid var(--highlight);
+      color: #ffda6a;
+      padding: 10px 15px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>🪵 Łamigłówki z Zapałkami</h1>
+    <p class="subtitle">Przełóż dokładnie 1 zapałkę, aby równanie było poprawne!</p>
+  </header>
+
+  <div class="level-bar">
+    <button class="btn" id="prev-btn">◀ Poprzedni</button>
+    <select id="level-select"></select>
+    <button class="btn" id="next-btn">Następny ▶</button>
+  </div>
+
+  <div class="status-panel">
+    <div class="status-item">Zapałka w dłoni: <span id="hand-status">Nie</span></div>
+    <div class="status-item">Stan zmiana: <span id="move-status">0 / 1 przełożona</span></div>
+  </div>
+
+  <div class="game-board" id="board"></div>
+
+  <div class="message-box" id="message"></div>
+  <div class="hint-box" id="hint-box"></div>
+
+  <div class="controls">
+    <button class="btn" id="reset-btn">🔄 Zresetuj poziom</button>
+    <button class="btn" id="hint-btn">💡 Podpowiedź</button>
+    <button class="btn btn-success" id="check-btn">✅ Sprawdź równanie</button>
+  </div>
+</div>
+
+<script>
+  // Dynamiczne wzorce cyfr 0-9 dla wyswietlacza 7-segmentowego:
+  // Segmenty: [0:Top, 1:Top-Right, 2:Bottom-Right, 3:Bottom, 4:Bottom-Left, 5:Top-Left, 6:Middle]
+  const DIGIT_PATTERNS = {
+    '1,1,1,1,1,1,0': 0,
+    '0,1,1,0,0,0,0': 1,
+    '1,1,0,1,1,0,1': 2,
+    '1,1,1,1,0,0,1': 3,
+    '0,1,1,0,0,1,1': 4,
+    '1,0,1,1,0,1,1': 5,
+    '1,0,1,1,1,1,1': 6,
+    '1,1,1,0,0,0,0': 7,
+    '1,1,1,1,1,1,1': 8,
+    '1,1,1,1,0,1,1': 9
+  };
+
+  function getSegmentsForDigit(val) {
+    const patterns = {
+      0: [1, 1, 1, 1, 1, 1, 0],
+      1: [0, 1, 1, 0, 0, 0, 0],
+      2: [1, 1, 0, 1, 1, 0, 1],
+      3: [1, 1, 1, 1, 0, 0, 1],
+      4: [0, 1, 1, 0, 0, 1, 1],
+      5: [1, 0, 1, 1, 0, 1, 1],
+      6: [1, 0, 1, 1, 1, 1, 1],
+      7: [1, 1, 1, 0, 0, 0, 0],
+      8: [1, 1, 1, 1, 1, 1, 1],
+      9: [1, 1, 1, 1, 0, 1, 1]
+    };
+    return [...patterns[val]];
+  }
+
+  // Lista poziomów
+  const LEVELS = [
+    {
+      title: "Poziom 1: 6 + 4 = 4",
+      hint: "Spróbuj zabrać zapałkę ze znaku plus i zmienić pierwszą cyfrę.",
+      items: [
+        { type: 'digit', segs: getSegmentsForDigit(6) },
+        { type: 'op', segs: [1, 1] }, // +
+        { type: 'digit', segs: getSegmentsForDigit(4) },
+        { type: 'eq', segs: [1, 1] },  // =
+        { type: 'digit', segs: getSegmentsForDigit(4) }
+      ]
+    },
+    {
+      title: "Poziom 2: 5 + 7 = 2",
+      hint: "Zmień znak plus na minus i powiększ pierwszą cyfrę.",
+      items: [
+        { type: 'digit', segs: getSegmentsForDigit(5) },
+        { type: 'op', segs: [1, 1] },
+        { type: 'digit', segs: getSegmentsForDigit(7) },
+        { type: 'eq', segs: [1, 1] },
+        { type: 'digit', segs: getSegmentsForDigit(2) }
+      ]
+    },
+    {
+      title: "Poziom 3: 9 + 3 = 5",
+      hint: "Przełóż zapałkę z cyfry 9 do ostatniej cyfry 5.",
+      items: [
+        { type: 'digit', segs: getSegmentsForDigit(9) },
+        { type: 'op', segs: [1, 1] },
+        { type: 'digit', segs: getSegmentsForDigit(3) },
+        { type: 'eq', segs: [1, 1] },
+        { type: 'digit', segs: getSegmentsForDigit(5) }
+      ]
+    },
+    {
+      title: "Poziom 4: 3 + 3 = 8",
+      hint: "Przełóż zapałkę wewnątrz pierwszej cyfry 3, aby zmienić ją w 5.",
+      items: [
+        { type: 'digit', segs: getSegmentsForDigit(3) },
+        { type: 'op', segs: [1, 1] },
+        { type: 'digit', segs: getSegmentsForDigit(3) },
+        { type: 'eq', segs: [1, 1] },
+        { type: 'digit', segs: getSegmentsForDigit(8) }
+      ]
+    },
+    {
+      title: "Poziom 5: 5 + 1 = 8",
+      hint: "Zabierz zapałkę ze znaku plus i dodaj do pierwszej cyfry.",
+      items: [
+        { type: 'digit', segs: getSegmentsForDigit(5) },
+        { type: 'op', segs: [1, 1] },
+        { type: 'digit', segs: getSegmentsForDigit(1) },
+        { type: 'eq', segs: [1, 1] },
+        { type: 'digit', segs: getSegmentsForDigit(8) }
+      ]
+    },
+    {
+      title: "Poziom 6: 8 - 3 = 3",
+      hint: "Przełóż zapałkę wewnątrz drugiej cyfry 3.",
+      items: [
+        { type: 'digit', segs: getSegmentsForDigit(8) },
+        { type: 'op', segs: [1, 0] }, // -
+        { type: 'digit', segs: getSegmentsForDigit(3) },
+        { type: 'eq', segs: [1, 1] },
+        { type: 'digit', segs: getSegmentsForDigit(3) }
+      ]
+    },
+    {
+      title: "Poziom 7: 7 + 1 = 5",
+      hint: "Zmień znak plus na minus i dodaj zapałkę do piątki.",
+      items: [
+        { type: 'digit', segs: getSegmentsForDigit(7) },
+        { type: 'op', segs: [1, 1] },
+        { type: 'digit', segs: getSegmentsForDigit(1) },
+        { type: 'eq', segs: [1, 1] },
+        { type: 'digit', segs: getSegmentsForDigit(5) }
+      ]
+    },
+    {
+      title: "Poziom 8: 6 + 3 = 5",
+      hint: "Zmień znak plus na minus i przekształć 6 w 8.",
+      items: [
+        { type: 'digit', segs: getSegmentsForDigit(6) },
+        { type: 'op', segs: [1, 1] },
+        { type: 'digit', segs: getSegmentsForDigit(3) },
+        { type: 'eq', segs: [1, 1] },
+        { type: 'digit', segs: getSegmentsForDigit(5) }
+      ]
+    },
+    {
+      title: "Poziom 9: 8 - 1 = 9",
+      hint: "Przełóż zapałkę z cyfry 8 do cyfry 9.",
+      items: [
+        { type: 'digit', segs: getSegmentsForDigit(8) },
+        { type: 'op', segs: [1, 0] },
+        { type: 'digit', segs: getSegmentsForDigit(1) },
+        { type: 'eq', segs: [1, 1] },
+        { type: 'digit', segs: getSegmentsForDigit(9) }
+      ]
+    },
+    {
+      title: "Poziom 10: 9 + 5 = 12",
+      hint: "Przełóż zapałkę wewnątrz cyfry 5, aby stała się trójką.",
+      items: [
+        { type: 'digit', segs: getSegmentsForDigit(9) },
+        { type: 'op', segs: [1, 1] },
+        { type: 'digit', segs: getSegmentsForDigit(5) },
+        { type: 'eq', segs: [1, 1] },
+        { type: 'digit', segs: getSegmentsForDigit(1) },
+        { type: 'digit', segs: getSegmentsForDigit(2) }
+      ]
+    },
+    {
+      title: "Poziom 11: 3 + 4 = 9",
+      hint: "Przełóż zapałkę w pierwszej cyfrze 3 tak, by powstała 5.",
+      items: [
+        { type: 'digit', segs: getSegmentsForDigit(3) },
+        { type: 'op', segs: [1, 1] },
+        { type: 'digit', segs: getSegmentsForDigit(4) },
+        { type: 'eq', segs: [1, 1] },
+        { type: 'digit', segs: getSegmentsForDigit(9) }
+      ]
+    },
+    {
+      title: "Poziom 12: 5 + 3 = 6",
+      hint: "Zmień plus na minus i ulepsz cyfrę 5 w cyfrę 9.",
+      items: [
+        { type: 'digit', segs: getSegmentsForDigit(5) },
+        { type: 'op', segs: [1, 1] },
+        { type: 'digit', segs: getSegmentsForDigit(3) },
+        { type: 'eq', segs: [1, 1] },
+        { type: 'digit', segs: getSegmentsForDigit(6) }
+      ]
+    }
+  ];
+
+  // Stan Gry
+  let currentLevelIdx = 0;
+  let boardState = [];
+  let initialBoardState = [];
+  let hand = false; // Czy zapałka jest w dłoni
+  let handSource = null; // { itemIdx, segIdx } skąd zapałka została wzięta
+
+  // Elementy DOM
+  const boardEl = document.getElementById('board');
+  const levelSelectEl = document.getElementById('level-select');
+  const messageEl = document.getElementById('message');
+  const hintBoxEl = document.getElementById('hint-box');
+  const handStatusEl = document.getElementById('hand-status');
+  const moveStatusEl = document.getElementById('move-status');
+
+  // Inicjalizacja wyboru poziomów
+  LEVELS.forEach((lvl, idx) => {
+    const opt = document.createElement('option');
+    opt.value = idx;
+    opt.textContent = lvl.title;
+    levelSelectEl.appendChild(opt);
+  });
+
+  function loadLevel(idx) {
+    currentLevelIdx = idx;
+    levelSelectEl.value = idx;
+    
+    // Głębokie kopiowanie stanu
+    boardState = JSON.parse(JSON.stringify(LEVELS[idx].items));
+    initialBoardState = JSON.parse(JSON.stringify(LEVELS[idx].items));
+    
+    hand = false;
+    handSource = null;
+    
+    messageEl.textContent = '';
+    messageEl.className = 'message-box';
+    hintBoxEl.style.display = 'none';
+    hintBoxEl.textContent = '';
+
+    renderBoard();
+    updateStatus();
+  }
+
+  function renderBoard() {
+    boardEl.innerHTML = '';
+
+    boardState.forEach((item, itemIdx) => {
+      let container = document.createElement('div');
+      
+      if (item.type === 'digit') container.className = 'digit-container';
+      else if (item.type === 'op') container.className = 'op-container';
+      else if (item.type === 'eq') container.className = 'eq-container';
+
+      item.segs.forEach((isActive, segIdx) => {
+        const segEl = document.createElement('div');
+        
+        let isHorizontal = false;
+        if (item.type === 'digit') {
+          isHorizontal = (segIdx === 0 || segIdx === 3 || segIdx === 6);
+        } else if (item.type === 'op' || item.type === 'eq') {
+          isHorizontal = (segIdx === 0);
+          if (item.type === 'eq') isHorizontal = true;
+        }
+
+        segEl.className = `segment seg-${segIdx} ${isHorizontal ? 'seg-h' : 'seg-v'} ${isActive ? 'active' : ''}`;
+
+        // Podświetlenie oryginalnego slotu, skąd wzięto zapałkę
+        if (hand && handSource && handSource.itemIdx === itemIdx && handSource.segIdx === segIdx) {
+          segEl.classList.add('source-highlight');
+        }
+
+        // Znak '=' jest zablokowany (nie można ruszać jego zapałek)
+        if (item.type !== 'eq') {
+          segEl.addEventListener('click', () => handleSegmentClick(itemIdx, segIdx));
+        } else {
+          segEl.style.cursor = 'default';
+        }
+
+        container.appendChild(segEl);
+      });
+
+      boardEl.appendChild(container);
+    });
+  }
+
+  function handleSegmentClick(itemIdx, segIdx) {
+    const item = boardState[itemIdx];
+    const isFilled = item.segs[segIdx] === 1;
+
+    if (!hand) {
+      // Podnoszenie zapałki
+      if (isFilled) {
+        item.segs[segIdx] = 0;
+        hand = true;
+        handSource = { itemIdx, segIdx };
+        showMessage("Wziąłeś zapałkę. Kliknij na puste miejsce, aby ją położyć.", "info");
+      }
+    } else {
+      // Odkładanie na to samo miejsce (anulowanie ruchu)
+      if (handSource.itemIdx === itemIdx && handSource.segIdx === segIdx) {
+        item.segs[segIdx] = 1;
+        hand = false;
+        handSource = null;
+        showMessage("Odłożyłeś zapałkę na miejsce.", "info");
+      } 
+      // Kładzenie w nowe puste miejsce
+      else if (!isFilled) {
+        item.segs[segIdx] = 1;
+        hand = false;
+        handSource = null;
+        showMessage("Zapałka została przełożona.", "info");
+      } else {
+        showMessage("To miejsce jest już zajęte!", "error");
+      }
+    }
+
+    renderBoard();
+    updateStatus();
+  }
+
+  function getMoveDiff() {
+    let removed = 0;
+    let added = 0;
+
+    for (let i = 0; i < boardState.length; i++) {
+      if (boardState[i].type === 'eq') continue;
+      for (let s = 0; s < boardState[i].segs.length; s++) {
+        const initVal = initialBoardState[i].segs[s];
+        const currVal = boardState[i].segs[s];
+        if (initVal === 1 && currVal === 0) removed++;
+        if (initVal === 0 && currVal === 1) added++;
+      }
+    }
+    return { removed, added };
+  }
+
+  function updateStatus() {
+    handStatusEl.textContent = hand ? "Tak (1 🪵)" : "Nie";
+    
+    const { removed, added } = getMoveDiff();
+    let movedCount = 0;
+    if (removed === 1 && added === 1 && !hand) movedCount = 1;
+    else if (removed > 0 || added > 0) movedCount = Math.max(removed, added);
+
+    moveStatusEl.textContent = `${movedCount} / 1 przełożona`;
+  }
+
+  function showMessage(msg, type) {
+    messageEl.textContent = msg;
+    messageEl.className = `message-box ${type}`;
+  }
+
+  function parseItem(item) {
+    if (item.type === 'digit') {
+      const key = item.segs.join(',');
+      return DIGIT_PATTERNS.hasOwnProperty(key) ? DIGIT_PATTERNS[key] : null;
+    } else if (item.type === 'op') {
+      const key = item.segs.join(',');
+      if (key === '1,0') return '-';
+      if (key === '1,1') return '+';
+      return null;
+    } else if (item.type === 'eq') {
+      return '=';
+    }
+  }
+
+  function checkSolution() {
+    if (hand) {
+      showMessage("Najpierw odłóż zapałkę na planszę!", "error");
+      return;
+    }
+
+    const { removed, added } = getMoveDiff();
+
+    if (removed === 0 && added === 0) {
+      showMessage("Nie przełożyłeś żadnej zapałki!", "error");
+      return;
+    }
+
+    if (removed !== 1 || added !== 1) {
+      showMessage("Musisz przełożyć DOKŁADNIE 1 zapałkę!", "error");
+      return;
+    }
+
+    // Parsowanie równania
+    const parsed = boardState.map(parseItem);
+
+    if (parsed.includes(null)) {
+      showMessage("Równanie zawiera niepoprawny układ zapałek (nieznana cyfra lub znak)!", "error");
+      return;
+    }
+
+    const eqIdx = parsed.indexOf('=');
+    const lhsTokens = parsed.slice(0, eqIdx);
+    const rhsTokens = parsed.slice(eqIdx + 1);
+
+    const opIdx = lhsTokens.findIndex(t => t === '+' || t === '-');
+    if (opIdx === -1) {
+      showMessage("Nieprawidłowa struktura równania!", "error");
+      return;
+    }
+
+    const term1Digits = lhsTokens.slice(0, opIdx);
+    const op = lhsTokens[opIdx];
+    const term2Digits = lhsTokens.slice(opIdx + 1);
+
+    if (term1Digits.length === 0 || term2Digits.length === 0 || rhsTokens.length === 0) {
+      showMessage("Niepełne równanie!", "error");
+      return;
+    }
+
+    const term1 = parseInt(term1Digits.join(''), 10);
+    const term2 = parseInt(term2Digits.join(''), 10);
+    const rhs = parseInt(rhsTokens.join(''), 10);
+
+    const calculated = (op === '+') ? (term1 + term2) : (term1 - term2);
+
+    if (calculated === rhs) {
+      showMessage(`🎉 Brawo! Równanie ${term1} ${op} ${term2} = ${rhs} jest poprawne!`, "success");
+    } else {
+      showMessage(`Równanie ${term1} ${op} ${term2} = ${rhs} jest błędne (${term1} ${op} ${term2} = ${calculated}). Spróbuj inaczej!`, "error");
+    }
+  }
+
+  // Event Listeners
+  document.getElementById('check-btn').addEventListener('click', checkSolution);
+  document.getElementById('reset-btn').addEventListener('click', () => loadLevel(currentLevelIdx));
+  
+  document.getElementById('hint-btn').addEventListener('click', () => {
+    hintBoxEl.textContent = LEVELS[currentLevelIdx].hint;
+    hintBoxEl.style.display = 'block';
+  });
+
+  levelSelectEl.addEventListener('change', (e) => loadLevel(parseInt(e.target.value, 10)));
+  
+  document.getElementById('prev-btn').addEventListener('click', () => {
+    if (currentLevelIdx > 0) loadLevel(currentLevelIdx - 1);
+  });
+
+  document.getElementById('next-btn').addEventListener('click', () => {
+    if (currentLevelIdx < LEVELS.length - 1) loadLevel(currentLevelIdx + 1);
+  });
+
+  // Start gry
+  loadLevel(0);
+</script>
+</body>
+</html>
