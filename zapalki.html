@@ -2,21 +2,53 @@
 <html lang="pl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Łamigłówki z Zapałkami</title>
   <style>
     :root {
-      --bg-color: #1a1a24;
-      --card-bg: #262838;
+      --bg-color: #12131c;
+      --card-bg: #1e202e;
       --text-color: #f0f2f5;
       --accent-color: #e63946;
       --match-wood-start: #f4a261;
       --match-wood-end: #e76f51;
       --match-head: #d90429;
-      --slot-empty: rgba(255, 255, 255, 0.07);
-      --slot-empty-hover: rgba(255, 183, 3, 0.25);
+      --slot-empty: rgba(255, 255, 255, 0.06);
+      --slot-empty-hover: rgba(255, 183, 3, 0.3);
       --highlight: #ffb703;
       --success: #2a9d8f;
+
+      /* Domyślne wymiary (Desktop / Tablet) */
+      --dw: 64px;       /* szerokość cyfry */
+      --dh: 110px;      /* wysokość cyfry */
+      --opw: 40px;      /* szerokość operatora */
+      --eqw: 34px;      /* szerokość znaku równości */
+      --st: 10px;       /* grubość zapałki */
+      --gap: 12px;      /* odstęp między elementami */
+    }
+
+    /* RWD: Telefony (max 600px) */
+    @media (max-width: 600px) {
+      :root {
+        --dw: 44px;
+        --dh: 78px;
+        --opw: 28px;
+        --eqw: 24px;
+        --st: 7px;
+        --gap: 6px;
+      }
+    }
+
+    /* RWD: Bardzo małe ekrany (max 380px) */
+    @media (max-width: 380px) {
+      :root {
+        --dw: 36px;
+        --dh: 64px;
+        --opw: 22px;
+        --eqw: 18px;
+        --st: 6px;
+        --gap: 4px;
+      }
     }
 
     * {
@@ -24,31 +56,35 @@
       margin: 0;
       padding: 0;
       user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
     }
 
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       background-color: var(--bg-color);
       color: var(--text-color);
       min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 20px;
+      justify-content: space-between;
+      padding: 12px;
     }
 
     .container {
       background-color: var(--card-bg);
       border-radius: 20px;
-      padding: 30px;
-      max-width: 900px;
+      padding: 16px;
+      max-width: 800px;
       width: 100%;
-      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 20px;
+      gap: 14px;
+      margin: auto 0;
     }
 
     header {
@@ -56,77 +92,64 @@
     }
 
     h1 {
-      font-size: 2.2rem;
+      font-size: 1.5rem;
       color: var(--highlight);
-      margin-bottom: 8px;
+      margin-bottom: 2px;
     }
 
     p.subtitle {
-      color: #a0a5b5;
-      font-size: 1rem;
+      color: #9aa0b4;
+      font-size: 0.85rem;
     }
 
     .level-bar {
       display: flex;
       align-items: center;
-      gap: 15px;
-      background: rgba(0, 0, 0, 0.2);
-      padding: 10px 20px;
-      border-radius: 30px;
-    }
-
-    select, button {
-      font-family: inherit;
-      font-size: 1rem;
-      padding: 8px 16px;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      transition: all 0.2s ease;
+      justify-content: space-between;
+      width: 100%;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.25);
+      padding: 6px 10px;
+      border-radius: 12px;
     }
 
     select {
-      background: #383b52;
+      font-family: inherit;
+      font-size: 0.95rem;
+      padding: 8px;
+      border-radius: 8px;
+      border: none;
+      background: #2d3045;
       color: #fff;
       font-weight: bold;
+      flex-grow: 1;
+      text-align: center;
+      outline: none;
     }
 
-    button.btn {
-      background: #383b52;
+    .btn-nav {
+      background: #2d3045;
       color: #fff;
-      font-weight: 600;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 1rem;
+      cursor: pointer;
     }
 
-    button.btn:hover {
-      background: #4a4e6d;
-      transform: translateY(-2px);
-    }
-
-    button.btn-primary {
-      background: var(--accent-color);
-      color: #fff;
-    }
-
-    button.btn-primary:hover {
-      background: #b8001f;
-    }
-
-    button.btn-success {
-      background: var(--success);
-      color: #fff;
-    }
-
-    button.btn-success:hover {
-      background: #218377;
+    .btn-nav:active {
+      background: #3d415e;
     }
 
     .status-panel {
       display: flex;
-      gap: 20px;
-      font-size: 1.05rem;
-      background: rgba(255, 255, 255, 0.05);
-      padding: 10px 25px;
-      border-radius: 12px;
+      justify-content: space-around;
+      width: 100%;
+      font-size: 0.85rem;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 8px 12px;
+      border-radius: 10px;
     }
 
     .status-item span {
@@ -134,132 +157,148 @@
       color: var(--highlight);
     }
 
-    /* Game Board Layout */
+    /* Plansza gry */
     .game-board {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 20px;
-      padding: 40px 20px;
-      background: #191b26;
+      gap: var(--gap);
+      padding: 20px 10px;
+      background: #151622;
       border-radius: 16px;
       width: 100%;
-      overflow-x: auto;
-      border: 2px solid #32354a;
+      border: 1.5px solid #2d3045;
     }
 
-    /* Digit & Operator Containers */
+    /* Kontenery elementów */
     .digit-container {
       position: relative;
-      width: 80px;
-      height: 140px;
+      width: var(--dw);
+      height: var(--dh);
     }
 
     .op-container {
       position: relative;
-      width: 60px;
-      height: 140px;
+      width: var(--opw);
+      height: var(--dh);
     }
 
     .eq-container {
       position: relative;
-      width: 50px;
-      height: 140px;
+      width: var(--eqw);
+      height: var(--dh);
     }
 
-    /* Segment Base Styling */
+    /* Bazowy styl segmentu zapałki */
     .segment {
       position: absolute;
-      border-radius: 4px;
+      border-radius: calc(var(--st) / 3);
       cursor: pointer;
-      transition: background-color 0.2s, box-shadow 0.2s;
       background-color: var(--slot-empty);
+      transition: background-color 0.15s ease, transform 0.1s ease;
     }
 
-    .segment:hover {
-      background-color: var(--slot-empty-hover);
+    /* Niewidoczny bufor dotykowy (Hitbox) ułatwiający klikanie na telefonie */
+    .segment::after {
+      content: '';
+      position: absolute;
+      top: -10px;
+      bottom: -10px;
+      left: -10px;
+      right: -10px;
+      z-index: 5;
     }
 
-    /* Segment Positions for 7-Segment Display */
+    .segment:active {
+      transform: scale(0.95);
+    }
+
+    /* Wymiary segmentów */
     .seg-h {
-      height: 12px;
-      width: 52px;
+      height: var(--st);
+      width: calc(var(--dw) - 2 * var(--st));
     }
 
     .seg-v {
-      width: 12px;
-      height: 52px;
+      width: var(--st);
+      height: calc((var(--dh) - 3 * var(--st)) / 2);
     }
 
-    /* Digit Segments (0 to 6) */
-    .digit-container .seg-0 { top: 4px; left: 14px; }         /* Top */
-    .digit-container .seg-1 { top: 14px; left: 54px; }        /* Top-Right */
-    .digit-container .seg-2 { top: 74px; left: 54px; }        /* Bottom-Right */
-    .digit-container .seg-3 { top: 124px; left: 14px; }       /* Bottom */
-    .digit-container .seg-4 { top: 74px; left: 14px; }        /* Bottom-Left */
-    .digit-container .seg-5 { top: 14px; left: 14px; }        /* Top-Left */
-    .digit-container .seg-6 { top: 64px; left: 14px; }        /* Middle */
+    /* Pozycjonowanie 7 segmentów cyfry */
+    .digit-container .seg-0 { top: 0; left: var(--st); }
+    .digit-container .seg-1 { top: var(--st); left: calc(var(--dw) - var(--st)); }
+    .digit-container .seg-2 { top: calc(var(--st) * 2 + (var(--dh) - 3 * var(--st)) / 2); left: calc(var(--dw) - var(--st)); }
+    .digit-container .seg-3 { top: calc(var(--dh) - var(--st)); left: var(--st); }
+    .digit-container .seg-4 { top: calc(var(--st) * 2 + (var(--dh) - 3 * var(--st)) / 2); left: 0; }
+    .digit-container .seg-5 { top: var(--st); left: 0; }
+    .digit-container .seg-6 { top: calc(var(--st) + (var(--dh) - 3 * var(--st)) / 2); left: var(--st); }
 
-    /* Operator + / - Segments */
-    .op-container .seg-0 { top: 64px; left: 4px; width: 52px; height: 12px; } /* Horizontal */
-    .op-container .seg-1 { top: 44px; left: 24px; width: 12px; height: 52px; } /* Vertical */
+    /* Operator + / - */
+    .op-container .seg-0 {
+      top: calc(var(--st) + (var(--dh) - 3 * var(--st)) / 2);
+      left: 0;
+      width: var(--opw);
+      height: var(--st);
+    }
+    .op-container .seg-1 {
+      top: calc(var(--dh) / 2 - var(--opw) / 2);
+      left: calc(var(--opw) / 2 - var(--st) / 2);
+      width: var(--st);
+      height: var(--opw);
+    }
 
-    /* Equals = Segments */
-    .eq-container .seg-0 { top: 50px; left: 0px; width: 50px; height: 12px; }
-    .eq-container .seg-1 { top: 78px; left: 0px; width: 50px; height: 12px; }
+    /* Znak równości = */
+    .eq-container .seg-0 {
+      top: calc(var(--dh) / 2 - var(--st) * 1.6);
+      left: 0;
+      width: var(--eqw);
+      height: var(--st);
+    }
+    .eq-container .seg-1 {
+      top: calc(var(--dh) / 2 + var(--st) * 0.6);
+      left: 0;
+      width: var(--eqw);
+      height: var(--st);
+    }
 
-    /* Active Matchstick Visuals */
+    /* Wygląd aktywnej zapałki */
     .segment.active {
       background: linear-gradient(135deg, var(--match-wood-start), var(--match-wood-end));
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
     }
 
+    /* Główka zapałki */
     .segment.active::before {
       content: '';
       position: absolute;
-      background: radial-gradient(circle at 30% 30%, #ff6b6b, var(--match-head));
+      width: calc(var(--st) * 1.35);
+      height: calc(var(--st) * 1.35);
+      background: radial-gradient(circle at 35% 35%, #ff7b7b, var(--match-head));
       border-radius: 50%;
-      box-shadow: 0 0 4px rgba(0,0,0,0.5);
+      top: calc(var(--st) * -0.17);
+      left: calc(var(--st) * -0.17);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.4);
     }
 
-    /* Match Head Orientations */
-    .seg-h.active::before {
-      width: 14px;
-      height: 14px;
-      left: -2px;
-      top: -1px;
-    }
-
-    .seg-v.active::before {
-      width: 14px;
-      height: 14px;
-      top: -2px;
-      left: -1px;
-    }
-
+    /* Podświetlenie wybranej zapałki */
     .segment.source-highlight {
       outline: 2px dashed var(--highlight);
-      animation: pulse 1.2s infinite;
+      outline-offset: 2px;
+      animation: pulse 1s infinite alternate;
     }
 
     @keyframes pulse {
-      0% { opacity: 0.6; }
-      50% { opacity: 1; }
-      100% { opacity: 0.6; }
+      0% { opacity: 0.5; }
+      100% { opacity: 1; }
     }
 
-    .controls {
-      display: flex;
-      gap: 15px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
+    /* Komunikaty i podpowiedzi */
     .message-box {
-      min-height: 28px;
-      font-size: 1.1rem;
+      min-height: 24px;
+      font-size: 0.95rem;
       font-weight: 600;
       text-align: center;
+      padding: 0 5px;
     }
 
     .message-box.error { color: #ff6b6b; }
@@ -267,13 +306,54 @@
     .message-box.info { color: var(--highlight); }
 
     .hint-box {
-      background: rgba(255, 183, 3, 0.1);
+      background: rgba(255, 183, 3, 0.12);
       border: 1px solid var(--highlight);
       color: #ffda6a;
-      padding: 10px 15px;
+      padding: 8px 12px;
       border-radius: 8px;
-      font-size: 0.95rem;
+      font-size: 0.85rem;
+      text-align: center;
       display: none;
+      width: 100%;
+    }
+
+    /* Przyciski akcji */
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .btn {
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      padding: 12px 10px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      background: #2d3045;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+      background: #3d415e;
+    }
+
+    .btn-main {
+      grid-column: span 2;
+      background: var(--success);
+      font-size: 1.05rem;
+    }
+
+    .btn-main:active {
+      background: #218377;
     }
   </style>
 </head>
@@ -281,19 +361,19 @@
 
 <div class="container">
   <header>
-    <h1>🪵 Łamigłówki z Zapałkami</h1>
-    <p class="subtitle">Przełóż dokładnie 1 zapałkę, aby równanie było poprawne!</p>
+    <h1>🪵 Zapałki</h1>
+    <p class="subtitle">Przełóż 1 zapałkę, aby naprawić równanie</p>
   </header>
 
   <div class="level-bar">
-    <button class="btn" id="prev-btn">◀ Poprzedni</button>
+    <button class="btn-nav" id="prev-btn">◀</button>
     <select id="level-select"></select>
-    <button class="btn" id="next-btn">Następny ▶</button>
+    <button class="btn-nav" id="next-btn">▶</button>
   </div>
 
   <div class="status-panel">
-    <div class="status-item">Zapałka w dłoni: <span id="hand-status">Nie</span></div>
-    <div class="status-item">Stan zmiana: <span id="move-status">0 / 1 przełożona</span></div>
+    <div class="status-item">W dłoni: <span id="hand-status">Brak</span></div>
+    <div class="status-item">Ruch: <span id="move-status">0 / 1</span></div>
   </div>
 
   <div class="game-board" id="board"></div>
@@ -302,15 +382,14 @@
   <div class="hint-box" id="hint-box"></div>
 
   <div class="controls">
-    <button class="btn" id="reset-btn">🔄 Zresetuj poziom</button>
-    <button class="btn" id="hint-btn">💡 Podpowiedź</button>
-    <button class="btn btn-success" id="check-btn">✅ Sprawdź równanie</button>
+    <button class="btn" id="reset-btn">🔄 Reset</button>
+    <button class="btn" id="hint-btn">💡 Wskazówka</button>
+    <button class="btn btn-main" id="check-btn">✅ Sprawdź wynik</button>
   </div>
 </div>
 
 <script>
-  // Dynamiczne wzorce cyfr 0-9 dla wyswietlacza 7-segmentowego:
-  // Segmenty: [0:Top, 1:Top-Right, 2:Bottom-Right, 3:Bottom, 4:Bottom-Left, 5:Top-Left, 6:Middle]
+  // Wzorce cyfr 0-9
   const DIGIT_PATTERNS = {
     '1,1,1,1,1,1,0': 0,
     '0,1,1,0,0,0,0': 1,
@@ -340,22 +419,22 @@
     return [...patterns[val]];
   }
 
-  // Lista poziomów
+  // Lista Poziomów
   const LEVELS = [
     {
       title: "Poziom 1: 6 + 4 = 4",
-      hint: "Spróbuj zabrać zapałkę ze znaku plus i zmienić pierwszą cyfrę.",
+      hint: "Zabierz zapałkę ze znaku plus i przekształć 6 w 8.",
       items: [
         { type: 'digit', segs: getSegmentsForDigit(6) },
-        { type: 'op', segs: [1, 1] }, // +
+        { type: 'op', segs: [1, 1] },
         { type: 'digit', segs: getSegmentsForDigit(4) },
-        { type: 'eq', segs: [1, 1] },  // =
+        { type: 'eq', segs: [1, 1] },
         { type: 'digit', segs: getSegmentsForDigit(4) }
       ]
     },
     {
       title: "Poziom 2: 5 + 7 = 2",
-      hint: "Zmień znak plus na minus i powiększ pierwszą cyfrę.",
+      hint: "Zmień plus na minus i dodaj zapałkę do piątki.",
       items: [
         { type: 'digit', segs: getSegmentsForDigit(5) },
         { type: 'op', segs: [1, 1] },
@@ -388,7 +467,7 @@
     },
     {
       title: "Poziom 5: 5 + 1 = 8",
-      hint: "Zabierz zapałkę ze znaku plus i dodaj do pierwszej cyfry.",
+      hint: "Zabierz zapałkę ze znaku plus i utwórz cyfrę 9.",
       items: [
         { type: 'digit', segs: getSegmentsForDigit(5) },
         { type: 'op', segs: [1, 1] },
@@ -402,7 +481,7 @@
       hint: "Przełóż zapałkę wewnątrz drugiej cyfry 3.",
       items: [
         { type: 'digit', segs: getSegmentsForDigit(8) },
-        { type: 'op', segs: [1, 0] }, // -
+        { type: 'op', segs: [1, 0] },
         { type: 'digit', segs: getSegmentsForDigit(3) },
         { type: 'eq', segs: [1, 1] },
         { type: 'digit', segs: getSegmentsForDigit(3) }
@@ -410,7 +489,7 @@
     },
     {
       title: "Poziom 7: 7 + 1 = 5",
-      hint: "Zmień znak plus na minus i dodaj zapałkę do piątki.",
+      hint: "Zmień plus na minus i dodaj zapałkę do piątki.",
       items: [
         { type: 'digit', segs: getSegmentsForDigit(7) },
         { type: 'op', segs: [1, 1] },
@@ -421,7 +500,7 @@
     },
     {
       title: "Poziom 8: 6 + 3 = 5",
-      hint: "Zmień znak plus na minus i przekształć 6 w 8.",
+      hint: "Zmień plus na minus i przekształć 6 w 8.",
       items: [
         { type: 'digit', segs: getSegmentsForDigit(6) },
         { type: 'op', segs: [1, 1] },
@@ -431,14 +510,14 @@
       ]
     },
     {
-      title: "Poziom 9: 8 - 1 = 9",
-      hint: "Przełóż zapałkę z cyfry 8 do cyfry 9.",
+      title: "Poziom 9: 3 - 1 = 4",
+      hint: "Przełóż zapałkę z cyfry 4 do znaku minus, aby zrobić plus.",
       items: [
-        { type: 'digit', segs: getSegmentsForDigit(8) },
+        { type: 'digit', segs: getSegmentsForDigit(3) },
         { type: 'op', segs: [1, 0] },
         { type: 'digit', segs: getSegmentsForDigit(1) },
         { type: 'eq', segs: [1, 1] },
-        { type: 'digit', segs: getSegmentsForDigit(9) }
+        { type: 'digit', segs: getSegmentsForDigit(4) }
       ]
     },
     {
@@ -481,8 +560,8 @@
   let currentLevelIdx = 0;
   let boardState = [];
   let initialBoardState = [];
-  let hand = false; // Czy zapałka jest w dłoni
-  let handSource = null; // { itemIdx, segIdx } skąd zapałka została wzięta
+  let hand = false;
+  let handSource = null;
 
   // Elementy DOM
   const boardEl = document.getElementById('board');
@@ -492,11 +571,18 @@
   const handStatusEl = document.getElementById('hand-status');
   const moveStatusEl = document.getElementById('move-status');
 
-  // Inicjalizacja wyboru poziomów
+  // Funkcja wibracji dla telefonów
+  function triggerHaptic() {
+    if ('vibrate' in navigator) {
+      try { navigator.vibrate(25); } catch(e){}
+    }
+  }
+
+  // Poprawne wygenerowanie opcji menu
   LEVELS.forEach((lvl, idx) => {
     const opt = document.createElement('option');
     opt.value = idx;
-    opt.textContent = lvl.title;
+    opt.textContent = `Poziom ${idx + 1}`;
     levelSelectEl.appendChild(opt);
   });
 
@@ -504,7 +590,6 @@
     currentLevelIdx = idx;
     levelSelectEl.value = idx;
     
-    // Głębokie kopiowanie stanu
     boardState = JSON.parse(JSON.stringify(LEVELS[idx].items));
     initialBoardState = JSON.parse(JSON.stringify(LEVELS[idx].items));
     
@@ -514,7 +599,6 @@
     messageEl.textContent = '';
     messageEl.className = 'message-box';
     hintBoxEl.style.display = 'none';
-    hintBoxEl.textContent = '';
 
     renderBoard();
     updateStatus();
@@ -524,7 +608,7 @@
     boardEl.innerHTML = '';
 
     boardState.forEach((item, itemIdx) => {
-      let container = document.createElement('div');
+      const container = document.createElement('div');
       
       if (item.type === 'digit') container.className = 'digit-container';
       else if (item.type === 'op') container.className = 'op-container';
@@ -543,12 +627,10 @@
 
         segEl.className = `segment seg-${segIdx} ${isHorizontal ? 'seg-h' : 'seg-v'} ${isActive ? 'active' : ''}`;
 
-        // Podświetlenie oryginalnego slotu, skąd wzięto zapałkę
         if (hand && handSource && handSource.itemIdx === itemIdx && handSource.segIdx === segIdx) {
           segEl.classList.add('source-highlight');
         }
 
-        // Znak '=' jest zablokowany (nie można ruszać jego zapałek)
         if (item.type !== 'eq') {
           segEl.addEventListener('click', () => handleSegmentClick(itemIdx, segIdx));
         } else {
@@ -563,33 +645,30 @@
   }
 
   function handleSegmentClick(itemIdx, segIdx) {
+    triggerHaptic();
     const item = boardState[itemIdx];
     const isFilled = item.segs[segIdx] === 1;
 
     if (!hand) {
-      // Podnoszenie zapałki
       if (isFilled) {
         item.segs[segIdx] = 0;
         hand = true;
         handSource = { itemIdx, segIdx };
-        showMessage("Wziąłeś zapałkę. Kliknij na puste miejsce, aby ją położyć.", "info");
+        showMessage("Wziąłeś zapałkę.", "info");
       }
     } else {
-      // Odkładanie na to samo miejsce (anulowanie ruchu)
       if (handSource.itemIdx === itemIdx && handSource.segIdx === segIdx) {
         item.segs[segIdx] = 1;
         hand = false;
         handSource = null;
-        showMessage("Odłożyłeś zapałkę na miejsce.", "info");
-      } 
-      // Kładzenie w nowe puste miejsce
-      else if (!isFilled) {
+        showMessage("Odłożyłeś zapałkę.", "info");
+      } else if (!isFilled) {
         item.segs[segIdx] = 1;
         hand = false;
         handSource = null;
-        showMessage("Zapałka została przełożona.", "info");
+        showMessage("Przełożyłeś zapałkę.", "info");
       } else {
-        showMessage("To miejsce jest już zajęte!", "error");
+        showMessage("To miejsce jest zajęte!", "error");
       }
     }
 
@@ -614,14 +693,14 @@
   }
 
   function updateStatus() {
-    handStatusEl.textContent = hand ? "Tak (1 🪵)" : "Nie";
+    handStatusEl.textContent = hand ? "Tak 🪵" : "Brak";
     
     const { removed, added } = getMoveDiff();
     let movedCount = 0;
     if (removed === 1 && added === 1 && !hand) movedCount = 1;
     else if (removed > 0 || added > 0) movedCount = Math.max(removed, added);
 
-    moveStatusEl.textContent = `${movedCount} / 1 przełożona`;
+    moveStatusEl.textContent = `${movedCount} / 1`;
   }
 
   function showMessage(msg, type) {
@@ -644,28 +723,29 @@
   }
 
   function checkSolution() {
+    triggerHaptic();
+
     if (hand) {
-      showMessage("Najpierw odłóż zapałkę na planszę!", "error");
+      showMessage("Najpierw odłóż zapałkę!", "error");
       return;
     }
 
     const { removed, added } = getMoveDiff();
 
     if (removed === 0 && added === 0) {
-      showMessage("Nie przełożyłeś żadnej zapałki!", "error");
+      showMessage("Nie przełożyłeś zapałki!", "error");
       return;
     }
 
     if (removed !== 1 || added !== 1) {
-      showMessage("Musisz przełożyć DOKŁADNIE 1 zapałkę!", "error");
+      showMessage("Przełóż DOKŁADNIE 1 zapałkę!", "error");
       return;
     }
 
-    // Parsowanie równania
     const parsed = boardState.map(parseItem);
 
     if (parsed.includes(null)) {
-      showMessage("Równanie zawiera niepoprawny układ zapałek (nieznana cyfra lub znak)!", "error");
+      showMessage("Niepoprawny cyfr lub znak!", "error");
       return;
     }
 
@@ -675,7 +755,7 @@
 
     const opIdx = lhsTokens.findIndex(t => t === '+' || t === '-');
     if (opIdx === -1) {
-      showMessage("Nieprawidłowa struktura równania!", "error");
+      showMessage("Błąd w równaniu!", "error");
       return;
     }
 
@@ -695,32 +775,38 @@
     const calculated = (op === '+') ? (term1 + term2) : (term1 - term2);
 
     if (calculated === rhs) {
-      showMessage(`🎉 Brawo! Równanie ${term1} ${op} ${term2} = ${rhs} jest poprawne!`, "success");
+      showMessage(`🎉 Świetnie! ${term1} ${op} ${term2} = ${rhs}`, "success");
     } else {
-      showMessage(`Równanie ${term1} ${op} ${term2} = ${rhs} jest błędne (${term1} ${op} ${term2} = ${calculated}). Spróbuj inaczej!`, "error");
+      showMessage(`Błąd: ${term1} ${op} ${term2} = ${calculated} (a nie ${rhs})`, "error");
     }
   }
 
-  // Event Listeners
+  // Handlery przycisków
   document.getElementById('check-btn').addEventListener('click', checkSolution);
-  document.getElementById('reset-btn').addEventListener('click', () => loadLevel(currentLevelIdx));
+  document.getElementById('reset-btn').addEventListener('click', () => {
+    triggerHaptic();
+    loadLevel(currentLevelIdx);
+  });
   
   document.getElementById('hint-btn').addEventListener('click', () => {
+    triggerHaptic();
     hintBoxEl.textContent = LEVELS[currentLevelIdx].hint;
-    hintBoxEl.style.display = 'block';
+    hintBoxEl.style.display = hintBoxEl.style.display === 'block' ? 'none' : 'block';
   });
 
   levelSelectEl.addEventListener('change', (e) => loadLevel(parseInt(e.target.value, 10)));
   
   document.getElementById('prev-btn').addEventListener('click', () => {
+    triggerHaptic();
     if (currentLevelIdx > 0) loadLevel(currentLevelIdx - 1);
   });
 
   document.getElementById('next-btn').addEventListener('click', () => {
+    triggerHaptic();
     if (currentLevelIdx < LEVELS.length - 1) loadLevel(currentLevelIdx + 1);
   });
 
-  // Start gry
+  // Start
   loadLevel(0);
 </script>
 </body>
