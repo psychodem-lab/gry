@@ -52,11 +52,17 @@ button{font-family:inherit;}
 [data-theme="dark"] .icon-moon{display:block;}
 
 .settings-panel{
-  position:fixed; top:calc(70px + env(safe-area-inset-top,0px)); right:18px; width:230px;
+  position:fixed; top:calc(70px + env(safe-area-inset-top,0px)); right:18px; width:250px;
+  max-height:80vh; overflow-y:auto;
   background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:16px;
   display:flex; flex-direction:column; gap:14px; box-shadow:0 14px 30px rgba(0,0,0,.16); z-index:11;
   opacity:0; pointer-events:none; transform:translateY(-6px); transition:opacity .2s, transform .2s;
 }
+.settings-group{display:flex; flex-direction:column; gap:6px;}
+.settings-label{font-size:.72rem; color:var(--muted);}
+.settings-panel .nav, .settings-panel .face-picker{width:100%; flex-wrap:wrap; justify-content:flex-start;}
+.settings-panel .nav button{padding:7px 12px; font-size:.82rem;}
+.settings-panel .face-picker button{padding:6px 12px; font-size:.76rem;}
 .settings-panel.open{opacity:1; pointer-events:auto; transform:translateY(0);}
 .settings-row{display:flex; align-items:center; justify-content:space-between; font-size:.85rem; color:var(--muted);}
 .settings-row input[type=color]{width:38px; height:30px; border:none; border-radius:8px; background:none; cursor:pointer; padding:0;}
@@ -197,6 +203,21 @@ button{font-family:inherit;}
 </div>
 
 <div class="settings-panel" id="settingsPanel">
+  <div class="settings-group">
+    <span class="settings-label">Widok</span>
+    <nav class="nav" id="nav">
+      <button class="active" data-view="clock">Zegar</button>
+      <button data-view="timer">Minutnik</button>
+      <button data-view="stopwatch">Stoper</button>
+    </nav>
+  </div>
+  <div class="settings-group" id="faceGroup">
+    <span class="settings-label">Tarcza</span>
+    <div class="face-picker" id="facePicker">
+      <button data-face="digital-minimal" class="active">Cyfry</button>
+      <button data-face="analog-classic">Klasyczny</button>
+    </div>
+  </div>
   <div class="settings-row"><label for="bgColorInput">Kolor tła</label><input type="color" id="bgColorInput"></div>
   <div class="settings-row"><label for="textColorInput">Kolor napisów</label><input type="color" id="textColorInput"></div>
   <button class="settings-reset" id="resetColors">Domyślne kolory motywu</button>
@@ -216,17 +237,7 @@ button{font-family:inherit;}
     <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
   </div>
 
-  <nav class="nav">
-    <button class="active" data-view="clock">Zegar</button>
-    <button data-view="timer">Minutnik</button>
-    <button data-view="stopwatch">Stoper</button>
-  </nav>
-
   <section id="clock" class="view active">
-    <div class="face-picker" id="facePicker">
-      <button data-face="digital-minimal" class="active">Cyfry</button>
-      <button data-face="analog-classic">Klasyczny</button>
-    </div>
     <div class="clock-face" id="clockFace" data-face="digital-minimal">
       <div class="clock-time" id="clockTime">00:00:00</div>
       <svg id="analogFace" class="analog-svg" viewBox="0 0 200 200" aria-hidden="true">
@@ -414,11 +425,13 @@ if(reduceMotion){
 
 /* --- nawigacja --- */
 const navBtns = document.querySelectorAll('.nav button');
+const faceGroup = document.getElementById('faceGroup');
 navBtns.forEach(btn => btn.addEventListener('click', () => {
   navBtns.forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById(btn.dataset.view).classList.add('active');
+  faceGroup.style.display = btn.dataset.view === 'clock' ? 'flex' : 'none';
 }));
 
 /* --- tarcze zegara --- */
