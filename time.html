@@ -36,6 +36,8 @@ html{scroll-padding-top:env(safe-area-inset-top,0px);}
 button{font-family:inherit;}
 :focus-visible{outline:2px solid var(--accent); outline-offset:3px;}
 
+#starfield{position:fixed; inset:0; z-index:-1; display:none;}
+
 .top-controls{
   position:fixed; top:calc(18px + env(safe-area-inset-top,0px)); right:18px;
   display:flex; gap:10px; z-index:12;
@@ -50,15 +52,24 @@ button{font-family:inherit;}
 [data-theme="dark"] .icon-moon{display:block;}
 
 .settings-panel{
-  position:fixed; top:calc(70px + env(safe-area-inset-top,0px)); right:18px; width:220px;
+  position:fixed; top:calc(70px + env(safe-area-inset-top,0px)); right:18px; width:230px;
   background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:16px;
-  display:flex; flex-direction:column; gap:12px; box-shadow:0 14px 30px rgba(0,0,0,.16); z-index:11;
+  display:flex; flex-direction:column; gap:14px; box-shadow:0 14px 30px rgba(0,0,0,.16); z-index:11;
   opacity:0; pointer-events:none; transform:translateY(-6px); transition:opacity .2s, transform .2s;
 }
 .settings-panel.open{opacity:1; pointer-events:auto; transform:translateY(0);}
 .settings-row{display:flex; align-items:center; justify-content:space-between; font-size:.85rem; color:var(--muted);}
 .settings-row input[type=color]{width:38px; height:30px; border:none; border-radius:8px; background:none; cursor:pointer; padding:0;}
 .settings-reset{padding:9px 0; font-size:.8rem; width:100%; border:1px solid var(--border); border-radius:999px; background:var(--bg); color:var(--text); cursor:pointer;}
+.settings-hint{font-size:.72rem; color:var(--muted); line-height:1.4; margin:-4px 0 0;}
+
+.switch{position:relative; display:inline-block; width:40px; height:22px; flex:none;}
+.switch input{opacity:0; width:0; height:0; position:absolute;}
+.switch .track{position:absolute; inset:0; background:var(--border); border-radius:999px; transition:background .2s; cursor:pointer;}
+.switch .thumb{position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:50%; background:var(--panel); box-shadow:0 1px 3px rgba(0,0,0,.3); transition:transform .2s;}
+.switch input:checked + .track{background:var(--accent);}
+.switch input:checked + .track .thumb{transform:translateX(18px);}
+.switch input:disabled + .track{opacity:.4; cursor:default;}
 
 .wrap{
   min-height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -67,6 +78,13 @@ button{font-family:inherit;}
 .wrap::before{
   content:''; position:absolute; inset:0; pointer-events:none;
   background:radial-gradient(circle at 50% 36%, var(--accent-soft), transparent 62%);
+  transform-origin:50% 36%;
+  animation:breathe 12s ease-in-out infinite;
+}
+@keyframes breathe{
+  0%{transform:scale(1);}
+  33.333%{transform:scale(1.22);}
+  100%{transform:scale(1);}
 }
 
 .bubbles{position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0;}
@@ -166,13 +184,14 @@ button{font-family:inherit;}
 </style>
 </head>
 <body>
+<canvas id="starfield" aria-hidden="true"></canvas>
 
 <div class="top-controls">
   <button id="themeToggle" class="icon-btn" aria-label="Przełącz tryb dzień/noc">
     <svg class="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v3M12 18.5v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2.5 12h3M18.5 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
     <svg class="icon-moon" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.6 6.6 0 0 0 10.5 10.5z"/></svg>
   </button>
-  <button id="settingsToggle" class="icon-btn" aria-label="Ustawienia kolorów">
+  <button id="settingsToggle" class="icon-btn" aria-label="Ustawienia wyglądu">
     <svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><circle cx="9" cy="6" r="2"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="15" cy="12" r="2"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="9" cy="18" r="2"/></svg>
   </button>
 </div>
@@ -181,10 +200,19 @@ button{font-family:inherit;}
   <div class="settings-row"><label for="bgColorInput">Kolor tła</label><input type="color" id="bgColorInput"></div>
   <div class="settings-row"><label for="textColorInput">Kolor napisów</label><input type="color" id="textColorInput"></div>
   <button class="settings-reset" id="resetColors">Domyślne kolory motywu</button>
+  <div class="settings-row">
+    <span>Bąbelki</span>
+    <label class="switch"><input type="checkbox" id="bubblesToggle" aria-label="Bąbelki"><span class="track"><span class="thumb"></span></span></label>
+  </div>
+  <div class="settings-row">
+    <span>Podróż w gwiazdach</span>
+    <label class="switch"><input type="checkbox" id="starfieldToggle" aria-label="Podróż w gwiazdach"><span class="track"><span class="thumb"></span></span></label>
+  </div>
+  <p class="settings-hint" id="motionHint" hidden>Animacje wyłączone zgodnie z ustawieniami systemu.</p>
 </div>
 
 <div class="wrap">
-  <div class="bubbles" aria-hidden="true">
+  <div class="bubbles" id="bubbles" aria-hidden="true">
     <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
   </div>
 
@@ -254,6 +282,7 @@ button{font-family:inherit;}
 <script>
 const pad = n => n.toString().padStart(2,'0');
 const capFirst = s => s.charAt(0).toUpperCase() + s.slice(1);
+const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* --- motyw --- */
 function applyTheme(t){ document.documentElement.setAttribute('data-theme', t); }
@@ -307,6 +336,81 @@ document.getElementById('resetColors').addEventListener('click', () => {
   try{ localStorage.removeItem('zegar-bg'); localStorage.removeItem('zegar-text'); }catch(e){}
   syncColorInputs();
 });
+
+/* --- bąbelki --- */
+const bubblesEl = document.getElementById('bubbles');
+const bubblesToggle = document.getElementById('bubblesToggle');
+function setBubbles(on){
+  bubblesEl.style.display = on ? 'block' : 'none';
+  bubblesToggle.checked = on;
+  try{ localStorage.setItem('zegar-bubbles', on ? '1' : '0'); }catch(e){}
+}
+bubblesToggle.addEventListener('change', () => setBubbles(bubblesToggle.checked));
+let savedBubbles = null;
+try{ savedBubbles = localStorage.getItem('zegar-bubbles'); }catch(e){}
+setBubbles(reduceMotion ? false : (savedBubbles === null ? true : savedBubbles === '1'));
+
+/* --- podróż w gwiazdach --- */
+const starCanvas = document.getElementById('starfield');
+const sctx = starCanvas.getContext('2d');
+const starfieldToggle = document.getElementById('starfieldToggle');
+const STAR_COUNT = 260;
+let stars = [], starfieldOn = false, starfieldRAF = null;
+
+function resizeCanvas(){
+  starCanvas.width = window.innerWidth;
+  starCanvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+function initStars(){
+  stars = Array.from({length:STAR_COUNT}, () => ({x:Math.random()*2-1, y:Math.random()*2-1, z:Math.random()}));
+}
+function drawFrame(){
+  const w = starCanvas.width, h = starCanvas.height, cx = w/2, cy = h/2;
+  sctx.clearRect(0,0,w,h);
+  const color = getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#ffffff';
+  sctx.strokeStyle = color;
+  const speed = 0.0025;
+  for(const s of stars){
+    const prevZ = s.z;
+    s.z -= speed;
+    if(s.z <= 0.002){ s.x = Math.random()*2-1; s.y = Math.random()*2-1; s.z = 1; continue; }
+    const sx = cx + (s.x / s.z) * cx, sy = cy + (s.y / s.z) * cy;
+    const psx = cx + (s.x / prevZ) * cx, psy = cy + (s.y / prevZ) * cy;
+    sctx.globalAlpha = Math.min(1, (1 - s.z) * 1.3);
+    sctx.lineWidth = Math.max(0.6, (1 - s.z) * 2.4);
+    sctx.beginPath();
+    sctx.moveTo(psx, psy);
+    sctx.lineTo(sx, sy);
+    sctx.stroke();
+  }
+  sctx.globalAlpha = 1;
+  if(starfieldOn) starfieldRAF = requestAnimationFrame(drawFrame);
+}
+function setStarfield(on){
+  if(reduceMotion) on = false;
+  starfieldOn = on;
+  starfieldToggle.checked = on;
+  starCanvas.style.display = on ? 'block' : 'none';
+  cancelAnimationFrame(starfieldRAF);
+  if(on){
+    if(!stars.length) initStars();
+    drawFrame();
+  }
+  try{ localStorage.setItem('zegar-starfield', on ? '1' : '0'); }catch(e){}
+}
+starfieldToggle.addEventListener('change', () => setStarfield(starfieldToggle.checked));
+let savedStarfield = null;
+try{ savedStarfield = localStorage.getItem('zegar-starfield'); }catch(e){}
+setStarfield(savedStarfield === '1');
+
+if(reduceMotion){
+  bubblesToggle.disabled = true;
+  starfieldToggle.disabled = true;
+  document.getElementById('motionHint').hidden = false;
+}
 
 /* --- nawigacja --- */
 const navBtns = document.querySelectorAll('.nav button');
