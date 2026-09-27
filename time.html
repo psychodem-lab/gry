@@ -616,7 +616,7 @@ let wakeLock = null;
 const wakeStatus = document.getElementById('wakeStatus');
 function setWakeStatus(active){
   if(active){
-    wakeStatus.textContent = 'Ekran pozostanie włączony';
+    wakeStatus.textContent = '';
     wakeStatus.classList.add('on');
   } else {
     wakeStatus.classList.remove('on');
