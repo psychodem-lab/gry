@@ -2,90 +2,190 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Nocny Ogród - Świetliki</title>
     <style>
-        body { 
-            background: #050706; 
-            margin: 0; 
-            overflow: hidden; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
+        * { box-sizing: border-box; }
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            height: 100dvh;
+            background: #050706;
+            overflow: hidden;
+            overscroll-behavior: none;
             font-family: 'Segoe UI', sans-serif;
             touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
-        .ui { padding: 15px; text-align: center; color: #5a7a60; }
-        canvas { 
-            background: linear-gradient(to bottom, #0f1411, #050706); 
-            display: block;
-            box-shadow: 0 0 60px rgba(0,0,0,0.9);
-            border-radius: 40px;
+        body {
+            position: fixed;
+            inset: 0;
+        }
+        .ui {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: calc(10px + env(safe-area-inset-top)) 12px 10px;
+            text-align: center;
+            color: #5a7a60;
+            pointer-events: none;
+            z-index: 2;
+        }
+        .ui h2 { margin: 0; font-weight: 300; color: #c8d6c5; font-size: clamp(16px, 4vw, 24px); }
+        .ui p { margin: 5px 0 0; opacity: 0.7; font-size: clamp(12px, 3.4vw, 15px); }
+        #fsBtn {
+            position: fixed;
+            right: calc(10px + env(safe-area-inset-right));
+            bottom: calc(10px + env(safe-area-inset-bottom));
+            z-index: 3;
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            border: 1px solid #243329;
+            background: rgba(10, 17, 13, 0.7);
+            color: #c8d6c5;
+            font-size: 20px;
             cursor: pointer;
-            border: 2px solid #1a231d;
-            max-width: 90vw;
-            max-height: 75vh;
+            backdrop-filter: blur(4px);
+            pointer-events: auto;
+        }
+        #fsBtn:active { transform: scale(0.95); }
+        canvas {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            display: block;
+            background: linear-gradient(to bottom, #0f1411, #050706);
+            cursor: pointer;
+            border: none;
+            border-radius: 0;
+            touch-action: none;
         }
     </style>
 </head>
 <body>
 
 <div class="ui">
-    <h2 style="margin:0; font-weight: 300; color: #c8d6c5;">Świetlisty Ogród</h2>
-    <p style="margin:5px; opacity: 0.7;">Usuwaj chwasty i obserwuj świetliki.</p>
+    <h2>Świetlisty Ogród</h2>
+    <p>Usuwaj chwasty i obserwuj świetliki.</p>
 </div>
 
-<canvas id="gardenCanvas" width="800" height="600"></canvas>
+<button id="fsBtn" title="Pełny ekran" aria-label="Pełny ekran">⛶</button>
+<canvas id="gardenCanvas"></canvas>
 
 <script>
     const canvas = document.getElementById("gardenCanvas");
     const ctx = canvas.getContext("2d");
 
+    let W = 0, H = 0;
     let plants = [];
     let leafParticles = [];
     let fireflies = [];
 
-    // Inicjalizacja świetlików
-    for(let i = 0; i < 15; i++) {
-        fireflies.push({
-            x: Math.random() * canvas.width,
-            y: Math.random() * canvas.height * 0.7,
-            vx: (Math.random() - 0.5) * 1,
-            vy: (Math.random() - 0.5) * 1,
-            size: 1 + Math.random() * 2,
-            pulse: Math.random() * Math.PI * 2
+    function resize() {
+        W = window.innerWidth;
+        H = window.innerHeight;
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = Math.round(W * dpr);
+        canvas.height = Math.round(H * dpr);
+        canvas.style.width = W + "px";
+        canvas.style.height = H + "px";
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        // Utrzymaj obiekty w granicach ekranu po zmianie rozmiaru/orientacji
+        const groundY = H - 20;
+        const maxAllowed = Math.max(120, H - 40);
+        plants.forEach(p => {
+            p.x = Math.min(Math.max(p.x, 20), Math.max(21, W - 20));
+            p.y = groundY;
+            // Przy przejściu na niższy ekran przytnij za wysokie rośliny
+            if (p.maxSize > maxAllowed) p.maxSize = maxAllowed;
+            if (p.size > p.maxSize) p.size = p.maxSize;
+        });
+        fireflies.forEach(f => {
+            f.x = Math.min(Math.max(f.x, 0), W);
+            f.y = Math.min(Math.max(f.y, 0), H * 0.8);
         });
     }
 
-    function createPlant() {
-        if (plants.length < 12) {
-            plants.push({
-                x: 60 + Math.random() * (canvas.width - 120),
-                y: canvas.height - 20,
-                size: 0,
-                maxSize: 35 + Math.random() * 55,
-                growthSpeed: 0.15 + Math.random() * 0.2,
-                rotation: (Math.random() - 0.5) * 0.3,
-                color: `hsl(${110 + Math.random() * 30}, 25%, ${20 + Math.random() * 10}%)`
+    // Inicjalizacja świetlików
+    function initFireflies() {
+        fireflies = [];
+        for(let i = 0; i < 15; i++) {
+            fireflies.push({
+                x: Math.random() * W,
+                y: Math.random() * H * 0.7,
+                vx: (Math.random() - 0.5) * 1,
+                vy: (Math.random() - 0.5) * 1,
+                size: 1 + Math.random() * 2,
+                pulse: Math.random() * Math.PI * 2
             });
         }
     }
 
-    function handleInput(e) {
-        e.preventDefault();
-        const rect = canvas.getBoundingClientRect();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-        const x = (clientX - rect.left) * scaleX;
-        const y = (clientY - rect.top) * scaleY;
+    // 5 chwastów polnych: oset, mniszek, chaber, mak, krwawnik
+    const WEED_TYPES = [
+        { name: "oset",      stem: "#33502f", leaf: "#3d6537", flower: "#c77fb3", dark: "#7a3d7e", hMin: 0.6, hMax: 1.0 },
+        { name: "mniszek",   stem: "#3a5a2e", leaf: "#4a7038", flower: "#e8c93a", dark: "#8a7420", hMin: 0.25, hMax: 0.55 },
+        { name: "chaber",    stem: "#2f4a33", leaf: "#3c5c40", flower: "#6a9ae0", dark: "#3a5a9a", hMin: 0.35, hMax: 0.7 },
+        { name: "mak",       stem: "#3d5230", leaf: "#4d6a38", flower: "#c94a4a", dark: "#6e1f1f", hMin: 0.4, hMax: 0.8 },
+        { name: "krwawnik",  stem: "#334e30", leaf: "#425f3a", flower: "#d8d8d0", dark: "#7a7a70", hMin: 0.3, hMax: 0.65 }
+    ];
 
+    function createPlant() {
+        if (plants.length < 12) {
+            const margin = Math.min(60, W * 0.08);
+            const type = Math.floor(Math.random() * WEED_TYPES.length);
+            const spec = WEED_TYPES[type];
+            // Wysokość nawet do pełnego ekranu, zależna od gatunku
+            const maxH = Math.max(200, H - 60);
+            const maxSize = maxH * (spec.hMin + Math.random() * (spec.hMax - spec.hMin));
+            // Wolny wzrost: pełny rozmiar po 45-90 s (60 fps)
+            const growSeconds = 45 + Math.random() * 45;
+            plants.push({
+                x: margin + Math.random() * Math.max(40, (W - margin * 2)),
+                y: H - 20,
+                size: 0,
+                maxSize: maxSize,
+                growthSpeed: maxSize / (60 * growSeconds),
+                rotation: (Math.random() - 0.5) * 0.25,
+                color: spec.leaf,
+                stemColor: spec.stem,
+                spec: spec,
+                type: type,
+                seed: Math.random() * Math.PI * 2
+            });
+        }
+    }
+
+    function getPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const t = e.touches ? e.touches[0] : e;
+        // canvas jest fullscreen 1:1 z CSS, więc proste mapowanie
+        const x = (t.clientX - rect.left) * (W / rect.width);
+        const y = (t.clientY - rect.top) * (H / rect.height);
+        return { x, y };
+    }
+
+    function handleInput(e) {
+        if (e.cancelable) e.preventDefault();
+        const { x, y } = getPos(e);
+
+        const touchR = Math.max(35, W * 0.05);
         for (let i = plants.length - 1; i >= 0; i--) {
             let p = plants[i];
             let dx = x - p.x;
-            let dy = y - (p.y - p.size / 2);
-            if (Math.abs(dx) < 35 && y > p.y - p.size - 25 && y < p.y + 10) {
+            if (Math.abs(dx) < touchR && y > p.y - p.size - 25 && y < p.y + 10) {
                 spawnLeafParticles(p.x, p.y - p.size / 2, p.color);
                 plants.splice(i, 1);
                 return;
@@ -106,7 +206,30 @@
     }
 
     canvas.addEventListener("touchstart", handleInput, { passive: false });
+    canvas.addEventListener("touchmove", handleInput, { passive: false });
     canvas.addEventListener("mousedown", handleInput);
+    // Pointer Events dla PC + telefonów (mysz / dotyk / pen)
+    canvas.addEventListener("pointerdown", handleInput);
+    document.addEventListener("dblclick", e => e.preventDefault(), { passive: false });
+    document.addEventListener("contextmenu", e => {
+        if (e.target === canvas) e.preventDefault();
+    });
+    document.addEventListener("gesturestart", e => e.preventDefault());
+
+    function toggleFullscreen() {
+        const el = document.documentElement;
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+            if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+            else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+        } else {
+            if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        }
+    }
+    document.getElementById("fsBtn").addEventListener("click", e => {
+        e.stopPropagation();
+        toggleFullscreen();
+    });
 
     function drawFireflies() {
         fireflies.forEach(f => {
@@ -115,8 +238,8 @@
             f.pulse += 0.03;
 
             // Zawracanie świetlików przy krawędziach
-            if (f.x < 0 || f.x > canvas.width) f.vx *= -1;
-            if (f.y < 0 || f.y > canvas.height * 0.8) f.vy *= -1;
+            if (f.x < 0 || f.x > W) f.vx *= -1;
+            if (f.y < 0 || f.y > H * 0.8) f.vy *= -1;
 
             let opacity = (Math.sin(f.pulse) + 1) / 2;
             
@@ -138,36 +261,225 @@
         });
     }
 
-    function drawPlant(p) {
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.rotate(p.rotation);
+    function drawSpikyLeaf(len, wid, color) {
+        // Kolczasty liść ostu: trójkątny ząbkowany
+        ctx.fillStyle = color;
         ctx.beginPath();
-        ctx.strokeStyle = p.color;
-        ctx.lineWidth = 3;
-        ctx.lineCap = "round";
         ctx.moveTo(0, 0);
-        ctx.quadraticCurveTo(8, -p.size/2, 0, -p.size);
-        ctx.stroke();
+        const teeth = 4;
+        for (let i = 1; i <= teeth; i++) {
+            const t = i / teeth;
+            ctx.lineTo(-len * t, -wid * (1 - t * 0.5) - (i % 2) * 3);
+            ctx.lineTo(-len * t, -wid * 0.3 * (1 - t * 0.5));
+        }
+        ctx.lineTo(-len, 0);
+        ctx.lineTo(0, wid * 0.4);
+        ctx.closePath();
+        ctx.fill();
+    }
 
-        if (p.size > 15) {
-            ctx.fillStyle = p.color;
+    function drawFlower(p, s, bloomOpen) {
+        const spec = p.spec;
+        const fr = (7 + Math.min(14, s / 50)) * (0.3 + 0.7 * bloomOpen);
+        if (fr <= 1 || bloomOpen <= 0) return;
+        const fx = 0, fy = -s;
+        ctx.save();
+        ctx.translate(fx, fy);
+
+        if (p.type === 0) {
+            // OSET: zielony koszyczek + fioletowa korona z igiełkami
+            ctx.fillStyle = "#2c452b";
             ctx.beginPath();
-            ctx.ellipse(-7, -p.size * 0.6, 8, 4, -Math.PI/4, 0, Math.PI*2);
+            ctx.ellipse(0, 3, fr * 0.55, fr * 0.45, 0, 0, Math.PI * 2);
             ctx.fill();
+            // Kolce kielicha
+            ctx.strokeStyle = "#3d6537";
+            ctx.lineWidth = 1.5;
+            for (let i = 0; i < 8; i++) {
+                const a = (i / 8) * Math.PI * 2 + p.seed;
+                ctx.beginPath();
+                ctx.moveTo(Math.cos(a) * fr * 0.4, 3 + Math.sin(a) * fr * 0.3);
+                ctx.lineTo(Math.cos(a) * fr * 0.75, 3 + Math.sin(a) * fr * 0.55);
+                ctx.stroke();
+            }
+            // Fioletowy puch
+            for (let i = 0; i < 22; i++) {
+                const a = (i / 22) * Math.PI * 2 + p.seed;
+                const r1 = fr * 0.3, r2 = fr * (0.9 + Math.random() * 0.25);
+                ctx.strokeStyle = i % 2 ? spec.flower : spec.dark;
+                ctx.lineWidth = 1.6;
+                ctx.beginPath();
+                ctx.moveTo(Math.cos(a) * r1, -fr * 0.2 + Math.sin(a) * r1 * 0.5);
+                ctx.lineTo(Math.cos(a) * r2, -fr * 0.3 - Math.abs(Math.sin(a)) * r2 * 0.4 - 3);
+                ctx.stroke();
+                ctx.fillStyle = spec.flower;
+                ctx.beginPath();
+                ctx.arc(Math.cos(a) * r2, -fr * 0.3 - Math.abs(Math.sin(a)) * r2 * 0.4 - 3, 1.4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        } else if (p.type === 1) {
+            // MNISZEK: żółta rozetka z płatków
+            ctx.fillStyle = spec.dark;
             ctx.beginPath();
-            ctx.ellipse(7, -p.size * 0.4, 8, 4, Math.PI/4, 0, Math.PI*2);
+            ctx.arc(0, 0, fr * 0.7, 0, Math.PI * 2);
             ctx.fill();
+            for (let i = 0; i < 16; i++) {
+                const a = (i / 16) * Math.PI * 2 + p.seed;
+                ctx.fillStyle = i % 2 ? spec.flower : "#f5e07a";
+                ctx.beginPath();
+                ctx.ellipse(Math.cos(a) * fr * 0.55, Math.sin(a) * fr * 0.55, fr * 0.42, fr * 0.2, a, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.fillStyle = "#fff3b0";
+            ctx.beginPath();
+            ctx.arc(0, 0, fr * 0.25, 0, Math.PI * 2);
+            ctx.fill();
+        } else if (p.type === 2) {
+            // CHABER: postrzępione niebieskie płatki
+            for (let i = 0; i < 12; i++) {
+                const a = (i / 12) * Math.PI * 2 + p.seed;
+                ctx.fillStyle = i % 3 === 0 ? spec.dark : spec.flower;
+                ctx.beginPath();
+                ctx.ellipse(Math.cos(a) * fr * 0.6, Math.sin(a) * fr * 0.6, fr * 0.38, fr * 0.22, a, 0, Math.PI * 2);
+                ctx.fill();
+                // Strzępki na końcach
+                ctx.strokeStyle = spec.flower;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(Math.cos(a) * fr * 0.85, Math.sin(a) * fr * 0.85);
+                ctx.lineTo(Math.cos(a) * fr * 1.1, Math.sin(a) * fr * 1.1);
+                ctx.stroke();
+            }
+            ctx.fillStyle = "#2c3d6e";
+            ctx.beginPath();
+            ctx.arc(0, 0, fr * 0.3, 0, Math.PI * 2);
+            ctx.fill();
+        } else if (p.type === 3) {
+            // MAK POLNY: 4 czerwone płatki + czarny środek
+            for (let i = 0; i < 4; i++) {
+                const a = (i / 4) * Math.PI * 2 + p.seed + Math.PI / 4;
+                ctx.fillStyle = i % 2 ? spec.flower : "#d95f5f";
+                ctx.beginPath();
+                ctx.ellipse(Math.cos(a) * fr * 0.45, Math.sin(a) * fr * 0.45, fr * 0.55, fr * 0.5, a, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.fillStyle = "#141414";
+            ctx.beginPath();
+            ctx.arc(0, 0, fr * 0.28, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = "#3a3a3a";
+            for (let i = 0; i < 6; i++) {
+                const a = (i / 6) * Math.PI * 2;
+                ctx.beginPath();
+                ctx.arc(Math.cos(a) * fr * 0.28, Math.sin(a) * fr * 0.28, 1.2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        } else {
+            // KRWAWNIK: baldach drobnych białych kwiatków
+            const heads = 7;
+            for (let i = 0; i < heads; i++) {
+                const a = (i / heads) * Math.PI * 2 + p.seed;
+                const hx = Math.cos(a) * fr * 0.8;
+                const hy = Math.sin(a) * fr * 0.5 - fr * 0.2;
+                ctx.strokeStyle = spec.leaf;
+                ctx.lineWidth = 1.2;
+                ctx.beginPath();
+                ctx.moveTo(0, 2);
+                ctx.lineTo(hx, hy);
+                ctx.stroke();
+                ctx.fillStyle = spec.flower;
+                ctx.beginPath();
+                ctx.arc(hx, hy, fr * 0.28, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = spec.dark;
+                ctx.beginPath();
+                ctx.arc(hx, hy, fr * 0.1, 0, Math.PI * 2);
+                ctx.fill();
+            }
         }
         ctx.restore();
     }
 
+    function drawPlant(p) {
+        const s = p.size;
+        if (s <= 0) return;
+        const bloomOpen = Math.min(1, Math.max(0, (s / p.maxSize - 0.6) / 0.4));
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rotation);
+        // Łodyga wg gatunku
+        ctx.beginPath();
+        ctx.strokeStyle = p.stemColor || p.color;
+        ctx.lineWidth = p.type === 0 ? 2.5 + s / 70 : 1.5 + s / 110;
+        ctx.lineCap = "round";
+        const bend = 8 + s * 0.02 + (p.type === 1 ? Math.sin(p.seed) * 6 : 0);
+        ctx.moveTo(0, 0);
+        ctx.quadraticCurveTo(bend, -s / 2, 0, -s);
+        ctx.stroke();
+
+        if (s > 12) {
+            const leafScale = Math.min(2.2, 0.7 + s / 160);
+            if (p.type === 0) {
+                // Oset: kolczaste liście na różnych wysokościach
+                ctx.save();
+                ctx.translate(2, -s * 0.35);
+                ctx.rotate(0.5);
+                drawSpikyLeaf(16 * leafScale, 7 * leafScale, p.color);
+                ctx.restore();
+                ctx.save();
+                ctx.translate(2, -s * 0.6);
+                ctx.rotate(-0.6);
+                ctx.scale(-1, 1);
+                drawSpikyLeaf(14 * leafScale, 6 * leafScale, p.color);
+                ctx.restore();
+                if (s > 120) {
+                    ctx.save();
+                    ctx.translate(1, -s * 0.15);
+                    ctx.rotate(0.9);
+                    drawSpikyLeaf(12 * leafScale, 5 * leafScale, p.color);
+                    ctx.restore();
+                }
+            } else if (p.type === 1) {
+                // Mniszek: rozeta przy ziemi + 1-2 małe listki
+                ctx.fillStyle = p.color;
+                for (let i = 0; i < 5; i++) {
+                    const a = (i / 5) * Math.PI * 2 + p.seed;
+                    ctx.beginPath();
+                    ctx.ellipse(Math.cos(a) * 8, -3 + Math.sin(a) * 3, 10 * leafScale * 0.7, 3.5, a, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            } else {
+                // Pozostałe: owalne liście, liczba zależy od wysokości
+                ctx.fillStyle = p.color;
+                const lw = (p.type === 3 ? 10 : 8) * leafScale;
+                const lh = (p.type === 3 ? 6 : 4) * leafScale;
+                ctx.beginPath();
+                ctx.ellipse(-7, -s * 0.55, lw, lh, -Math.PI / 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(7, -s * 0.38, lw, lh, Math.PI / 4, 0, Math.PI * 2);
+                ctx.fill();
+                if (s > 140) {
+                    ctx.beginPath();
+                    ctx.ellipse(-6, -s * 0.78, lw * 0.85, lh * 0.85, -Math.PI / 4, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.ellipse(6, -s * 0.2, lw * 0.85, lh * 0.85, Math.PI / 4, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+        // Kwiat chwasta na czubku
+        drawFlower(p, s, bloomOpen);
+        ctx.restore();
+    }
+
     function loop() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.clearRect(0, 0, W, H);
 
         // Ziemia
         ctx.fillStyle = "#0a110d";
-        ctx.fillRect(0, canvas.height - 20, canvas.width, 20);
+        ctx.fillRect(0, H - 20, W, 20);
 
         drawFireflies();
 
@@ -193,7 +505,16 @@
         requestAnimationFrame(loop);
     }
 
+    // Start: fullscreen init + resize na PC i telefon
+    resize();
+    initFireflies();
     loop();
+
+    window.addEventListener("resize", resize);
+    window.addEventListener("orientationchange", () => setTimeout(resize, 100));
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener("resize", resize);
+    }
 </script>
 
 </body>
