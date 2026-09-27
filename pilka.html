@@ -198,6 +198,56 @@
       border: 2px solid var(--card-bg);
     }
 
+    .win-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: rgba(10, 10, 18, 0.72);
+      border-radius: 12px;
+      z-index: 5;
+      padding: 16px;
+    }
+
+    .win-overlay.hidden {
+      display: none;
+    }
+
+    .win-card {
+      background-color: var(--card-bg);
+      border: 3px solid #fff;
+      border-radius: 14px;
+      padding: 22px 30px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+      animation: win-pop 0.35s ease-out;
+      max-width: 90%;
+    }
+
+    @keyframes win-pop {
+      from { transform: scale(0.8); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .win-card h2 {
+      margin-bottom: 8px;
+      font-size: 1.6rem;
+    }
+
+    .win-card p {
+      color: var(--line-color);
+      margin-bottom: 16px;
+      font-size: 0.95rem;
+    }
+
+    .win-card .btn-row {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
     canvas {
       cursor: crosshair;
       touch-action: none;
@@ -259,6 +309,16 @@
 
     <div class="board-wrapper">
       <canvas id="gameCanvas"></canvas>
+      <div class="win-overlay hidden" id="win-overlay">
+        <div class="win-card" id="win-card">
+          <h2 id="win-title">🎉 Wygrywają Niebiescy!</h2>
+          <p id="win-reason"></p>
+          <div class="btn-row">
+            <button class="primary" id="rematch-btn">Rewanż</button>
+            <button id="win-undo-btn">↩ Cofnij ruch</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -311,6 +371,10 @@
     const restartBtn = document.getElementById('restart-btn');
     const undoBtn = document.getElementById('undo-btn');
     const crossingCheckbox = document.getElementById('crossing');
+    const winOverlay = document.getElementById('win-overlay');
+    const winCard = document.getElementById('win-card');
+    const winTitle = document.getElementById('win-title');
+    const winReason = document.getElementById('win-reason');
     const statusText = document.getElementById('status-text');
     const turnIndicator = document.getElementById('turn-color');
 
@@ -327,6 +391,7 @@
       turnId = 0;
       history = [];
       hoverPos = null;
+      hideWinOverlay();
 
       // Tworzenie ramki boiska
       const addBnd = (x1,y1, x2,y2) => {
@@ -433,11 +498,11 @@
       // 1. Gol
       // GÓRA (Y=-1) = bramka CZERWONYCH -> punkt dla Niebieskich (atak do góry)
       if (currentPos.y === -1) {
-        endGame(1, "Niebiescy trafili do górnej (czerwonej) bramki!"); return;
+        endGame(1, ""); return;
       }
       // DÓŁ (Y=11) = bramka NIEBIESKICH -> punkt dla Czerwonych (atak w dół)
       if (currentPos.y === 11) {
-        endGame(2, "Czerwoni trafili do dolnej (niebieskiej) bramki!"); return;
+        endGame(2, ""); return;
       }
 
       // 2. Brak ruchów (Blok / Samobój)
@@ -468,10 +533,30 @@
     function endGame(winnerPlayer, reason) {
       isGameOver = true;
       isAITurn = false;
-      let winnerColor = winnerPlayer === 1 ? 'Niebiescy' : 'Czerwoni';
-      statusText.innerHTML = `🎉 Wygrywają ${winnerColor}! (${reason})`;
-      turnIndicator.style.backgroundColor = winnerPlayer === 1 ? 'var(--p1-color)' : 'var(--p2-color)';
+      const winnerColor = winnerPlayer === 1 ? 'Niebiescy' : 'Czerwoni';
+      const colorVar = winnerPlayer === 1 ? 'var(--p1-color)' : 'var(--p2-color)';
+      const colorHex = winnerPlayer === 1 ? P1_COLOR : P2_COLOR;
+      // Wynik na planszy (nakładka), nie w belce
+      winTitle.textContent = `🎉 Wygrywają ${winnerColor}!`;
+      winTitle.style.color = colorHex;
+      if (reason) {
+        winReason.textContent = reason;
+        winReason.style.display = '';
+      } else {
+        winReason.textContent = '';
+        winReason.style.display = 'none';
+      }
+      winCard.style.borderColor = colorHex;
+      winCard.style.boxShadow = `0 0 30px ${colorHex}`;
+      winOverlay.classList.remove('hidden');
+      // Belka wraca do neutralnej
+      statusText.innerText = '🏁 Koniec meczu';
+      turnIndicator.style.backgroundColor = colorVar;
       draw();
+    }
+
+    function hideWinOverlay() {
+      winOverlay.classList.add('hidden');
     }
 
     // --- COFANIE RUCHU ---
@@ -486,6 +571,7 @@
       isAITurn = false;
       aiBatchActive = false;
       hoverPos = null;
+      hideWinOverlay();
       updateStatus();
       draw();
     }
@@ -637,9 +723,9 @@
       ctx.textBaseline = 'middle';
       ctx.font = 'bold 13px Segoe UI, sans-serif';
       ctx.fillStyle = TOP_GOAL_COLOR;
-      ctx.fillText('⬆ BRAMKA CZERWONYCH (atakuje 🔵)', px(4), py(-1) - 14);
+      ctx.fillText('BRAMKA CZERWONYCH', px(4), py(-1) - 14);
       ctx.fillStyle = BOTTOM_GOAL_COLOR;
-      ctx.fillText('⬇ BRAMKA NIEBIESKICH (atakuje 🔴)', px(4), py(11) + 15);
+      ctx.fillText('BRAMKA NIEBIESKICH', px(4), py(11) + 15);
 
       // Strzałki kierunku ataku na marginesach (poza kropkami, żeby ich nie zasłaniać)
       ctx.font = 'bold 11px Segoe UI, sans-serif';
@@ -957,6 +1043,8 @@
     diffSelect.addEventListener('change', initGame);
     restartBtn.addEventListener('click', initGame);
     undoBtn.addEventListener('click', undoMove);
+    document.getElementById('rematch-btn').addEventListener('click', initGame);
+    document.getElementById('win-undo-btn').addEventListener('click', undoMove);
     crossingCheckbox.addEventListener('change', () => {
       allowCrossing = crossingCheckbox.checked;
       // Bez restartu meczu — zasada obowiązuje od następnego ruchu (także dla AI)
