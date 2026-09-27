@@ -1,1 +1,349 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Zegar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F6F3EC; --panel:#FFFFFF; --text:#262421; --muted:#78736B;
+  --accent:#D98A3D; --accent-soft:rgba(217,138,61,0.16); --border:rgba(38,36,33,0.09);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#10131A; --panel:#1A1E29; --text:#EDEBE6; --muted:#8E93A3;
+    --accent:#7FA8D9; --accent-soft:rgba(127,168,217,0.18); --border:rgba(237,235,230,0.09);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10131A; --panel:#1A1E29; --text:#EDEBE6; --muted:#8E93A3;
+  --accent:#7FA8D9; --accent-soft:rgba(127,168,217,0.18); --border:rgba(237,235,230,0.09);
+}
+*{box-sizing:border-box;}
+html,body{height:100%;}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:'Outfit',system-ui,-apple-system,sans-serif;
+  transition:background .5s ease, color .5s ease;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  overflow-x:hidden;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);}
+button{font-family:inherit;}
+:focus-visible{outline:2px solid var(--accent); outline-offset:3px;}
+
+.theme-toggle{
+  position:fixed; top:calc(18px + env(safe-area-inset-top,0px)); right:18px;
+  width:44px; height:44px; border-radius:50%; border:1px solid var(--border);
+  background:var(--panel); color:var(--text); display:flex; align-items:center; justify-content:center;
+  cursor:pointer; z-index:10;
+}
+.theme-toggle svg{width:19px; height:19px; stroke:currentColor; fill:none; stroke-width:1.8;}
+.icon-moon{display:none;}
+[data-theme="dark"] .icon-sun{display:none;}
+[data-theme="dark"] .icon-moon{display:block;}
+
+.wrap{
+  min-height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:36px 20px; gap:44px; position:relative;
+}
+.wrap::before{
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background:radial-gradient(circle at 50% 36%, var(--accent-soft), transparent 62%);
+}
+
+.nav{
+  display:flex; gap:4px; background:var(--panel); border:1px solid var(--border);
+  padding:5px; border-radius:999px; position:relative; z-index:1;
+}
+.nav button{
+  border:none; background:transparent; color:var(--muted); font-size:.95rem;
+  padding:9px 20px; border-radius:999px; cursor:pointer; transition:background .25s, color .25s;
+}
+.nav button.active{background:var(--accent); color:var(--bg);}
+
+.view{display:none; flex-direction:column; align-items:center; gap:30px; z-index:1; width:100%;}
+.view.active{display:flex; animation:rise .35s ease;}
+@keyframes rise{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);}}
+
+.clock-time{font-size:clamp(3rem,15vw,7.5rem); font-weight:600; font-variant-numeric:tabular-nums; line-height:1;}
+.clock-date{font-size:clamp(1rem,3vw,1.25rem); color:var(--muted); font-weight:400;}
+
+.big-display{font-size:clamp(2.75rem,13vw,6rem); font-weight:600; font-variant-numeric:tabular-nums; line-height:1; transition:color .2s;}
+.big-display.ringing{animation:pulse 1s ease-in-out infinite; color:var(--accent);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+
+.adjust-row{display:flex; align-items:center; gap:32px;}
+.adjust-group{display:flex; flex-direction:column; align-items:center; gap:8px;}
+.adjust-group span{font-size:.8rem; color:var(--muted);}
+.step-btns{display:flex; gap:10px;}
+.step-btn{
+  width:38px; height:38px; border-radius:50%; border:1px solid var(--border);
+  background:var(--panel); color:var(--text); font-size:1.15rem; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+}
+.step-btn:disabled{opacity:.3; cursor:default;}
+
+.controls{display:flex; gap:14px;}
+.btn{
+  padding:12px 30px; border-radius:999px; border:1px solid var(--border);
+  background:var(--panel); color:var(--text); font-size:1rem; cursor:pointer; transition:transform .15s;
+}
+.btn:active{transform:scale(.96);}
+.btn.primary{background:var(--accent); color:var(--bg); border-color:transparent;}
+
+.laps{list-style:none; padding:0; margin:0; width:100%; max-width:280px; display:flex; flex-direction:column; gap:6px; max-height:170px; overflow-y:auto;}
+.laps li{display:flex; justify-content:space-between; padding:8px 14px; background:var(--panel); border:1px solid var(--border); border-radius:12px; font-size:.88rem; font-variant-numeric:tabular-nums;}
+.laps li span:first-child{color:var(--muted);}
+
+.wake-status{font-size:.78rem; color:var(--muted); display:flex; align-items:center; gap:6px; z-index:1;}
+.wake-status.on::before{content:''; width:6px; height:6px; border-radius:50%; background:var(--accent); display:inline-block;}
+
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important;}
+}
+</style>
+</head>
+<body>
+
+<button id="themeToggle" class="theme-toggle" aria-label="Przełącz tryb dzień/noc">
+  <svg class="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v3M12 18.5v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2.5 12h3M18.5 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
+  <svg class="icon-moon" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.6 6.6 0 0 0 10.5 10.5z"/></svg>
+</button>
+
+<div class="wrap">
+  <nav class="nav">
+    <button class="active" data-view="clock">Zegar</button>
+    <button data-view="timer">Minutnik</button>
+    <button data-view="stopwatch">Stoper</button>
+  </nav>
+
+  <section id="clock" class="view active">
+    <div class="clock-time" id="clockTime">00:00:00</div>
+    <div class="clock-date" id="clockDate"></div>
+  </section>
+
+  <section id="timer" class="view">
+    <div class="big-display" id="timerDisplay">05:00</div>
+    <div class="adjust-row">
+      <div class="adjust-group">
+        <div class="step-btns">
+          <button class="step-btn" id="minMinus" aria-label="Minus minuta">−</button>
+          <button class="step-btn" id="minPlus" aria-label="Plus minuta">+</button>
+        </div>
+        <span>minuty</span>
+      </div>
+      <div class="adjust-group">
+        <div class="step-btns">
+          <button class="step-btn" id="secMinus" aria-label="Minus 10 sekund">−</button>
+          <button class="step-btn" id="secPlus" aria-label="Plus 10 sekund">+</button>
+        </div>
+        <span>sekundy</span>
+      </div>
+    </div>
+    <div class="controls">
+      <button class="btn primary" id="timerStart">Start</button>
+      <button class="btn" id="timerReset">Resetuj</button>
+    </div>
+  </section>
+
+  <section id="stopwatch" class="view">
+    <div class="big-display" id="swDisplay">00:00.00</div>
+    <div class="controls">
+      <button class="btn primary" id="swStart">Start</button>
+      <button class="btn" id="swLap">Okrążenie</button>
+      <button class="btn" id="swReset">Resetuj</button>
+    </div>
+    <ul class="laps" id="swLaps"></ul>
+  </section>
+
+  <div class="wake-status" id="wakeStatus">Sprawdzanie ekranu…</div>
+</div>
+
+<script>
+const pad = n => n.toString().padStart(2,'0');
+const capFirst = s => s.charAt(0).toUpperCase() + s.slice(1);
+
+/* --- motyw --- */
+function applyTheme(t){ document.documentElement.setAttribute('data-theme', t); }
+let saved = null;
+try{ saved = localStorage.getItem('zegar-theme'); }catch(e){}
+applyTheme(saved || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+document.getElementById('themeToggle').addEventListener('click', () => {
+  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+  try{ localStorage.setItem('zegar-theme', next); }catch(e){}
+});
+
+/* --- nawigacja --- */
+const navBtns = document.querySelectorAll('.nav button');
+navBtns.forEach(btn => btn.addEventListener('click', () => {
+  navBtns.forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(btn.dataset.view).classList.add('active');
+}));
+
+/* --- zegar --- */
+function updateClock(){
+  const now = new Date();
+  document.getElementById('clockTime').textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+  document.getElementById('clockDate').textContent = capFirst(now.toLocaleDateString('pl-PL',{weekday:'long', day:'numeric', month:'long'}));
+}
+updateClock(); setInterval(updateClock, 1000);
+
+/* --- dźwięk --- */
+function beep(times=3){
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if(!Ctx) return;
+  const ctx = new Ctx();
+  for(let i=0;i<times;i++){
+    setTimeout(() => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type='sine'; o.frequency.value=880;
+      g.gain.setValueAtTime(0.001, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.28, ctx.currentTime+0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.45);
+      o.start(); o.stop(ctx.currentTime+0.45);
+    }, i*550);
+  }
+  if(navigator.vibrate) navigator.vibrate([200,100,200]);
+}
+
+/* --- minutnik --- */
+let timerTotal = 300, timerRemaining = 300, timerInterval = null, timerRunning = false;
+const timerDisplay = document.getElementById('timerDisplay');
+const timerStartBtn = document.getElementById('timerStart');
+const stepBtns = [document.getElementById('minMinus'),document.getElementById('minPlus'),document.getElementById('secMinus'),document.getElementById('secPlus')];
+
+function renderTimer(){
+  const m = Math.floor(timerRemaining/60), s = timerRemaining%60;
+  timerDisplay.textContent = `${pad(m)}:${pad(s)}`;
+}
+function adjustTimer(delta){
+  if(timerRunning) return;
+  timerTotal = Math.max(0, Math.min(99*60+59, timerTotal+delta));
+  timerRemaining = timerTotal;
+  renderTimer();
+}
+document.getElementById('minMinus').addEventListener('click', () => adjustTimer(-60));
+document.getElementById('minPlus').addEventListener('click', () => adjustTimer(60));
+document.getElementById('secMinus').addEventListener('click', () => adjustTimer(-10));
+document.getElementById('secPlus').addEventListener('click', () => adjustTimer(10));
+
+function timerFinish(){
+  clearInterval(timerInterval); timerRunning = false;
+  timerStartBtn.textContent = 'Start';
+  stepBtns.forEach(b => b.disabled = false);
+  timerDisplay.classList.add('ringing');
+  beep(3);
+  setTimeout(() => {
+    timerDisplay.classList.remove('ringing');
+    timerRemaining = timerTotal;
+    renderTimer();
+  }, 3500);
+}
+function toggleTimer(){
+  if(timerRunning){
+    clearInterval(timerInterval); timerRunning = false;
+    timerStartBtn.textContent = 'Start';
+    stepBtns.forEach(b => b.disabled = false);
+  } else {
+    if(timerRemaining <= 0) timerRemaining = timerTotal;
+    if(timerRemaining <= 0) return;
+    timerRunning = true;
+    timerStartBtn.textContent = 'Pauza';
+    stepBtns.forEach(b => b.disabled = true);
+    timerInterval = setInterval(() => {
+      timerRemaining--;
+      renderTimer();
+      if(timerRemaining <= 0) timerFinish();
+    }, 1000);
+  }
+}
+timerStartBtn.addEventListener('click', toggleTimer);
+document.getElementById('timerReset').addEventListener('click', () => {
+  clearInterval(timerInterval); timerRunning = false;
+  timerStartBtn.textContent = 'Start';
+  stepBtns.forEach(b => b.disabled = false);
+  timerDisplay.classList.remove('ringing');
+  timerRemaining = timerTotal;
+  renderTimer();
+});
+renderTimer();
+
+/* --- stoper --- */
+let swElapsed = 0, swStartTime = null, swRunning = false, swRAF = null, swLaps = [];
+const swDisplay = document.getElementById('swDisplay');
+const swStartBtn = document.getElementById('swStart');
+
+function formatSW(ms){
+  const totalCs = Math.floor(ms/10);
+  const cs = totalCs%100, totalSec = Math.floor(totalCs/100);
+  return `${pad(Math.floor(totalSec/60))}:${pad(totalSec%60)}.${pad(cs)}`;
+}
+function swTick(){
+  swDisplay.textContent = formatSW(swElapsed + (Date.now()-swStartTime));
+  swRAF = requestAnimationFrame(swTick);
+}
+function toggleSW(){
+  if(swRunning){
+    swElapsed += Date.now()-swStartTime;
+    swRunning = false;
+    cancelAnimationFrame(swRAF);
+    swStartBtn.textContent = 'Start';
+  } else {
+    swStartTime = Date.now();
+    swRunning = true;
+    swStartBtn.textContent = 'Pauza';
+    swTick();
+  }
+}
+function renderLaps(){
+  document.getElementById('swLaps').innerHTML = swLaps.map((t,i) =>
+    `<li><span>Okrążenie ${swLaps.length-i}</span><span>${formatSW(t)}</span></li>`).join('');
+}
+swStartBtn.addEventListener('click', toggleSW);
+document.getElementById('swLap').addEventListener('click', () => {
+  if(!swRunning) return;
+  swLaps.unshift(swElapsed + (Date.now()-swStartTime));
+  renderLaps();
+});
+document.getElementById('swReset').addEventListener('click', () => {
+  cancelAnimationFrame(swRAF);
+  swRunning = false; swElapsed = 0; swStartTime = null; swLaps = [];
+  swStartBtn.textContent = 'Start';
+  swDisplay.textContent = '00:00.00';
+  renderLaps();
+});
+
+/* --- blokada wygaszania ekranu --- */
+let wakeLock = null;
+const wakeStatus = document.getElementById('wakeStatus');
+function setWakeStatus(active, unsupported){
+  if(unsupported){ wakeStatus.textContent = 'Tryb czuwania ekranu niedostępny w tej przeglądarce'; wakeStatus.classList.remove('on'); return; }
+  wakeStatus.textContent = active ? 'Ekran pozostanie włączony' : 'Ekran może się wygaszać';
+  wakeStatus.classList.toggle('on', !!active);
+}
+async function requestWakeLock(){
+  try{
+    if('wakeLock' in navigator){
+      wakeLock = await navigator.wakeLock.request('screen');
+      setWakeStatus(true);
+      wakeLock.addEventListener('release', () => setWakeStatus(false));
+    } else {
+      setWakeStatus(false, true);
+    }
+  }catch(e){ setWakeStatus(false); }
+}
+document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') requestWakeLock(); });
+requestWakeLock();
+</script>
+</body>
+</html>
 
