@@ -31,6 +31,7 @@ body{
   transition:background .4s ease, color .4s ease;
   padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
   overflow-x:hidden;
+  touch-action:manipulation;
 }
 html{scroll-padding-top:env(safe-area-inset-top,0px);}
 button{font-family:inherit;}
@@ -635,6 +636,43 @@ async function requestWakeLock(){
 }
 document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') requestWakeLock(); });
 requestWakeLock();
+
+/* --- pełny ekran na podwójne kliknięcie / stuknięcie --- */
+let lastFSToggle = 0;
+function toggleFullscreen(){
+  lastFSToggle = Date.now();
+  try{
+    if(document.fullscreenElement || document.webkitFullscreenElement){
+      if(document.exitFullscreen) return document.exitFullscreen().catch(()=>{});
+      if(document.webkitExitFullscreen) return document.webkitExitFullscreen();
+    } else {
+      const el = document.documentElement;
+      if(el.requestFullscreen) return el.requestFullscreen().catch(()=>{});
+      if(el.webkitRequestFullscreen) return el.webkitRequestFullscreen();
+    }
+  }catch(e){}
+}
+function isInteractiveTarget(t){
+  return t && t.closest && t.closest('button, input, a, select, textarea, .settings-panel, .top-controls');
+}
+document.addEventListener('dblclick', e => {
+  if(isInteractiveTarget(e.target)) return;
+  if(Date.now() - lastFSToggle < 600) return;
+  e.preventDefault();
+  toggleFullscreen();
+});
+let lastTapTime = 0;
+document.addEventListener('touchend', e => {
+  if(isInteractiveTarget(e.target)) return;
+  const now = Date.now();
+  if(now - lastTapTime < 350){
+    lastTapTime = 0;
+    e.preventDefault();
+    toggleFullscreen();
+  } else {
+    lastTapTime = now;
+  }
+}, {passive:false});
 </script>
 </body>
 </html>
