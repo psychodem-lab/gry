@@ -40,7 +40,7 @@ button{font-family:inherit;}
 #starfield{position:fixed; inset:0; z-index:-1; display:none;}
 
 .top-controls{
-  position:fixed; top:calc(18px + env(safe-area-inset-top,0px)); right:18px;
+  position:fixed; bottom:calc(18px + env(safe-area-inset-bottom,0px)); right:18px;
   display:flex; gap:10px; z-index:12;
 }
 .icon-btn{
@@ -53,11 +53,11 @@ button{font-family:inherit;}
 [data-theme="dark"] .icon-moon{display:block;}
 
 .settings-panel{
-  position:fixed; top:calc(70px + env(safe-area-inset-top,0px)); right:18px; width:250px;
+  position:fixed; bottom:calc(70px + env(safe-area-inset-bottom,0px)); right:18px; width:250px;
   max-height:80vh; overflow-y:auto;
   background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:16px;
   display:flex; flex-direction:column; gap:14px; box-shadow:0 14px 30px rgba(0,0,0,.16); z-index:11;
-  opacity:0; pointer-events:none; transform:translateY(-6px); transition:opacity .2s, transform .2s;
+  opacity:0; pointer-events:none; transform:translateY(6px); transition:opacity .2s, transform .2s;
 }
 .settings-group{display:flex; flex-direction:column; gap:6px;}
 .settings-label{font-size:.72rem; color:var(--muted);}
