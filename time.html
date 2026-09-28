@@ -181,9 +181,7 @@ button{font-family:inherit;}
 .laps li{display:flex; justify-content:space-between; padding:8px 14px; background:var(--panel); border:1px solid var(--border); border-radius:12px; font-size:.88rem; font-variant-numeric:tabular-nums;}
 .laps li span:first-child{color:var(--muted);}
 
-.wake-status{font-size:.78rem; color:var(--muted); display:none; align-items:center; gap:6px; z-index:1;}
-.wake-status.on{display:flex;}
-.wake-status.on::before{content:''; width:6px; height:6px; border-radius:50%; background:var(--accent); display:inline-block;}
+.wake-status{display:none !important;}
 
 @media (prefers-reduced-motion: reduce){
   *{animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important;}
