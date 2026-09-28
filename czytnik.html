@@ -69,7 +69,6 @@ article:active{transform:scale(.99)}
                 <button onclick="loadFeed('polska')" id="btn-polska">Polska</button>
                 <button onclick="loadFeed('sciencedaily')" id="btn-sciencedaily">ScienceDaily</button>
                 <button onclick="loadFeed('cnn')" id="btn-cnn">Świat</button>
-                <button onclick="loadFeed('gazetaru')" id="btn-gazetaru">Ruskie</button>
                 <button onclick="loadFeed('psychologia')" id="btn-psychologia">Psychologia</button>
             </nav>
         </header>
@@ -96,7 +95,14 @@ article:active{transform:scale(.99)}
             'http://feeds.bbci.co.uk/news/rss.xml': 'BBC News',
             'https://news.google.com/rss/search?q=site%3Areuters.com%20when%3A1h&hl=en-US&gl=US&ceid=US%3Aen': 'Reuters',
             'https://www.reutersagency.com/feed/?best-topics=political-general-news&post_type=best': 'Reuters Agency',
-            'https://www.gazeta.ru/export/rss/first.xml': 'Gazeta.ru',
+            'https://www.aljazeera.com/xml/rss/all.xml': 'Al Jazeera English',
+            'https://www.theguardian.com/world/rss': 'The Guardian World',
+            'https://rss.dw.com/xml/rss-en-world': 'DW World',
+            'https://www.france24.com/en/rss': 'France 24 English',
+            'https://feeds.npr.org/1001/rss.xml': 'NPR News',
+            'https://feeds.skynews.com/feeds/rss/world.xml': 'Sky News World',
+            'https://feeds.feedburner.com/euronews/en/news': 'Euronews',
+            'https://news.google.com/rss/search?q=site%3Acnn.com%20when%3A7d&hl=en-US&gl=US&ceid=US%3Aen': 'CNN',
             'https://www.polsatnews.pl/rss/wszystkie.xml': 'Polsat News',
             'https://news.google.com/rss/search?q=kalendarz+swiat+polska&hl=pl&gl=PL&ceid=PL:pl': 'Google News',
             'https://rss.dw.com/xml/rss-pl-pol': 'DW Polska',
@@ -142,10 +148,15 @@ article:active{transform:scale(.99)}
             cnn: [
                 'http://feeds.bbci.co.uk/news/rss.xml',
                 'https://news.google.com/rss/search?q=site%3Areuters.com%20when%3A1h&hl=en-US&gl=US&ceid=US%3Aen',
-                'https://www.reutersagency.com/feed/?best-topics=political-general-news&post_type=best'
-            ],
-            gazetaru: [
-                'https://www.gazeta.ru/export/rss/first.xml'
+                'https://www.reutersagency.com/feed/?best-topics=political-general-news&post_type=best',
+                'https://www.aljazeera.com/xml/rss/all.xml',
+                'https://www.theguardian.com/world/rss',
+                'https://rss.dw.com/xml/rss-en-world',
+                'https://www.france24.com/en/rss',
+                'https://feeds.npr.org/1001/rss.xml',
+                'https://feeds.skynews.com/feeds/rss/world.xml',
+                'https://feeds.feedburner.com/euronews/en/news',
+                'https://news.google.com/rss/search?q=site%3Acnn.com%20when%3A7d&hl=en-US&gl=US&ceid=US%3Aen'
             ],
             psychologia: [
                 'https://news.google.com/rss/search?q=psychologia&hl=pl&gl=PL&ceid=PL:pl',
@@ -233,21 +244,6 @@ article:active{transform:scale(.99)}
             else name = 'Dąży do nowiu 🌘';
             return { name, illum, age: Math.round(age * 10) / 10 };
         }
-
-        const przyslowia = [
-            '„Jak we wrześniu krety kopią po nizinach, będzie wietrzno, ale lekka zima.”',
-            '„Kto w lecie nie gromadzi, w zimie głodem marudzi.”',
-            '„Lepszy wróbel w garści niż gołąb na dachu.”',
-            '„Bez pracy nie ma kołaczy.”',
-            '„Cicha woda brzegi rwie.”',
-            '„Gdzie dwóch się bije, tam trzeci korzysta.”',
-            '„Jaka pogoda w dzień, taka i w noc.”',
-            '„Mądry Polak po szkodzie.”',
-            '„Nie chwal dnia przed zachodem słońca.”',
-            '„Prawda w oczy kole.”',
-            '„Rano wstawać, a wieczorem się kłaść — to droga do zdrowia.”',
-            '„Słowo się rzekło, kobyłka u płota.”'
-        ];
 
         const cytaty = [
             { t: '„Miłość nie leży po prostu jak kamień; trzeba ją robić jak chleb — wciąż od nowa, wciąż na nowo.”', a: 'Ursula K. Le Guin' },
@@ -454,7 +450,6 @@ article:active{transform:scale(.99)}
                     const stats = getYearStats(today);
                     const zodiac = getZodiacSign(today.getDate(), today.getMonth() + 1);
                     const moon = getMoonPhase(today);
-                    const przyslowie = przyslowia[dayOfYear % przyslowia.length];
                     const cytat = cytaty[dayOfYear % cytaty.length];
 
                     const widget = document.createElement('div');
@@ -464,8 +459,7 @@ article:active{transform:scale(.99)}
                         <p class="cal-sub">${dayOfYear}. dzień roku &bull; Tydzień ${weekNum} &bull; ${stats.diffDays} dni do końca roku</p>
                         <div class="cal-grid">
                             <div class="cal-box">
-                                <strong>Znak zodiaku:</strong> ${zodiac}<br><br>
-                                <strong>Przysłowie na dziś:</strong><br><em>${przyslowie}</em>
+                                <strong>Znak zodiaku:</strong> ${zodiac}
                             </div>
                             <div class="cal-box">
                                 <strong>Słońce i dzień:</strong><br>
