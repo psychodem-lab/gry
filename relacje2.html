@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spleceni Sercom – Gra dla Par</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-dark: #120914;
+      --bg-card: rgba(35, 18, 38, 0.75);
+      --accent-rose: #e88ca5;
+      --accent-gold: #e2be7d;
+      --accent-fire: #ff6b6b;
+      --accent-deep: #a272ff;
+      --text-light: #fdf8f5;
+      --text-muted: #c7b3c6;
+      --border-glow: rgba(226, 190, 125, 0.3);
+      --card-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: radial-gradient(circle at center, #241128 0%, #0d050e 100%);
+      color: var(--text-light);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Animowane tło */
+    #bg-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Kontener aplikacji */
+    .app-container {
+      width: 100%;
+      max-width: 1100px;
+      padding: 20px;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      justify-content: space-between;
+    }
+
+    /* Nagłówek */
+    header {
+      text-align: center;
+      margin-top: 10px;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.8rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      background: linear-gradient(135deg, var(--accent-rose), var(--accent-gold));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 20px rgba(232, 140, 165, 0.2);
+    }
+
+    p.subtitle {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      margin-top: 5px;
+      font-weight: 300;
+      letter-spacing: 1px;
+    }
+
+    /* Panel graczy i sterowania */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 800px;
+      background: rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-glow);
+      border-radius: 50px;
+      padding: 10px 25px;
+      margin-bottom: 25px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    }
+
+    .turn-indicator {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1rem;
+      font-weight: 500;
+    }
+
+    .active-player-badge {
+      background: linear-gradient(135deg, var(--accent-rose), var(--accent-gold));
+      color: #120914;
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-weight: 600;
+      box-shadow: 0 0 12px rgba(226, 190, 125, 0.4);
+      transition: all 0.3s ease;
+    }
+
+    .controls-top {
+      display: flex;
+      gap: 12px;
+    }
+
+    .icon-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--text-light);
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 1.1rem;
+    }
+
+    .icon-btn:hover {
+      background: var(--accent-rose);
+      color: #120914;
+      transform: translateY(-2px);
+    }
+
+    /* Instrukcja wyboru */
+    .instruction-text {
+      text-align: center;
+      font-size: 1.05rem;
+      color: var(--accent-gold);
+      margin-bottom: 25px;
+      font-weight: 400;
+      letter-spacing: 0.5px;
+      min-height: 28px;
+    }
+
+    /* Sekcja TRIO - 3 Karty */
+    .trio-container {
+      display: flex;
+      gap: 25px;
+      justify-content: center;
+      width: 100%;
+      max-width: 950px;
+      perspective: 1200px;
+      margin-bottom: 25px;
+      flex-wrap: wrap;
+    }
+
+    .card-wrapper {
+      width: 270px;
+      height: 380px;
+      perspective: 1000px;
+      cursor: pointer;
+    }
+
+    .card {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+      border-radius: 20px;
+    }
+
+    .card-wrapper:hover .card:not(.flipped) {
+      transform: translateY(-10px) rotateY(5deg);
+    }
+
+    .card.flipped {
+      transform: rotateY(180deg);
+      cursor: default;
+    }
+
+    .card.disabled {
+      opacity: 0.3;
+      filter: grayscale(0.7);
+      pointer-events: none;
+      transform: scale(0.92);
+    }
+
+    .card-face {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      border-radius: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 30px 20px;
+      box-shadow: var(--card-shadow);
+      border: 1px solid var(--border-glow);
+    }
+
+    /* TYŁ KARTY (Zakryta – widoczny symbol kategorii) */
+    .card-front {
+      background: linear-gradient(145deg, rgba(38, 20, 42, 0.9), rgba(20, 10, 22, 0.95));
+      backdrop-filter: blur(10px);
+      text-align: center;
+    }
+
+    .card-front::before {
+      content: '';
+      position: absolute;
+      top: 12px; left: 12px; right: 12px; bottom: 12px;
+      border: 1px dashed rgba(226, 190, 125, 0.25);
+      border-radius: 12px;
+      pointer-events: none;
+    }
+
+    .category-badge {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      padding: 5px 12px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--accent-gold);
+      border: 1px solid rgba(226, 190, 125, 0.2);
+    }
+
+    .category-icon {
+      font-size: 3.5rem;
+      margin: 15px 0;
+      filter: drop-shadow(0 0 10px rgba(232, 140, 165, 0.4));
+      transition: transform 0.3s ease;
+    }
+
+    .card-wrapper:hover .category-icon {
+      transform: scale(1.15);
+    }
+
+    .category-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--text-light);
+    }
+
+    .pick-prompt {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+    }
+
+    /* PRZÓD KARTY (Odkryta – treść pytania) */
+    .card-back {
+      background: linear-gradient(145deg, rgba(48, 24, 52, 0.95), rgba(28, 14, 30, 0.98));
+      transform: rotateY(180deg);
+      text-align: center;
+      border: 1px solid var(--accent-rose);
+    }
+
+    .question-category {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      color: var(--accent-rose);
+      font-weight: 500;
+    }
+
+    .question-text {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.45rem;
+      line-height: 1.4;
+      color: #ffffff;
+      margin: auto 0;
+      font-weight: 600;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .btn-small {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--text-light);
+      padding: 8px 12px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .btn-small:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Dolny panel akcji */
+    .bottom-actions {
+      margin-top: 10px;
+      margin-bottom: 20px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-rose), #c85a7c);
+      color: #fff;
+      border: none;
+      padding: 14px 38px;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 30px;
+      cursor: pointer;
+      box-shadow: 0 8px 25px rgba(232, 140, 165, 0.35);
+      transition: all 0.3s ease;
+      letter-spacing: 1px;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(232, 140, 165, 0.5);
+      background: linear-gradient(135deg, #f09bb2, var(--accent-rose));
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* Modale */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal {
+      background: linear-gradient(145deg, #28142c, #160a18);
+      border: 1px solid var(--border-glow);
+      border-radius: 24px;
+      padding: 30px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+      transform: translateY(20px);
+      transition: transform 0.3s ease;
+    }
+
+    .modal-overlay.active .modal {
+      transform: translateY(0);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .modal-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.8rem;
+      color: var(--accent-gold);
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .input-group {
+      margin-bottom: 15px;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 5px;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 12px 15px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(0,0,0,0.3);
+      color: #fff;
+      font-size: 1rem;
+      outline: none;
+    }
+
+    .input-group input:focus {
+      border-color: var(--accent-rose);
+    }
+
+    /* Minutnik */
+    .timer-display {
+      font-size: 3.5rem;
+      font-family: 'Cormorant Garamond', serif;
+      text-align: center;
+      color: var(--accent-gold);
+      margin: 20px 0;
+    }
+
+    .timer-controls {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    /* Notatnik / Kapsuła */
+    .capsule-list {
+      max-height: 250px;
+      overflow-y: auto;
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .capsule-item {
+      background: rgba(255, 255, 255, 0.04);
+      border-left: 3px solid var(--accent-rose);
+      padding: 10px 15px;
+      border-radius: 0 10px 10px 0;
+      font-size: 0.9rem;
+    }
+
+    /* Responsywność */
+    @media (max-width: 880px) {
+      .trio-container {
+        flex-direction: column;
+        align-items: center;
+      }
+      .card-wrapper {
+        width: 100%;
+        max-width: 320px;
+        height: 260px;
+      }
+      h1 { font-size: 2.2rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Animowane Tło Świec / Serc -->
+  <canvas id="bg-canvas"></canvas>
+
+  <div class="app-container">
+    
+    <!-- Nagłówek -->
+    <header>
+      <h1>Spleceni Sercom</h1>
+      <p class="subtitle">Odkrywajcie siebie na nowo, karta po karcie</p>
+    </header>
+
+    <!-- Pasek Statusu i Sterowania -->
+    <div class="status-bar">
+      <div class="turn-indicator">
+        <span>Kolej na:</span>
+        <span class="active-player-badge" id="active-player-name">Partner 1</span>
+      </div>
+      <div class="controls-top">
+        <button class="icon-btn" id="audio-btn" title="Muzyka tła (Włącz/Wyłącz)">🎵</button>
+        <button class="icon-btn" id="names-btn" title="Zmień imiona">✏️</button>
+        <button class="icon-btn" id="capsule-btn" title="Kapsuła Wspomnień">📜</button>
+      </div>
+    </div>
+
+    <!-- Zachęta -->
+    <div class="instruction-text" id="instruction-text">
+      Wybierz jedną z 3 kart na podstawie nastroju kategorii:
+    </div>
+
+    <!-- Zestaw 3 Kart (TRIO) -->
+    <div class="trio-container" id="trio-container">
+      <!-- Karta 1 -->
+      <div class="card-wrapper" data-index="0">
+        <div class="card" id="card-0">
+          <div class="card-face card-front">
+            <span class="category-badge" id="badge-0">Kategoria</span>
+            <div class="category-icon" id="icon-0">🌸</div>
+            <div class="category-title" id="cat-title-0">Nazwa Nastroju</div>
+            <div class="pick-prompt">Dotknij, aby odkryć</div>
+          </div>
+          <div class="card-face card-back">
+            <div class="question-category" id="q-cat-0">🌸 Kategoria</div>
+            <div class="question-text" id="q-text-0">Treść pytania pojawi się tutaj...</div>
+            <div class="card-actions">
+              <button class="btn-small save-q-btn" data-card="0">❤️ Zapisz</button>
+              <button class="btn-small open-timer-btn" id="timer-trigger-0" style="display:none;">⏱️ Minutnik</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Karta 2 -->
+      <div class="card-wrapper" data-index="1">
+        <div class="card" id="card-1">
+          <div class="card-face card-front">
+            <span class="category-badge" id="badge-1">Kategoria</span>
+            <div class="category-icon" id="icon-1">💎</div>
+            <div class="category-title" id="cat-title-1">Nazwa Nastroju</div>
+            <div class="pick-prompt">Dotknij, aby odkryć</div>
+          </div>
+          <div class="card-face card-back">
+            <div class="question-category" id="q-cat-1">💎 Kategoria</div>
+            <div class="question-text" id="q-text-1">Treść pytania pojawi się tutaj...</div>
+            <div class="card-actions">
+              <button class="btn-small save-q-btn" data-card="1">❤️ Zapisz</button>
+              <button class="btn-small open-timer-btn" id="timer-trigger-1" style="display:none;">⏱️ Minutnik</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Karta 3 -->
+      <div class="card-wrapper" data-index="2">
+        <div class="card" id="card-2">
+          <div class="card-face card-front">
+            <span class="category-badge" id="badge-2">Kategoria</span>
+            <div class="category-icon" id="icon-2">🔥</div>
+            <div class="category-title" id="cat-title-2">Nazwa Nastroju</div>
+            <div class="pick-prompt">Dotknij, aby odkryć</div>
+          </div>
+          <div class="card-face card-back">
+            <div class="question-category" id="q-cat-2">🔥 Kategoria</div>
+            <div class="question-text" id="q-text-2">Treść pytania pojawi się tutaj...</div>
+            <div class="card-actions">
+              <button class="btn-small save-q-btn" data-card="2">❤️ Zapisz</button>
+              <button class="btn-small open-timer-btn" id="timer-trigger-2" style="display:none;">⏱️ Minutnik</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Przycisk Następnej Tury -->
+    <div class="bottom-actions">
+      <button class="btn-primary" id="next-turn-btn" disabled>Następna Tura ➔</button>
+    </div>
+
+  </div>
+
+  <!-- MODAL: Ustawienia Imion -->
+  <div class="modal-overlay" id="names-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Wasze Imiona</div>
+        <button class="close-btn" class="modal-close">&times;</button>
+      </div>
+      <div class="input-group">
+        <label>Osoba 1:</label>
+        <input type="text" id="p1-input" value="Partner 1">
+      </div>
+      <div class="input-group">
+        <label>Osoba 2:</label>
+        <input type="text" id="p2-input" value="Partner 2">
+      </div>
+      <button class="btn-primary" id="save-names-btn" style="width:100%; margin-top:10px;">Zapisz i Graj</button>
+    </div>
+  </div>
+
+  <!-- MODAL: Kapsuła Wspomnień -->
+  <div class="modal-overlay" id="capsule-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Kapsuła Bliskości</div>
+        <button class="close-btn" class="modal-close">&times;</button>
+      </div>
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:15px;">
+        Zapisane pytania z dzisiejszego wieczoru:
+      </p>
+      <div class="capsule-list" id="capsule-list">
+        <div style="text-align:center; color:var(--text-muted); padding:20px;">
+          Nie zapisano jeszcze żadnych pytań.
+        </div>
+      </div>
+      <button class="btn-primary" id="copy-capsule-btn" style="width:100%;">Kopiuj Wspomnienia 📋</button>
+    </div>
+  </div>
+
+  <!-- MODAL: Minutnik Bliskości -->
+  <div class="modal-overlay" id="timer-modal">
+    <div class="modal" style="text-align: center;">
+      <div class="modal-header">
+        <div class="modal-title" style="margin: 0 auto;">Chwila Obecności</div>
+      </div>
+      <p style="font-size:0.9rem; color:var(--text-muted);" id="timer-desc">
+        Zamknijcie oczy lub spójrzcie sobie głęboko w oczy...
+      </p>
+      <div class="timer-display" id="timer-display">01:00</div>
+      <div class="timer-controls">
+        <button class="btn-primary" id="start-timer-btn">Start</button>
+        <button class="btn-small" id="close-timer-btn" style="padding: 12px 20px;">Zamknij</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* BAZA PYTAŃ PODZIELONA NA NASTROJE/KATEGORIE */
+    const QUESTIONS_DB = [
+      // 🌸 ISKRA WSPOMNIEŃ
+      { cat: 'Iskra Wspomnień', icon: '🌸', text: 'Co dokładnie pomyślałeś/aś o mnie podczas naszego pierwszego spotkania?' },
+      { cat: 'Iskra Wspomnień', icon: '🌸', text: 'Jaki wspólny moment z ostatniego roku wywołuje u Ciebie największy uśmiech?' },
+      { cat: 'Iskra Wspomnień', icon: '🌸', text: 'Opisz chwilę, w której poczułeś/aś, że nasza relacja staje się naprawdę wyjątkowa.' },
+      { cat: 'Iskra Wspomnień', icon: '🌸', text: 'Jaką naszą wspólną zabawną sytuację pamiętasz najbardziej?' },
+      { cat: 'Iskra Wspomnień', icon: '🌸', text: 'Gdybyś miał/a wybrać jedną piosenkę, która kojarzy Ci się z naszą miłością, co by to było?' },
+
+      // 💎 GŁĘBOKIE SERCE
+      { cat: 'Głębokie Serce', icon: '💎', text: 'W czym czujesz się przeze mnie najbardziej doceniony/a i dostrzeżony/a?' },
+      { cat: 'Głębokie Serce', icon: '💎', text: 'Jakiej mojej cechy lub wsparcia najbardziej potrzebujesz, gdy przeżywasz trudny dzień?' },
+      { cat: 'Głębokie Serce', icon: '💎', text: 'Jaka reakcja z mojej strony sprawia, że czujesz się przy mnie w pełni bezpiecznie?' },
+      { cat: 'Głębokie Serce', icon: '💎', text: 'Czego nauczyłeś/aś się o sobie dzięki naszej relacji?' },
+      { cat: 'Głębokie Serce', icon: '💎', text: 'Za co chciałbyś/chciałabyś mi dzisiaj z głębi serca podziękować?' },
+
+      // 🔥 OGIEŃ I NAMIĘTNOŚĆ
+      { cat: 'Ogień i Namiętność', icon: '🔥', text: 'Jaki gest lub dotyk z mojej strony najszybciej przyprawia Cię o szybsze bicie serca?' },
+      { cat: 'Ogień i Namiętność', icon: '🔥', text: 'Opisz swój wymarzony, nieprzerwanie romantyczny wieczór tylko we dwójkę.' },
+      { cat: 'Ogień i Namiętność', icon: '🔥', text: 'W jakiej stylizacji lub wydaniu uważasz mnie za najbardziej pociągającego/ą?' },
+      { cat: 'Ogień i Namiętność', icon: '🔥', text: 'Jaki komplement z mojej strony sprawia Ci największą przyjemność?' },
+      { cat: 'Ogień i Namiętność', icon: '🔥', text: 'Szepnij mi teraz na ucho jedną miłą lub zmysłową rzecz, o której dziś pomyślałeś/aś.' },
+
+      // 🌟 WSPÓLNE MARZENIA
+      { cat: 'Wspólne Marzenia', icon: '🌟', text: 'Gdybyśmy mogli spakować się i wyjechać jutro w dowolne miejsce na świecie, dokąd byśmy pojechali?' },
+      { cat: 'Wspólne Marzenia', icon: '🌟', text: 'Jeden mały cel lub rytuał, który chciałbyś/chciałabyś wprowadzić do naszego wspólnego życia w tym roku?' },
+      { cat: 'Wspólne Marzenia', icon: '🌟', text: 'Jak wyobrażasz sobie nasz idealny leniwy poranek za 5 lat?' },
+      { cat: 'Wspólne Marzenia', icon: '🌟', text: 'O jakiej nowej wspólnej przygodzie lub pasji potajemnie marzysz?' },
+
+      // ⏱️ CHWILA BLISKOŚCI (Ćwiczenia)
+      { cat: 'Chwila Bliskości', icon: '⏱️', text: 'Spójrzcie sobie prosto w oczy bez słowa przez 60 sekund. Pozwólcie sobie na bliskość.', isTimer: true, duration: 60 },
+      { cat: 'Chwila Bliskości', icon: '⏱️', text: 'Przytulcie się mocno i wyrównajcie swój oddech przez pełne 90 sekund.', isTimer: true, duration: 90 },
+      { cat: 'Chwila Bliskości', icon: '⏱️', text: 'Zróbcie sobie nawzajem krótki, 2-minutowy masaż dłoni lub barków bez pośpiechu.', isTimer: true, duration: 120 },
+
+
+      // --- Uzupełnione z relacje.html (poprzednia wersja) ---
+
+      // 🌸 ISKRA WSPOMNIEŃ — uzupełnienie z Poziom 1 (25),
+      { cat: 'Iskra Wspomnień', icon: '🌸', text: 'Jakie było Twoje pierwsze wrażenie, kiedy spotkaliśmy się po raz pierwszy? Co poczułeś/aś w pierwszym ułamku sekundy?' },
+      { cat: 'Iskra Wspomnień', icon: '🌸', text: 'Gdyby nasz związek był gatunkiem filmowym lub piosenką, jaki by to był styl?' },
+      { cat: 'Iskra Wspomnień', icon: '🌸', text: 'Jaki mój nawyk lub gest uważasz za najbardziej uroczy, choć rzadko o tym mówisz?' },
+      { cat: 'Iskra Wspomnień', icon: '🌸', text: 'Jaki był Twój ulubiony wspólny wyjazd lub randka w całym naszym życiu i dlaczego?' },
+      { cat: 'Iskra Wspomnień', icon: '🌸', text: 'Czym zaskoczyłem/am Cię najbardziej od kiedy się znamy?' },
+      { cat: 'Iskra Wspomnień', icon: '🌸', text: 'Gdybyś mógł/mogła odtworzyć jeden dowolny dzień z naszej przeszłości, który dzień by to był?' },
+      { cat: 'Iskra Wspomnień', icon: '🌸', text: 'Jaka piosenka najbardziej kojarzy Ci się ze mną lub z początkiem naszej miłości?' },
+      { cat: 'Iskra Wspomnień', icon: '🌸', text: 'Jaki był najśmieszniejszy moment, który wspólnie przeżyliśmy i do dziś wywołuje u Ciebie uśmiech?' },
+      { cat: 'Iskra Wspomnień', icon: '🌸', text: 'Jakie trzy słowa najlepiej opisują atmosferę naszego związku?' },
+      { cat: 'Iskra Wspomnień', icon: '🌸', text: 'Kiedy po raz pierwszy pomyślałeś/aś: \'To jest ktoś wyjątkowy\'?' },
+      { cat: 'Iskra Wspomnień', icon: '🌸', text: 'Jaki mały drobiazg, który robię dla Ciebie w ciągu dnia, sprawia Ci największą radość?' },
+      { cat: 'Iskra Wspomnień', icon: '🌸', text: 'Gdybyśmy mieli jutro wyruszyć w niespodziewaną podróż tylko we dwoje, dokąd chciałbyś/chciałabyś pojechać?' },
+      { cat: 'Iskra Wspomnień', icon: '🌸', text: 'Co w moim wyglądzie lub sposobie bycia przyciągnęło Twoją uwagę w pierwszej kolejności?' },
+      { cat: 'Iskra Wspomnień', icon: '🌸', text: 'Jaka wspólna tradycja, którą stworzyliśmy, jest dla Ciebie najbardziej cenna?' },
+      { cat: 'Iskra Wspomnień', icon: '🌸', text: 'Jaki komplement z mojej strony pamiętasz do dzisiaj?' },
+      { cat: 'Iskra Wspomnień', icon: '🌸', text: 'Gdybyś miał/a opisać mnie komuś, kto mnie w ogóle nie zna, co powiedziałbyś/powiedziałabyś na samym początku?' },
+      { cat: 'Iskra Wspomnień', icon: '🌸', text: 'Jaka była najprzyjemniejsza niespodzianka, jaką kiedykolwiek odemnie otrzymałeś/aś?' },
+      { cat: 'Iskra Wspomnień', icon: '🌸', text: 'W czym jesteśmy do siebie najbardziej podobni, a w czym najbardziej się różnimy?' },
+      { cat: 'Iskra Wspomnień', icon: '🌸', text: 'Co najbardziej lubisz robić ze mną w leniwą niedzielę?' },
+      { cat: 'Iskra Wspomnień', icon: '🌸', text: 'Jakie jest Twoje ulubione zdjęcie z nami dwojgiem i jaka wiąże się z nim historia?' },
+      { cat: 'Iskra Wspomnień', icon: '🌸', text: 'Jaki był Twój ulubiony wspólny posiłek lub kolacja przy świecach?' },
+      { cat: 'Iskra Wspomnień', icon: '🌸', text: 'Co sprawia, że czujesz się ze mną w pełni swobodnie i bezpiecznie?' },
+      { cat: 'Iskra Wspomnień', icon: '🌸', text: 'Gdybyś mógł/mogła nauczyć się ze mną jakiejś nowej umiejętności (np. tańca, języka, gotowania), co by to było?' },
+      { cat: 'Iskra Wspomnień', icon: '🌸', text: 'Jakie wspólne marzenie z początków naszego związku udało nam się już spełnić?' },
+      { cat: 'Iskra Wspomnień', icon: '🌸', text: 'Jaki mój uśmiech lub spojrzenie pamiętasz najbardziej ze wspólnych chwil?' },
+
+      // 💎 GŁĘBOKIE SERCE — uzupełnienie z Poziom 2 (25),
+      { cat: 'Głębokie Serce', icon: '💎', text: 'W jakich chwilach czujesz się przeze mnie najbardziej kochany/a i doceniany/a?' },
+      { cat: 'Głębokie Serce', icon: '💎', text: 'Za jaką rzadko dostrzeganą rzecz jesteś mi dzisiaj głęboko wdzięczny/a?' },
+      { cat: 'Głębokie Serce', icon: '💎', text: 'W czym według Ciebie staliśmy się silniejsi jako para przez ostatnie miesiące?' },
+      { cat: 'Głębokie Serce', icon: '💎', text: 'Jaka jest Twoja największa obawa w głębi serca, którą chciałbyś/chciałabyś się dzisiaj ze mną podzielić?' },
+      { cat: 'Głębokie Serce', icon: '💎', text: 'Co mogę zrobić w trudnych momentach, abyś poczuł/a, że jestem dla Ciebie największym oparciem?' },
+      { cat: 'Głębokie Serce', icon: '💎', text: 'Co jest czymś, o czym marzysz dla naszej wspólnej przyszłości, ale rzadko wymawiasz to na głos?' },
+      { cat: 'Głębokie Serce', icon: '💎', text: 'Czy jest jakaś chwila w naszym życiu, w której czułeś/aś się ze mną zraniony/a, a o której chciałbyś/chciałabyś porozmawiać z czułością i zrozumieniem?' },
+      { cat: 'Głębokie Serce', icon: '💎', text: 'Jakie nawyki lub przekonania z przeszłości udało Ci się przełamać dzięki naszej relacji?' },
+      { cat: 'Głębokie Serce', icon: '💎', text: 'Co w moim wnętrzu lub charakterze podziwiasz najbardziej?' },
+      { cat: 'Głębokie Serce', icon: '💎', text: 'W jaki sposób najłatwiej okazuję Ci miłość i czy jest to zgodne z Twoim głównym językiem miłości?' },
+      { cat: 'Głębokie Serce', icon: '💎', text: 'Kiedy w ostatnim czasie poczułeś/aś ze mną głęboką jedność duchową i emocjonalną?' },
+      { cat: 'Głębokie Serce', icon: '💎', text: 'Jakie słowa wsparcia odemnie znaczyły dla Ciebie najwięcej w trudniejszym okresie?' },
+      { cat: 'Głębokie Serce', icon: '💎', text: 'Czego najbardziej nauczyłeś/aś się o sobie samym/samej będąc ze mną w związku?' },
+      { cat: 'Głębokie Serce', icon: '💎', text: 'Jak widzisz nasz dom i nasze wspólne życie za 5 lat?' },
+      { cat: 'Głębokie Serce', icon: '💎', text: 'Co sprawia, że czujesz, iż nasza relacja jest wyjątkowa na tle całego świata?' },
+      { cat: 'Głębokie Serce', icon: '💎', text: 'Jaka jest Twoja ulubiona cecha mojego serca?' },
+      { cat: 'Głębokie Serce', icon: '💎', text: 'W jaki sposób chciałbyś/chciałabyś, abyśmy okazywali sobie jeszcze więcej czułości na co dzień?' },
+      { cat: 'Głębokie Serce', icon: '💎', text: 'O czym myślisz, kiedy tęsknisz za mną w ciągu dnia?' },
+      { cat: 'Głębokie Serce', icon: '💎', text: 'Co jest dla Ciebie najważniejszym filarem zaufania w naszej relacji?' },
+      { cat: 'Głębokie Serce', icon: '💎', text: 'Jakie przemyślenie na temat miłości zmieniło się u Ciebie od kiedy jesteśmy razem?' },
+      { cat: 'Głębokie Serce', icon: '💎', text: 'Gdybyś miał/a podziękować mi za jedną konkretną rzecz z tego tygodnia, co by to było?' },
+      { cat: 'Głębokie Serce', icon: '💎', text: 'Co powoduje, że czujesz się przy mnie w pełni zaakceptowany/a ze wszystkimi swoimi wadami?' },
+      { cat: 'Głębokie Serce', icon: '💎', text: 'Jaka tajemnica lub marzenie z dzieciństwa wciąż żyje w Twoim sercu?' },
+      { cat: 'Głębokie Serce', icon: '💎', text: 'Co sprawia, że nawet po trudnym dniu na nowo czujesz spokój, wracając do mnie?' },
+      { cat: 'Głębokie Serce', icon: '💎', text: 'W jaki sposób możemy jeszcze lepiej dbać o naszą przestrzeń emocjonalną w biegu codzienności?' },
+
+      // 🔥 OGIEŃ I NAMIĘTNOŚĆ — uzupełnienie z Poziom 3 (25),
+      { cat: 'Ogień i Namiętność', icon: '🔥', text: 'Spojrzyj mi prosto w oczy przez 30 sekund bez mówienia ani słowa, a potem opowiedz, co poczułeś/aś.' },
+      { cat: 'Ogień i Namiętność', icon: '🔥', text: 'Odszeptaj mi do ucha trzy rzeczy, które najbardziej pociągają Cię we mnie fizycznie i emocjonalnie.' },
+      { cat: 'Ogień i Namiętność', icon: '🔥', text: 'Wyobraź sobie nasz idealny romantyczny wieczór bez żadnych ograniczeń – opisz go minuta po minucie.' },
+      { cat: 'Ogień i Namiętność', icon: '🔥', text: 'Dotknij mojej dłoni lub policzka w sposób, który wywołuje u Ciebie największą czułość i bliskość.' },
+      { cat: 'Ogień i Namiętność', icon: '🔥', text: 'Co jest Twoją ulubioną romantyczną pamięcią związaną z nami z ostatniego roku?' },
+      { cat: 'Ogień i Namiętność', icon: '🔥', text: 'Jaki romantyczny gest z mojej strony sprawia, że Twoje serce bije szybciej?' },
+      { cat: 'Ogień i Namiętność', icon: '🔥', text: 'Gdybyś miał/a zaplanować dla nas zmysłowy wieczór niespodziankę, jaki klimat byś stworzył/a?' },
+      { cat: 'Ogień i Namiętność', icon: '🔥', text: 'Jaka część mojego ciała jest Twoją ulubioną do całowania i przytulania?' },
+      { cat: 'Ogień i Namiętność', icon: '🔥', text: 'Opowiedz o momencie, w którym poczułeś/aś do mnie najbardziej intensywne przyciąganie.' },
+      { cat: 'Ogień i Namiętność', icon: '🔥', text: 'Jaki komplement na temat Twojego wyglądu i zmysłowości najbardziej lubisz ode mnie słyszeć?' },
+      { cat: 'Ogień i Namiętność', icon: '🔥', text: 'Wyzwanie: Zamknij oczy na 20 sekund, podczas gdy ja zadam Ci jedno czułe pytanie whisperem.' },
+      { cat: 'Ogień i Namiętność', icon: '🔥', text: 'Co jest dla Ciebie najbardziej romantycznym sposobem na rozpoczęcie wspólnego poranka?' },
+      { cat: 'Ogień i Namiętność', icon: '🔥', text: 'Gdybyśmy mieli teraz tańczyć przy jednym wolnym utworze, jaką piosenkę byś wybrał/a?' },
+      { cat: 'Ogień i Namiętność', icon: '🔥', text: 'Jaki rodzaj dotyku najszybciej pomaga Ci się zrelaksować i poczuć bliskość?' },
+      { cat: 'Ogień i Namiętność', icon: '🔥', text: 'Co najbardziej lubisz w naszych pocałunkach?' },
+      { cat: 'Ogień i Namiętność', icon: '🔥', text: 'Opisz jedno zmysłowe marzenie, które chciałbyś/chciałabyś wspólnie zrealizować w najbliższym czasie.' },
+      { cat: 'Ogień i Namiętność', icon: '🔥', text: 'Jaki strój lub styl ubioru sprawia, że uważasz mnie za wyjątkowo atrakcyjnego/ą?' },
+      { cat: 'Ogień i Namiętność', icon: '🔥', text: 'Gdybyś miał/a określić nasz romantyczny płomień jednym słowem, jak by ono brzmiało?' },
+      { cat: 'Ogień i Namiętność', icon: '🔥', text: 'Wyzwanie: Przytul mnie mocno przez pełne 30 sekund i zrób trzy głębokie wspólne oddechy.' },
+      { cat: 'Ogień i Namiętność', icon: '🔥', text: 'Co sprawia, że czujesz, że nasza namiętność i bliskość rozkwitają?' },
+      { cat: 'Ogień i Namiętność', icon: '🔥', text: 'Jakie spojrzenie lub gest w publicznym miejscu daje Ci sygnał, że jesteś tylko mój/moja?' },
+      { cat: 'Ogień i Namiętność', icon: '🔥', text: 'Opowiedz o pierwszym pocałunku – co pamiętasz z tamtej sekundy?' },
+      { cat: 'Ogień i Namiętność', icon: '🔥', text: 'Jaka jest Twoja ulubiona pozycja do wspólnego przytulania się w łóżku?' },
+      { cat: 'Ogień i Namiętność', icon: '🔥', text: 'Co sprawia, że czujesz się najbardziej zmysłowo i pięknie przy mnie?' },
+      { cat: 'Ogień i Namiętność', icon: '🔥', text: 'Złóż na moich dłoniach czuły pocałunek i powiedz jedno najszczersze życzenie dla nas.' },
+
+      // ⚖️ CO BYŚ WOLAŁ/A — przeniesione z poprzedniej wersji (20),
+      { cat: 'Co byś wolał/a', icon: '⚖️', text: 'Co byś wolał/a: Wspólny weekend w przytulnej chatce w górach przy kominku czy luksusowy hotel przy szumie oceanu?' },
+      { cat: 'Co byś wolał/a', icon: '⚖️', text: 'Co byś wolał/a: Otrzymać odemnie odprężający masaż całego ciała czy wykwintną kolację ugotowaną specjalnie dla Ciebie?' },
+      { cat: 'Co byś wolał/a', icon: '⚖️', text: 'Co byś wolał/a: Niespodziewany czuły list miłosny schowany w kieszeni czy spontaniczny romantyczny wyjazd na weekend?' },
+      { cat: 'Co byś wolał/a', icon: '⚖️', text: 'Co byś wolał/a: Wspólny wieczór na kanapie z filmem i przytulaniem czy nocny spacer pod gwiazdami po cichym mieście?' },
+      { cat: 'Co byś wolał/a', icon: '⚖️', text: 'Co byś wolał/a: Codziennie rano dostawać buziaka na dobranoc/dzień dobry czy raz w tygodniu długą rozmowę o marzeniach?' },
+      { cat: 'Co byś wolał/a', icon: '⚖️', text: 'Co byś wolał/a: Wspólny taniec w deszczu czy wspólny relaks w gorącym źródle / jacuzzi?' },
+      { cat: 'Co byś wolał/a', icon: '⚖️', text: 'Co byś wolał/a: Gdybym zaskoczył/a Cię śniadaniem do łóżka czy przygotował/a romantyczną kąpiel z pianą i świecami?' },
+      { cat: 'Co byś wolał/a', icon: '⚖️', text: 'Co byś wolał/a: Umiejętność czytania w moich myślach przez jeden dzień czy możliwość zatrzymania czasu na 3 godziny tylko dla nas?' },
+      { cat: 'Co byś wolał/a', icon: '⚖️', text: 'Co byś wolał/a: Wspólny kurs gotowania włoskich potraw czy lekcję zmysłowego tańca dla par?' },
+      { cat: 'Co byś wolał/a', icon: '⚖️', text: 'Co byś wolał/a: Przeprowadzić się na rok do urokliwego włoskiego miasteczka czy podróżować kamperem po całym świecie?' },
+      { cat: 'Co byś wolał/a', icon: '⚖️', text: 'Co byś wolał/a: Zawsze zaczynać dzień od wspólnej kawy czy zawsze kończyć dzień długim przytulaniem przed snem?' },
+      { cat: 'Co byś wolał/a', icon: '⚖️', text: 'Co byś wolał/a: Otrzymać pamiątkową biżuterię/drobiazg z wygrawerowaną datą czy fotoksiążkę z naszymi wszystkimi wspomnieniami?' },
+      { cat: 'Co byś wolał/a', icon: '⚖️', text: 'Co byś wolał/a: Spędzić cały wieczór bez żadnych telefonów i ekranów czy spędzić cały dzień na wspólnej zabawie i grach?' },
+      { cat: 'Co byś wolał/a', icon: '⚖️', text: 'Co byś wolał/a: Być zaskakiwanym drobnymi podarunkami bez okazji czy wspólnie planować duże, wielkie marzenia?' },
+      { cat: 'Co byś wolał/a', icon: '⚖️', text: 'Co byś wolał/a: Zjeść kolację w restauracji na dachu wieżowca z widokiem na miasto czy piknik na kocu przy zachodzie słońca?' },
+      { cat: 'Co byś wolał/a', icon: '⚖️', text: 'Co byś wolał/a: Gdybym napisał/a dla Ciebie wiersz czy zaśpiewał/a Twoją ulubioną piosenkę?' },
+      { cat: 'Co byś wolał/a', icon: '⚖️', text: 'Co byś wolał/a: Przeżyć znowu nasz pierwszy rok relacji czy natychmiast przenieść się do naszej idealnej przyszłości?' },
+      { cat: 'Co byś wolał/a', icon: '⚖️', text: 'Co byś wolał/a: Posiadać prywatną wyspę tylko dla naszej dwójki na miesiąc czy zwiedzić 10 najpiękniejszych stolic świata razem?' },
+      { cat: 'Co byś wolał/a', icon: '⚖️', text: 'Co byś wolał/a: Rozmawiać bez słów samym spojrzeniem czy rozumieć się idealnie po jednym małym geście?' },
+      { cat: 'Co byś wolał/a', icon: '⚖️', text: 'Co byś wolał/a: Zawsze mieć pewność, co drugie myśli czy zawsze mieć element romantycznej niespodzianki?' },
+
+      // ⏱️ CHWILA BLISKOŚCI — ćwiczenia z minutnikiem (10),
+      { cat: 'Chwila Bliskości', icon: '⏱️', text: 'Wyzwanie Oczu (60s): Patrzcie sobie prosto w oczy przez 60 sekund bez słów i bez odwracania wzroku. Oddychajcie powoli.', isTimer: true, duration: 60 },
+      { cat: 'Chwila Bliskości', icon: '⏱️', text: 'Wyzwanie Głębokiego Uścisku (45s): Przytulcie się wyjątkowo mocno przez 45 sekund, opierając głowę na ramieniu partnera.', isTimer: true, duration: 45 },
+      { cat: 'Chwila Bliskości', icon: '⏱️', text: 'Wyzwanie Masażu (60s): Daj partnerowi/partnerce odprężający masaż karku lub dłoni, mówiąc w międzyczasie dwa szczere komplementy.', isTimer: true, duration: 60 },
+      { cat: 'Chwila Bliskości', icon: '⏱️', text: 'Wyzwanie Szeptu (30s): Zbliż się do ucha partnera i odszeptaj trzy najpiękniejsze słowa, jakie dzisiaj przychodzą Ci do serca.', isTimer: true, duration: 30 },
+      { cat: 'Chwila Bliskości', icon: '⏱️', text: 'Wyzwanie Pocałunku (30s): Złóż czuły pocałunek na czołu, obu policzkach i dłoni partnera/partnerki.', isTimer: true, duration: 30 },
+      { cat: 'Chwila Bliskości', icon: '⏱️', text: 'Wyzwanie Wdzięczności (60s): Trzymając się za obie dłonie, wymieńcie naprzemiennie po 3 rzeczy, za które dziękujecie sobie nawzajem.', isTimer: true, duration: 60 },
+      { cat: 'Chwila Bliskości', icon: '⏱️', text: 'Wyzwanie Bicia Serca (45s): Połóż dłoń na klatce piersiowej partnera/partnerki, poczuj rytm jego/jej serca i wyrównajcie oddech.', isTimer: true, duration: 45 },
+      { cat: 'Chwila Bliskości', icon: '⏱️', text: 'Wyzwanie Komplementów (30s): Wymień bez zatrzymania 5 cech zewnętrznych i wewnętrznych, które najbardziej uwielbiasz w partnerze.', isTimer: true, duration: 30 },
+      { cat: 'Chwila Bliskości', icon: '⏱️', text: 'Wyzwanie Wolnego Tańca (60s): Wstańcie i zatańczcie bez muzyki, w cichym rytmie własnych serc i bliskości.', isTimer: true, duration: 60 },
+      { cat: 'Chwila Bliskości', icon: '⏱️', text: 'Wyzwanie Czułego Spojrzenia (45s): Weź twarz partnera w dłonie i powiedz mu/jej, jak bardzo jest dla Ciebie ważny/a.', isTimer: true, duration: 45 }
+    ];
+
+    /* STAN GRY */
+    let players = ['Partner 1', 'Partner 2'];
+    let activePlayerIndex = 0;
+    let currentTrio = [];
+    let hasSelectedCard = false;
+    let savedQuestions = [];
+    let timerInterval = null;
+    let timerSeconds = 60;
+
+    /* ELEMENTY DOM */
+    const activePlayerNameEl = document.getElementById('active-player-name');
+    const instructionTextEl = document.getElementById('instruction-text');
+    const nextTurnBtn = document.getElementById('next-turn-btn');
+
+    // Modale
+    const namesModal = document.getElementById('names-modal');
+    const capsuleModal = document.getElementById('capsule-modal');
+    const timerModal = document.getElementById('timer-modal');
+
+    /* INICJALIZACJA GRY */
+    function initGame() {
+      setupEventListeners();
+      dealNewTrio();
+      initCanvasBackground();
+    }
+
+    /* LOSOWANIE 3 KART */
+    function dealNewTrio() {
+      hasSelectedCard = false;
+      nextTurnBtn.disabled = true;
+      instructionTextEl.innerText = `${players[activePlayerIndex]}, wybierz jedną z 3 kart na podstawie nastroju:`;
+
+      // Losowanie 3 pytań z różnych kategorii
+      const shuffled = [...QUESTIONS_DB].sort(() => 0.5 - Math.random());
+      currentTrio = shuffled.slice(0, 3);
+
+      for (let i = 0; i < 3; i++) {
+        const cardEl = document.getElementById(`card-${i}`);
+        const wrapper = cardEl.parentElement;
+
+        // Reset stanu karty
+        cardEl.classList.remove('flipped');
+        wrapper.classList.remove('disabled');
+
+        const q = currentTrio[i];
+
+        // Ustawianie tyłu (zakryta - ikona + kategoria)
+        document.getElementById(`badge-${i}`).innerText = 'Nastroje';
+        document.getElementById(`icon-${i}`).innerText = q.icon;
+        document.getElementById(`cat-title-${i}`).innerText = q.cat;
+
+        // Ustawianie przodu (odkryta - treść pytania)
+        document.getElementById(`q-cat-${i}`).innerText = `${q.icon} ${q.cat}`;
+        document.getElementById(`q-text-${i}`).innerText = q.text;
+
+        // Przycisk minutnika jeśli dotyczy
+        const timerBtn = document.getElementById(`timer-trigger-${i}`);
+        if (q.isTimer) {
+          timerBtn.style.display = 'inline-flex';
+          timerBtn.onclick = (e) => {
+            e.stopPropagation();
+            openTimer(q.duration || 60);
+          };
+        } else {
+          timerBtn.style.display = 'none';
+        }
+      }
+
+      activePlayerNameEl.innerText = players[activePlayerIndex];
+    }
+
+    /* WYBÓR KARTY */
+    function selectCard(index) {
+      if (hasSelectedCard) return;
+
+      hasSelectedCard = true;
+      const selectedCard = document.getElementById(`card-${index}`);
+      selectedCard.classList.add('flipped');
+
+      // Wyłączenie pozostałych dwóch kart
+      for (let i = 0; i < 3; i++) {
+        if (i !== index) {
+          const wrapper = document.getElementById(`card-${i}`).parentElement;
+          wrapper.classList.add('disabled');
+        }
+      }
+
+      instructionTextEl.innerText = 'Wysłuchajcie się nawzajem bez pośpiechu... ❤️️';
+      nextTurnBtn.disabled = false;
+    }
+
+    /* PRZEJŚCIE DO NASTĘPNEJ TURY */
+    function handleNextTurn() {
+      activePlayerIndex = (activePlayerIndex + 1) % 2;
+      dealNewTrio();
+    }
+
+    /* PODŁĄCZENIE ZDARZEŃ */
+    function setupEventListeners() {
+      // Kliknięcie w kartę
+      document.querySelectorAll('.card-wrapper').forEach(wrapper => {
+        wrapper.addEventListener('click', () => {
+          const idx = parseInt(wrapper.getAttribute('data-index'));
+          selectCard(idx);
+        });
+      });
+
+      // Przycisk Następna Tura
+      nextTurnBtn.addEventListener('click', handleNextTurn);
+
+      // Zapisywanie pytania do Kapsuły
+      document.querySelectorAll('.save-q-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const idx = parseInt(btn.getAttribute('data-card'));
+          const q = currentTrio[idx];
+          if (!savedQuestions.includes(q.text)) {
+            savedQuestions.push(q.text);
+            btn.innerText = '✓ Zapisano';
+            btn.style.color = 'var(--accent-gold)';
+            updateCapsuleUI();
+          }
+        });
+      });
+
+      // Modale
+      document.getElementById('names-btn').onclick = () => namesModal.classList.add('active');
+      document.getElementById('capsule-btn').onclick = () => capsuleModal.classList.add('active');
+
+      document.querySelectorAll('.modal-close, .close-btn').forEach(btn => {
+        btn.onclick = () => {
+          namesModal.classList.remove('active');
+          capsuleModal.classList.remove('active');
+          timerModal.classList.remove('active');
+        };
+      });
+
+      // Zapis Imion
+      document.getElementById('save-names-btn').onclick = () => {
+        const p1 = document.getElementById('p1-input').value.trim();
+        const p2 = document.getElementById('p2-input').value.trim();
+        if (p1) players[0] = p1;
+        if (p2) players[1] = p2;
+        activePlayerNameEl.innerText = players[activePlayerIndex];
+        namesModal.classList.remove('active');
+      };
+
+      // Kopiowanie Kapsuły
+      document.getElementById('copy-capsule-btn').onclick = () => {
+        if (savedQuestions.length === 0) return;
+        const textToCopy = `Spleceni Sercom – Nasze Przemyślenia:\n\n` + savedQuestions.map((q, i) => `${i+1}. ${q}`).join('\n');
+        navigator.clipboard.writeText(textToCopy);
+        alert('Skopiowano saved pytania do schowka!');
+      };
+
+      // Muzyka tła
+      document.getElementById('audio-btn').onclick = toggleAmbientAudio;
+    }
+
+    /* KAPSUŁA BLISKOŚCI UI */
+    function updateCapsuleUI() {
+      const listEl = document.getElementById('capsule-list');
+      if (savedQuestions.length === 0) {
+        listEl.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:20px;">Nie zapisano jeszcze żadnych pytań.</div>';
+        return;
+      }
+      listEl.innerHTML = savedQuestions.map(q => `<div class="capsule-item">${q}</div>`).join('');
+    }
+
+    /* MINUTNIK BLISKOŚCI */
+    function openTimer(seconds) {
+      timerSeconds = seconds;
+      updateTimerDisplay();
+      timerModal.classList.add('active');
+      document.getElementById('start-timer-btn').innerText = 'Start';
+    }
+
+    function updateTimerDisplay() {
+      const mins = Math.floor(timerSeconds / 60);
+      const secs = timerSeconds % 60;
+      document.getElementById('timer-display').innerText = 
+        `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    document.getElementById('start-timer-btn').onclick = () => {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        document.getElementById('start-timer-btn').innerText = 'Wznowij';
+        return;
+      }
+
+      document.getElementById('start-timer-btn').innerText = 'Pauza';
+      timerInterval = setInterval(() => {
+        timerSeconds--;
+        updateTimerDisplay();
+        if (timerSeconds <= 0) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+          document.getElementById('timer-display').innerText = '✨ Czas minął ✨';
+        }
+      }, 1000);
+    };
+
+    document.getElementById('close-timer-btn').onclick = () => {
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = null;
+      timerModal.classList.remove('active');
+    };
+
+    /* PROSTY GENERATOR TŁA DŹWIĘKOWEGO (WEB AUDIO API) */
+    let audioCtx = null;
+    let isAudioPlaying = false;
+    let mainGain = null;
+
+    function toggleAmbientAudio() {
+      const btn = document.getElementById('audio-btn');
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        mainGain = audioCtx.createGain();
+        mainGain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+        mainGain.connect(audioCtx.destination);
+
+        // Tworzenie ciepłych akordów w tle
+        const freqs = [130.81, 164.81, 196.00, 246.94]; // C major 7 soft synth
+        freqs.forEach(f => {
+          const osc = audioCtx.createOscillator();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(f, audioCtx.currentTime);
+          osc.connect(mainGain);
+          osc.start();
+        });
+      }
+
+      if (isAudioPlaying) {
+        audioCtx.suspend();
+        btn.innerText = '🎵';
+        isAudioPlaying = false;
+      } else {
+        audioCtx.resume();
+        btn.innerText = '🎶';
+        isAudioPlaying = true;
+      }
+    }
+
+    /* ANIMACJA UNOSZĄCYCH SIĘ SERC / ISKIER W TLE */
+    function initCanvasBackground() {
+      const canvas = document.getElementById('bg-canvas');
+      const ctx = canvas.getContext('2d');
+
+      let width = canvas.width = window.innerWidth;
+      let height = canvas.height = window.innerHeight;
+
+      window.addEventListener('resize', () => {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+      });
+
+      const particles = [];
+      for (let i = 0; i < 35; i++) {
+        particles.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          size: Math.random() * 3 + 1,
+          speedY: Math.random() * 0.5 + 0.2,
+          opacity: Math.random() * 0.5 + 0.2
+        });
+      }
+
+      function render() {
+        ctx.clearRect(0, 0, width, height);
+
+        particles.forEach(p => {
+          p.y -= p.speedY;
+          if (p.y < -10) {
+            p.y = height + 10;
+            p.x = Math.random() * width;
+          }
+
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(226, 190, 125, ${p.opacity})`;
+          ctx.shadowBlur = 8;
+          ctx.shadowColor = '#e88ca5';
+          ctx.fill();
+        });
+
+        requestAnimationFrame(render);
+      }
+
+      render();
+    }
+
+    // Uruchomienie gry po załadowaniu strony
+    window.onload = initGame;
+  </script>
+</body>
+</html>
