@@ -1,1 +1,1387 @@
+<!DOCTYPE html>
+<html lang="pl" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Spleceni Sercom – Gra dla Par</title>
 
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
+
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        rosegold: {
+                            light: '#F8E1D9',
+                            DEFAULT: '#E0A96D',
+                            dark: '#B77943',
+                        },
+                        burgundy: {
+                            light: '#5B1A24',
+                            DEFAULT: '#3B0E14',
+                            dark: '#21050A',
+                        },
+                        plum: {
+                            light: '#2D112B',
+                            DEFAULT: '#1A081A',
+                            dark: '#0F030F',
+                        },
+                        warmamber: '#F59E0B'
+                    },
+                    fontFamily: {
+                        serif: ['Playfair Display', 'serif'],
+                        sans: ['Montserrat', 'sans-serif'],
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'glow': 'glow 2s ease-in-out infinite alternate',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        glow: {
+                            '0%': { boxShadow: '0 0 15px rgba(224, 169, 109, 0.3)' },
+                            '100%': { boxShadow: '0 0 30px rgba(224, 169, 109, 0.8), 0 0 40px rgba(244, 63, 94, 0.4)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom Styles & CSS Variables */
+        :root {
+            --bg-primary: #1A081A;
+            --card-border: rgba(224, 169, 109, 0.3);
+            --accent-glow: rgba(224, 169, 109, 0.5);
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #0F030F;
+            color: #F8E1D9;
+            overflow-x: hidden;
+            touch-action: manipulation;
+        }
+
+        /* Perspective and 3D Card Flip */
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+        .transform-style-3d {
+            transform-style: preserve-3d;
+            transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .backface-hidden {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+        .rotate-y-180 {
+            transform: rotateY(180deg);
+        }
+
+        /* Glassmorphism UI */
+        .glass-panel {
+            background: rgba(26, 8, 26, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        .glass-card {
+            background: linear-gradient(135deg, rgba(45, 17, 43, 0.85) 0%, rgba(26, 8, 26, 0.95) 100%);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(224, 169, 109, 0.35);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(224, 169, 109, 0.1);
+        }
+
+        /* Theme Overrides */
+        body.theme-rosegold {
+            background-color: #160814;
+            --card-border: rgba(224, 169, 109, 0.4);
+            --accent-glow: rgba(224, 169, 109, 0.6);
+        }
+        body.theme-evening {
+            background-color: #0B081A;
+            --card-border: rgba(139, 92, 246, 0.35);
+            --accent-glow: rgba(139, 92, 246, 0.5);
+        }
+        body.theme-candlelight {
+            background-color: #1C0D0A;
+            --card-border: rgba(245, 158, 11, 0.4);
+            --accent-glow: rgba(245, 158, 11, 0.6);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 3, 15, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(224, 169, 109, 0.4);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(224, 169, 109, 0.8);
+        }
+
+        /* Gold Gradient Text */
+        .text-gold-gradient {
+            background: linear-gradient(135deg, #FFF0D4 0%, #E0A96D 50%, #B77943 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .text-rose-gradient {
+            background: linear-gradient(135deg, #FFE4E6 0%, #FB7185 50%, #E11D48 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Canvas Overlay */
+        #particleCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body class="theme-rosegold min-h-screen flex flex-col justify-between selection:bg-rosegold selection:text-burgundy-dark relative">
+
+    <!-- Background Floating Particles Canvas -->
+    <canvas id="particleCanvas"></canvas>
+
+    <!-- Main Container -->
+    <div class="relative z-10 flex flex-col min-h-screen max-w-5xl mx-auto px-4 py-4 md:py-6 w-full justify-between">
+        
+        <!-- Header & Nav Controls -->
+        <header class="glass-panel rounded-2xl p-3 md:p-4 mb-4 flex flex-wrap items-center justify-between gap-3 shadow-2xl border-rosegold/30">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-rosegold-dark via-rosegold to-rose-400 flex items-center justify-center text-burgundy-dark shadow-lg shadow-rosegold/20">
+                    <i class="fa-solid font-bold fa-heart text-xl animate-pulse"></i>
+                </div>
+                <div>
+                    <h1 class="font-serif text-lg md:text-2xl font-bold tracking-wide text-gold-gradient">Spleceni Sercom</h1>
+                    <p class="text-xs text-rosegold-light/70 tracking-widest uppercase font-medium">Gra dla Par</p>
+                </div>
+            </div>
+
+            <!-- Top Actions -->
+            <div class="flex items-center space-x-2 md:space-x-3">
+                <!-- Ambient Audio Switch -->
+                <button id="audioToggleBtn" onclick="toggleAmbientMusic()" title="Muzyka relaksacyjna w tle" class="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-white/5 hover:bg-white/10 border border-rosegold/30 flex items-center justify-center text-rosegold transition-all duration-300">
+                    <i id="audioIcon" class="fa-solid fa-volume-xmark text-sm md:text-base"></i>
+                </button>
+
+                <!-- Atmosphere Modes Dropdown/Toggle -->
+                <button onclick="cycleAtmosphereTheme()" title="Zmień nastrój / atmosferę" class="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-white/5 hover:bg-white/10 border border-rosegold/30 flex items-center justify-center text-amber-300 transition-all duration-300">
+                    <i class="fa-solid fa-wand-magic-sparkles text-sm md:text-base"></i>
+                </button>
+
+                <!-- Love Capsule / Favorites Modal Trigger -->
+                <button onclick="openCapsuleModal()" class="px-3 py-2 rounded-xl bg-gradient-to-r from-rosegold/20 to-rose-500/20 hover:from-rosegold/30 hover:to-rose-500/30 border border-rosegold/40 flex items-center space-x-2 text-xs md:text-sm font-medium text-rosegold-light transition-all shadow-md">
+                    <i class="fa-solid fa-bookmark text-rose-400"></i>
+                    <span class="hidden sm:inline">Kapsuła Bliskości</span>
+                    <span id="capsuleBadge" class="bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">0</span>
+                </button>
+
+                <!-- Reset / Setup Trigger -->
+                <button onclick="openSetupModal()" title="Ustawienia imion" class="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-white/5 hover:bg-white/10 border border-rosegold/30 flex items-center justify-center text-rosegold-light/80 hover:text-rosegold transition-all">
+                    <i class="fa-solid fa-gear text-sm md:text-base"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Active Turn & Closeness Progress Indicator -->
+        <section class="glass-panel rounded-2xl p-4 mb-4 flex flex-col md:flex-row items-center justify-between gap-4 border-rosegold/20">
+            <!-- Turn Indicator -->
+            <div class="flex items-center space-x-3 w-full md:w-auto justify-center md:justify-start">
+                <div id="partnerAvatar" class="w-11 h-11 rounded-full bg-gradient-to-r from-rose-500 to-rosegold flex items-center justify-center text-white text-lg font-bold shadow-lg shadow-rose-500/30 transition-all duration-500">
+                    <i class="fa-solid fa-user-heart"></i>
+                </div>
+                <div>
+                    <span class="text-xs uppercase tracking-wider text-rosegold-light/60 font-semibold block">Teraz opowiada / wykonuje</span>
+                    <h2 id="activePartnerText" class="font-serif text-xl md:text-2xl font-bold text-white tracking-wide">
+                        Kasia & Tomek
+                    </h2>
+                </div>
+            </div>
+
+            <!-- Closeness Heart Gauge -->
+            <div class="w-full md:w-1/2 flex flex-col space-y-1.5">
+                <div class="flex justify-between items-center text-xs font-semibold">
+                    <span class="text-rosegold-light/80 flex items-center gap-1.5">
+                        <i class="fa-solid fa-heart-pulse text-rose-400"></i> Wskaźnik Zbliżenia
+                    </span>
+                    <span id="closenessPercent" class="text-rosegold font-bold">0%</span>
+                </div>
+                <div class="w-full h-3 bg-black/40 rounded-full p-0.5 border border-rosegold/20 overflow-hidden shadow-inner">
+                    <div id="closenessBar" class="h-full bg-gradient-to-r from-rosegold via-rose-500 to-amber-400 rounded-full w-0 transition-all duration-700 shadow-lg shadow-rose-500/50"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Category & Level Navigation Tabs -->
+        <nav class="flex items-center space-x-2 overflow-x-auto pb-2 mb-4 no-scrollbar scroll-smooth">
+            <button onclick="selectCategory('lvl1')" id="tab-lvl1" class="tab-btn active shrink-0 px-4 py-2.5 rounded-xl border text-xs md:text-sm font-semibold transition-all duration-300 flex items-center space-x-2 bg-rosegold/20 border-rosegold text-white shadow-lg shadow-rosegold/10">
+                <i class="fa-solid fa-feather text-amber-300"></i>
+                <span>Poziom 1: Lekkie & Urocze</span>
+            </button>
+            <button onclick="selectCategory('lvl2')" id="tab-lvl2" class="tab-btn shrink-0 px-4 py-2.5 rounded-xl border text-xs md:text-sm font-semibold transition-all duration-300 flex items-center space-x-2 bg-white/5 border-white/10 text-rosegold-light/70 hover:bg-white/10">
+                <i class="fa-solid fa-water text-cyan-300"></i>
+                <span>Poziom 2: Głębokie Wody</span>
+            </button>
+            <button onclick="selectCategory('lvl3')" id="tab-lvl3" class="tab-btn shrink-0 px-4 py-2.5 rounded-xl border text-xs md:text-sm font-semibold transition-all duration-300 flex items-center space-x-2 bg-white/5 border-white/10 text-rosegold-light/70 hover:bg-white/10">
+                <i class="fa-solid fa-fire-flame-curved text-rose-400"></i>
+                <span>Poziom 3: Iskra & Zmysły</span>
+            </button>
+            <button onclick="selectCategory('wyr')" id="tab-wyr" class="tab-btn shrink-0 px-4 py-2.5 rounded-xl border text-xs md:text-sm font-semibold transition-all duration-300 flex items-center space-x-2 bg-white/5 border-white/10 text-rosegold-light/70 hover:bg-white/10">
+                <i class="fa-solid fa-scale-balanced text-purple-300"></i>
+                <span>Co byś wolał/a?</span>
+            </button>
+            <button onclick="selectCategory('challenges')" id="tab-challenges" class="tab-btn shrink-0 px-4 py-2.5 rounded-xl border text-xs md:text-sm font-semibold transition-all duration-300 flex items-center space-x-2 bg-white/5 border-white/10 text-rosegold-light/70 hover:bg-white/10">
+                <i class="fa-solid fa-stopwatch text-emerald-300"></i>
+                <span>Ćwiczenia & Minutnik</span>
+            </button>
+        </nav>
+
+        <!-- Deck Selector & Drawing Controls Bar -->
+        <div class="flex items-center justify-between mb-4 px-1 text-xs text-rosegold-light/70">
+            <div class="flex items-center space-x-2">
+                <span>Tryb losowania:</span>
+                <button id="modeSpreadBtn" onclick="setDrawMode('spread')" class="px-2.5 py-1 rounded-lg border border-rosegold/40 bg-rosegold/20 text-white font-medium">Trio (Wybierz 1 z 3)</button>
+                <button id="modeSingleBtn" onclick="setDrawMode('single')" class="px-2.5 py-1 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-rosegold-light/70 font-medium">Szybka Karta</button>
+            </div>
+            <div id="deckCountText" class="font-medium text-rosegold">Pozostało w talii: --</div>
+        </div>
+
+        <!-- Interactive Card Stage -->
+        <main class="flex-1 flex flex-col items-center justify-center my-2 min-h-[380px] md:min-h-[440px] relative">
+
+            <!-- 3 Card Spread Mode Container -->
+            <div id="spreadContainer" class="w-full max-w-2xl grid grid-cols-3 gap-3 md:gap-6 my-auto">
+                <!-- Card Slot 1 -->
+                <div onclick="revealSpreadCard(0)" class="spread-card-slot cursor-pointer group perspective-1000 h-[260px] sm:h-[320px]">
+                    <div class="w-full h-full glass-card rounded-2xl flex flex-col items-center justify-center p-4 border border-rosegold/30 hover:border-rosegold/80 hover:shadow-2xl hover:shadow-rosegold/20 transition-all duration-300 transform group-hover:-translate-y-2 group-hover:scale-105">
+                        <div class="w-12 h-12 rounded-full bg-rosegold/10 border border-rosegold/40 flex items-center justify-center text-rosegold mb-3 group-hover:bg-rosegold group-hover:text-burgundy-dark transition-all">
+                            <i class="fa-solid fa-gem text-lg"></i>
+                        </div>
+                        <span class="font-serif text-sm font-bold text-rosegold-light group-hover:text-white">Los I</span>
+                        <p class="text-[10px] text-rosegold-light/50 text-center mt-2">Dotknij, aby odkryć kartę</p>
+                    </div>
+                </div>
+
+                <!-- Card Slot 2 -->
+                <div onclick="revealSpreadCard(1)" class="spread-card-slot cursor-pointer group perspective-1000 h-[260px] sm:h-[320px]">
+                    <div class="w-full h-full glass-card rounded-2xl flex flex-col items-center justify-center p-4 border border-rosegold/30 hover:border-rosegold/80 hover:shadow-2xl hover:shadow-rosegold/20 transition-all duration-300 transform group-hover:-translate-y-2 group-hover:scale-105">
+                        <div class="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-400/40 flex items-center justify-center text-rose-400 mb-3 group-hover:bg-rose-500 group-hover:text-white transition-all">
+                            <i class="fa-solid fa-heart text-lg"></i>
+                        </div>
+                        <span class="font-serif text-sm font-bold text-rosegold-light group-hover:text-white">Los II</span>
+                        <p class="text-[10px] text-rosegold-light/50 text-center mt-2">Dotknij, aby odkryć kartę</p>
+                    </div>
+                </div>
+
+                <!-- Card Slot 3 -->
+                <div onclick="revealSpreadCard(2)" class="spread-card-slot cursor-pointer group perspective-1000 h-[260px] sm:h-[320px]">
+                    <div class="w-full h-full glass-card rounded-2xl flex flex-col items-center justify-center p-4 border border-rosegold/30 hover:border-rosegold/80 hover:shadow-2xl hover:shadow-rosegold/20 transition-all duration-300 transform group-hover:-translate-y-2 group-hover:scale-105">
+                        <div class="w-12 h-12 rounded-full bg-amber-400/10 border border-amber-400/40 flex items-center justify-center text-amber-400 mb-3 group-hover:bg-amber-400 group-hover:text-burgundy-dark transition-all">
+                            <i class="fa-solid fa-sparkles text-lg"></i>
+                        </div>
+                        <span class="font-serif text-sm font-bold text-rosegold-light group-hover:text-white">Los III</span>
+                        <p class="text-[10px] text-rosegold-light/50 text-center mt-2">Dotknij, aby odkryć kartę</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Single Card Display Area (Initially Hidden or Shown after card flip) -->
+            <div id="singleCardWrapper" class="hidden w-full max-w-xl perspective-1000 my-auto">
+                <div id="main3DCard" class="relative w-full h-[360px] sm:h-[400px] transform-style-3d rounded-3xl cursor-pointer">
+                    
+                    <!-- CARD FRONT (Cover Face) -->
+                    <div onclick="flipCardToBack()" class="absolute inset-0 w-full h-full backface-hidden glass-card rounded-3xl border-2 border-rosegold/40 p-6 flex flex-col justify-between items-center text-center shadow-2xl hover:border-rosegold transition-all group">
+                        <div class="w-full flex justify-between items-center text-rosegold/60 text-xs">
+                            <span id="cardCoverCategoryTag" class="tracking-widest uppercase font-semibold text-rosegold">Poziom 1</span>
+                            <i class="fa-solid fa-crown text-amber-300"></i>
+                        </div>
+
+                        <div class="flex flex-col items-center justify-center space-y-4 my-auto">
+                            <div class="w-20 h-20 rounded-full bg-gradient-to-br from-rosegold/20 to-rose-500/20 border border-rosegold/50 flex items-center justify-center text-rosegold text-3xl shadow-xl shadow-rosegold/20 group-hover:scale-110 transition-transform duration-500">
+                                <i id="cardCoverIcon" class="fa-solid fa-heart-circle-bolt"></i>
+                            </div>
+                            <h3 id="cardCoverTitle" class="font-serif text-2xl font-bold text-gold-gradient">Spleceni Sercom</h3>
+                            <p class="text-xs text-rosegold-light/70 max-w-xs leading-relaxed">Kliknij kartę, aby odwrócić ją i odkryć sekretne pytanie dla Was.</p>
+                        </div>
+
+                        <div class="text-[11px] text-rosegold/80 font-medium flex items-center space-x-1">
+                            <span>Odkryj kartę</span>
+                            <i class="fa-solid fa-arrow-rotate-right text-xs"></i>
+                        </div>
+                    </div>
+
+                    <!-- CARD BACK (Revealed Question Face) -->
+                    <div class="absolute inset-0 w-full h-full backface-hidden rotate-y-180 glass-card rounded-3xl border-2 border-rose-400/50 p-6 flex flex-col justify-between items-center text-center shadow-2xl bg-gradient-to-b from-plum-light via-plum to-burgundy-dark">
+                        
+                        <!-- Top Info Bar -->
+                        <div class="w-full flex justify-between items-center text-xs">
+                            <span id="revealedCategoryBadge" class="px-2.5 py-1 rounded-full bg-rosegold/20 border border-rosegold/40 text-rosegold font-semibold">
+                                Poziom 1
+                            </span>
+                            <span id="cardActiveTurnBadge" class="text-rose-300 font-semibold flex items-center gap-1">
+                                <i class="fa-solid fa-user-sparkles"></i> Odpowiada: Kasia
+                            </span>
+                        </div>
+
+                        <!-- Question Content -->
+                        <div class="my-auto px-2 md:px-6 flex flex-col items-center justify-center space-y-4">
+                            <p id="questionText" class="font-serif text-lg md:text-2xl font-medium text-white leading-relaxed tracking-wide">
+                                "Ładowanie pytania..."
+                            </p>
+                            
+                            <!-- Timer Trigger button (If challenge category) -->
+                            <div id="challengeTimerTrigger" class="hidden">
+                                <button onclick="openTimerModal()" class="mt-2 px-4 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 text-amber-300 font-medium text-xs flex items-center space-x-2 transition-all">
+                                    <i class="fa-solid fa-stopwatch text-base"></i>
+                                    <span id="challengeTimerLabel">Uruchom Minutnik Ćwiczenia</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Card Action Controls -->
+                        <div class="w-full pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-2">
+                            <button onclick="swapPartnerTurn()" title="Przekaż pytanie partnerowi" class="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-rosegold-light flex items-center space-x-1.5 transition-all">
+                                <i class="fa-solid fa-repeat text-rosegold"></i>
+                                <span class="hidden sm:inline">Zamień kolej</span>
+                            </button>
+
+                            <button onclick="saveCardToCapsule()" title="Zapisz do Kapsuły Bliskości" class="px-3 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-xs text-rose-300 flex items-center space-x-1.5 transition-all">
+                                <i class="fa-solid fa-bookmark"></i>
+                                <span>Zapisz</span>
+                            </button>
+
+                            <button onclick="drawNextQuestionCard()" title="Losuj inne pytanie" class="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-rosegold-light/70 flex items-center space-x-1.5 transition-all">
+                                <i class="fa-solid fa-forward text-amber-300"></i>
+                                <span class="hidden sm:inline">Pomiń</span>
+                            </button>
+
+                            <button onclick="completeCardAction()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-rosegold to-rose-500 text-burgundy-dark font-bold text-xs flex items-center space-x-1.5 shadow-lg shadow-rose-500/30 hover:scale-105 transition-all">
+                                <i class="fa-solid fa-check text-sm"></i>
+                                <span>Odpowiedziane</span>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Footer / Quick Action Bar -->
+        <footer class="glass-panel rounded-2xl p-3 flex flex-wrap items-center justify-between text-xs text-rosegold-light/60 border-rosegold/20 gap-2">
+            <div class="flex items-center space-x-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                <span id="atmosphereName">Atmosfera: Różane Złoto</span>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <button onclick="drawNextQuestionCard()" class="hover:text-rosegold font-medium transition-colors flex items-center space-x-1">
+                    <i class="fa-solid fa-shuffle"></i>
+                    <span>Losuj Nową Kartę</span>
+                </button>
+                <span class="text-rosegold/30">|</span>
+                <button onclick="resetGameProgress()" class="hover:text-rose-400 transition-colors flex items-center space-x-1">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    <span>Resetuj Talie</span>
+                </button>
+            </div>
+        </footer>
+
+    </div>
+
+    
+    <!-- MODAL 1: SETUP / PERSONALIZATION MODAL -->
+    <div id="setupModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 transition-opacity duration-300">
+        <div class="glass-card rounded-3xl max-w-md w-full p-6 md:p-8 border-2 border-rosegold/40 shadow-2xl relative">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-rosegold to-rose-500 flex items-center justify-center text-white text-2xl mx-auto mb-3 shadow-xl shadow-rosegold/30">
+                    <i class="fa-solid fa-heart-circle-check"></i>
+                </div>
+                <h2 class="font-serif text-2xl font-bold text-gold-gradient">Witajcie w Gra dla Par</h2>
+                <p class="text-xs text-rosegold-light/70 mt-1">Wpiszcie Wasze imiona, aby spersonalizować grę.</p>
+            </div>
+
+            <form onsubmit="saveSetupForm(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-rosegold-light/80 mb-1">Imię Partnera A</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-user absolute left-3.5 top-3 text-rosegold/60 text-sm"></i>
+                        <input type="text" id="partnerAInput" required value="Kasia" placeholder="np. Kasia" class="w-full bg-black/40 border border-rosegold/30 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white placeholder-rosegold/30 focus:outline-none focus:border-rosegold transition-all">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-rosegold-light/80 mb-1">Imię Partnera B</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-user-heart absolute left-3.5 top-3 text-rose-400/60 text-sm"></i>
+                        <input type="text" id="partnerBInput" required value="Tomek" placeholder="np. Tomek" class="w-full bg-black/40 border border-rosegold/30 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white placeholder-rosegold/30 focus:outline-none focus:border-rosegold transition-all">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-rosegold-light/80 mb-1">Kto zaczyna?</label>
+                    <select id="startPartnerSelect" class="w-full bg-black/40 border border-rosegold/30 rounded-xl py-2.5 px-3 text-sm text-white focus:outline-none focus:border-rosegold transition-all">
+                        <option value="random">Wybierz losowo na start</option>
+                        <option value="A">Partner A zaczyna</option>
+                        <option value="B">Partner B zaczyna</option>
+                    </select>
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" class="w-full py-3 rounded-xl bg-gradient-to-r from-rosegold via-rose-500 to-amber-400 text-burgundy-dark font-bold text-sm tracking-wide shadow-xl shadow-rose-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                        Rozpocznij Wieczór Bliskości <i class="fa-solid fa-sparkles ml-1"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: INTIMACY TIMER MODAL -->
+    <div id="timerModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="glass-card rounded-3xl max-w-sm w-full p-6 text-center border-2 border-amber-400/40 shadow-2xl relative">
+            <button onclick="closeTimerModal()" class="absolute top-4 right-4 text-rosegold-light/50 hover:text-white transition-colors">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <span id="timerTaskTitle" class="text-xs uppercase tracking-widest text-amber-300 font-semibold block mb-2">Ćwiczenie Bliskości</span>
+            <h3 id="timerTaskDesc" class="font-serif text-lg font-bold text-white mb-6">"Spójrzcie sobie głęboko w oczy bez słów"</h3>
+
+            <!-- Circular Timer Container -->
+            <div class="relative w-44 h-44 mx-auto mb-6 flex items-center justify-center">
+                <svg class="w-full h-full transform -rotate-90">
+                    <circle cx="88" cy="88" r="78" stroke="rgba(255,255,255,0.1)" stroke-width="8" fill="transparent" />
+                    <circle id="timerCircle" cx="88" cy="88" r="78" stroke="#F59E0B" stroke-width="8" stroke-dasharray="490" stroke-dashoffset="0" stroke-linecap="round" fill="transparent" class="transition-all duration-1000 linear" />
+                </svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                    <span id="timerDisplay" class="font-serif text-4xl font-bold text-amber-300">01:00</span>
+                    <span class="text-[10px] text-rosegold-light/60 tracking-wider uppercase mt-1">Pozostało</span>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-center space-x-3">
+                <button id="startTimerBtn" onclick="toggleIntimacyTimer()" class="px-6 py-2.5 rounded-xl bg-amber-500 text-burgundy-dark font-bold text-sm shadow-lg shadow-amber-500/30 hover:scale-105 transition-all flex items-center space-x-2">
+                    <i id="timerPlayIcon" class="fa-solid fa-play"></i>
+                    <span id="timerPlayText">Start</span>
+                </button>
+                <button onclick="resetIntimacyTimer()" class="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 text-white font-medium text-sm transition-all">
+                    <i class="fa-solid fa-rotate-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: LOVE CAPSULE / SAVED MEMORIES MODAL -->
+    <div id="capsuleModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="glass-card rounded-3xl max-w-2xl w-full max-h-[85vh] flex flex-col p-6 border-2 border-rosegold/40 shadow-2xl relative">
+            
+            <div class="flex items-center justify-between pb-4 border-b border-white/10">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-full bg-rose-500/20 border border-rose-400 flex items-center justify-center text-rose-400 text-lg">
+                        <i class="fa-solid fa-box-archive"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-serif text-xl font-bold text-gold-gradient">Nasza Kapsuła Bliskości</h3>
+                        <p class="text-xs text-rosegold-light/60">Zapisane pytania i Wasze osobiste notatki z wieczoru</p>
+                    </div>
+                </div>
+                <button onclick="closeCapsuleModal()" class="text-rosegold-light/50 hover:text-white transition-colors">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Saved Questions List Container -->
+            <div id="capsuleListContainer" class="flex-1 overflow-y-auto py-4 space-y-3 my-2 pr-1">
+                <!-- Dynamic Items Inserted Here -->
+            </div>
+
+            <!-- Capsule Footer Actions -->
+            <div class="pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
+                <span id="capsuleCountFooter" class="text-xs text-rosegold-light/60">Zapisano: 0 wpisów</span>
+                <div class="flex items-center space-x-2">
+                    <button onclick="exportCapsuleSummary()" class="px-4 py-2 rounded-xl bg-rosegold/20 hover:bg-rosegold/30 border border-rosegold/40 text-xs font-semibold text-rosegold-light transition-all flex items-center space-x-2">
+                        <i class="fa-solid fa-copy"></i>
+                        <span>Kopiuj Podsumowanie</span>
+                    </button>
+                    <button onclick="closeCapsuleModal()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-rosegold to-rose-500 text-burgundy-dark font-bold text-xs shadow-md">
+                        Zamknij
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Notification Toast Message -->
+    <div id="toastNotification" class="fixed bottom-6 right-6 z-50 glass-card px-4 py-3 rounded-2xl border border-rosegold/50 text-white text-xs font-medium flex items-center space-x-2 shadow-2xl transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <i class="fa-solid fa-sparkles text-amber-300"></i>
+        <span id="toastText">Zapisano pytanie w Kapsule Bliskości!</span>
+    </div>
+
+    <script>
+        
+        // Game State Management
+        let partnerA = "Kasia";
+        let partnerB = "Tomek";
+        let currentTurnPartner = "A"; // "A" or "B"
+        let closenessScore = 0;
+        let maxClosenessScore = 10; // 10 answered questions = 100%
+        let currentCategory = 'lvl1';
+        let drawMode = 'spread'; // 'spread' or 'single'
+        let currentCardIndex = -1;
+        let isCardFlipped = false;
+        let savedCapsuleItems = [];
+
+        // Audio System State
+        let audioCtx = null;
+        let isAmbientPlaying = false;
+        let ambientOsc1 = null;
+        let ambientOsc2 = null;
+        let ambientGain = null;
+
+        // Timer State
+        let timerInterval = null;
+        let timerTotalSeconds = 60;
+        let timerRemainingSeconds = 60;
+        let isTimerRunning = false;
+
+        // Themes
+        const atmosphereThemes = [
+            { id: 'rosegold', name: 'Atmosfera: Różane Złoto', bodyClass: 'theme-rosegold' },
+            { id: 'evening', name: 'Atmosfera: Aksamitny Wieczór', bodyClass: 'theme-evening' },
+            { id: 'candlelight', name: 'Atmosfera: Światło Świec', bodyClass: 'theme-candlelight' }
+        ];
+        let currentThemeIndex = 0;
+
+        const questionDatabase = {
+            lvl1: [
+                "Jakie było Twoje pierwsze wrażenie, kiedy spotkaliśmy się po raz pierwszy? Co poczułeś/aś w pierwszym ułamku sekundy?",
+                "Gdyby nasz związek był gatunkiem filmowym lub piosenką, jaki by to był styl?",
+                "Jaki mój nawyk lub gest uważasz za najbardziej uroczy, choć rzadko o tym mówisz?",
+                "Jaki był Twój ulubiony wspólny wyjazd lub randka w całym naszym życiu i dlaczego?",
+                "Czym zaskoczyłem/am Cię najbardziej od kiedy się znamy?",
+                "Gdybyś mógł/mogła odtworzyć jeden dowolny dzień z naszej przeszłości, który dzień by to był?",
+                "Jaka piosenka najbardziej kojarzy Ci się ze mną lub z początkiem naszej miłości?",
+                "Jaki był najśmieszniejszy moment, który wspólnie przeżyliśmy i do dziś wywołuje u Ciebie uśmiech?",
+                "Jakie trzy słowa najlepiej opisują atmosferę naszego związku?",
+                "Kiedy po raz pierwszy pomyślałeś/aś: 'To jest ktoś wyjątkowy'?",
+                "Jaki mały drobiazg, który robię dla Ciebie w ciągu dnia, sprawia Ci największą radość?",
+                "Gdybyśmy mieli jutro wyruszyć w niespodziewaną podróż tylko we dwoje, dokąd chciałbyś/chciałabyś pojechać?",
+                "Co w moim wyglądzie lub sposobie bycia przyciągnęło Twoją uwagę w pierwszej kolejności?",
+                "Jaka wspólna tradycja, którą stworzyliśmy, jest dla Ciebie najbardziej cenna?",
+                "Jaki komplement z mojej strony pamiętasz do dzisiaj?",
+                "Gdybyś miał/a opisać mnie komuś, kto mnie w ogóle nie zna, co powiedziałbyś/powiedziałabyś na samym początku?",
+                "Jaka była najprzyjemniejsza niespodzianka, jaką kiedykolwiek odemnie otrzymałeś/aś?",
+                "W czym jesteśmy do siebie najbardziej podobni, a w czym najbardziej się różnimy?",
+                "Co najbardziej lubisz robić ze mną w leniwą niedzielę?",
+                "Jakie jest Twoje ulubione zdjęcie z nami dwojgiem i jaka wiąże się z nim historia?",
+                "Jaki był Twój ulubiony wspólny posiłek lub kolacja przy świecach?",
+                "Co sprawia, że czujesz się ze mną w pełni swobodnie i bezpiecznie?",
+                "Gdybyś mógł/mogła nauczyć się ze mną jakiejś nowej umiejętności (np. tańca, języka, gotowania), co by to było?",
+                "Jakie wspólne marzenie z początków naszego związku udało nam się już spełnić?",
+                "Jaki mój uśmiech lub spojrzenie pamiętasz najbardziej ze wspólnych chwil?"
+            ],
+            lvl2: [
+                "W jakich chwilach czujesz się przeze mnie najbardziej kochany/a i doceniany/a?",
+                "Za jaką rzadko dostrzeganą rzecz jesteś mi dzisiaj głęboko wdzięczny/a?",
+                "W czym według Ciebie staliśmy się silniejsi jako para przez ostatnie miesiące?",
+                "Jaka jest Twoja największa obawa w głębi serca, którą chciałbyś/chciałabyś się dzisiaj ze mną podzielić?",
+                "Co mogę zrobić w trudnych momentach, abyś poczuł/a, że jestem dla Ciebie największym oparciem?",
+                "Co jest czymś, o czym marzysz dla naszej wspólnej przyszłości, ale rzadko wymawiasz to na głos?",
+                "Czy jest jakaś chwila w naszym życiu, w której czułeś/aś się ze mną zraniony/a, a o której chciałbyś/chciałabyś porozmawiać z czułością i zrozumieniem?",
+                "Jakie nawyki lub przekonania z przeszłości udało Ci się przełamać dzięki naszej relacji?",
+                "Co w moim wnętrzu lub charakterze podziwiasz najbardziej?",
+                "W jaki sposób najłatwiej okazuję Ci miłość i czy jest to zgodne z Twoim głównym językiem miłości?",
+                "Kiedy w ostatnim czasie poczułeś/aś ze mną głęboką jedność duchową i emocjonalną?",
+                "Jakie słowa wsparcia odemnie znaczyły dla Ciebie najwięcej w trudniejszym okresie?",
+                "Czego najbardziej nauczyłeś/aś się o sobie samym/samej będąc ze mną w związku?",
+                "Jak widzisz nasz dom i nasze wspólne życie za 5 lat?",
+                "Co sprawia, że czujesz, iż nasza relacja jest wyjątkowa na tle całego świata?",
+                "Jaka jest Twoja ulubiona cecha mojego serca?",
+                "W jaki sposób chciałbyś/chciałabyś, abyśmy okazywali sobie jeszcze więcej czułości na co dzień?",
+                "O czym myślisz, kiedy tęsknisz za mną w ciągu dnia?",
+                "Co jest dla Ciebie najważniejszym filarem zaufania w naszej relacji?",
+                "Jakie przemyślenie na temat miłości zmieniło się u Ciebie od kiedy jesteśmy razem?",
+                "Gdybyś miał/a podziękować mi za jedną konkretną rzecz z tego tygodnia, co by to było?",
+                "Co powoduje, że czujesz się przy mnie w pełni zaakceptowany/a ze wszystkimi swoimi wadami?",
+                "Jaka tajemnica lub marzenie z dzieciństwa wciąż żyje w Twoim sercu?",
+                "Co sprawia, że nawet po trudnym dniu na nowo czujesz spokój, wracając do mnie?",
+                "W jaki sposób możemy jeszcze lepiej dbać o naszą przestrzeń emocjonalną w biegu codzienności?"
+            ],
+            lvl3: [
+                "Spojrzyj mi prosto w oczy przez 30 sekund bez mówienia ani słowa, a potem opowiedz, co poczułeś/aś.",
+                "Odszeptaj mi do ucha trzy rzeczy, które najbardziej pociągają Cię we mnie fizycznie i emocjonalnie.",
+                "Wyobraź sobie nasz idealny romantyczny wieczór bez żadnych ograniczeń – opisz go minuta po minucie.",
+                "Dotknij mojej dłoni lub policzka w sposób, który wywołuje u Ciebie największą czułość i bliskość.",
+                "Co jest Twoją ulubioną romantyczną pamięcią związaną z nami z ostatniego roku?",
+                "Jaki romantyczny gest z mojej strony sprawia, że Twoje serce bije szybciej?",
+                "Gdybyś miał/a zaplanować dla nas zmysłowy wieczór niespodziankę, jaki klimat byś stworzył/a?",
+                "Jaka część mojego ciała jest Twoją ulubioną do całowania i przytulania?",
+                "Opowiedz o momencie, w którym poczułeś/aś do mnie najbardziej intensywne przyciąganie.",
+                "Jaki komplement na temat Twojego wyglądu i zmysłowości najbardziej lubisz ode mnie słyszeć?",
+                "Wyzwanie: Zamknij oczy na 20 sekund, podczas gdy ja zadam Ci jedno czułe pytanie whisperem.",
+                "Co jest dla Ciebie najbardziej romantycznym sposobem na rozpoczęcie wspólnego poranka?",
+                "Gdybyśmy mieli teraz tańczyć przy jednym wolnym utworze, jaką piosenkę byś wybrał/a?",
+                "Jaki rodzaj dotyku najszybciej pomaga Ci się zrelaksować i poczuć bliskość?",
+                "Co najbardziej lubisz w naszych pocałunkach?",
+                "Opisz jedno zmysłowe marzenie, które chciałbyś/chciałabyś wspólnie zrealizować w najbliższym czasie.",
+                "Jaki strój lub styl ubioru sprawia, że uważasz mnie za wyjątkowo atrakcyjnego/ą?",
+                "Gdybyś miał/a określić nasz romantyczny płomień jednym słowem, jak by ono brzmiało?",
+                "Wyzwanie: Przytul mnie mocno przez pełne 30 sekund i zrób trzy głębokie wspólne oddechy.",
+                "Co sprawia, że czujesz, że nasza namiętność i bliskość rozkwitają?",
+                "Jakie spojrzenie lub gest w publicznym miejscu daje Ci sygnał, że jesteś tylko mój/moja?",
+                "Opowiedz o pierwszym pocałunku – co pamiętasz z tamtej sekundy?",
+                "Jaka jest Twoja ulubiona pozycja do wspólnego przytulania się w łóżku?",
+                "Co sprawia, że czujesz się najbardziej zmysłowo i pięknie przy mnie?",
+                "Złóż na moich dłoniach czuły pocałunek i powiedz jedno najszczersze życzenie dla nas."
+            ],
+            wyr: [
+                "Co byś wolał/a: Wspólny weekend w przytulnej chatce w górach przy kominku czy luksusowy hotel przy szumie oceanu?",
+                "Co byś wolał/a: Otrzymać odemnie odprężający masaż całego ciała czy wykwintną kolację ugotowaną specjalnie dla Ciebie?",
+                "Co byś wolał/a: Niespodziewany czuły list miłosny schowany w kieszeni czy spontaniczny romantyczny wyjazd na weekend?",
+                "Co byś wolał/a: Wspólny wieczór na kanapie z filmem i przytulaniem czy nocny spacer pod gwiazdami po cichym mieście?",
+                "Co byś wolał/a: Codziennie rano dostawać buziaka na dobranoc/dzień dobry czy raz w tygodniu długą rozmowę o marzeniach?",
+                "Co byś wolał/a: Wspólny taniec w deszczu czy wspólny relaks w gorącym źródle / jacuzzi?",
+                "Co byś wolał/a: Gdybym zaskoczył/a Cię śniadaniem do łóżka czy przygotował/a romantyczną kąpiel z pianą i świecami?",
+                "Co byś wolał/a: Umiejętność czytania w moich myślach przez jeden dzień czy możliwość zatrzymania czasu na 3 godziny tylko dla nas?",
+                "Co byś wolał/a: Wspólny kurs gotowania włoskich potraw czy lekcję zmysłowego tańca dla par?",
+                "Co byś wolał/a: Przeprowadzić się na rok do urokliwego włoskiego miasteczka czy podróżować kamperem po całym świecie?",
+                "Co byś wolał/a: Zawsze zaczynać dzień od wspólnej kawy czy zawsze kończyć dzień długim przytulaniem przed snem?",
+                "Co byś wolał/a: Otrzymać pamiątkową biżuterię/drobiazg z wygrawerowaną datą czy fotoksiążkę z naszymi wszystkimi wspomnieniami?",
+                "Co byś wolał/a: Spędzić cały wieczór bez żadnych telefonów i ekranów czy spędzić cały dzień na wspólnej zabawie i grach?",
+                "Co byś wolał/a: Być zaskakiwanym drobnymi podarunkami bez okazji czy wspólnie planować duże, wielkie marzenia?",
+                "Co byś wolał/a: Zjeść kolację w restauracji na dachu wieżowca z widokiem na miasto czy piknik na kocu przy zachodzie słońca?",
+                "Co byś wolał/a: Gdybym napisał/a dla Ciebie wiersz czy zaśpiewał/a Twoją ulubioną piosenkę?",
+                "Co byś wolał/a: Przeżyć znowu nasz pierwszy rok relacji czy natychmiast przenieść się do naszej idealnej przyszłości?",
+                "Co byś wolał/a: Posiadać prywatną wyspę tylko dla naszej dwójki na miesiąc czy zwiedzić 10 najpiękniejszych stolic świata razem?",
+                "Co byś wolał/a: Rozmawiać bez słów samym spojrzeniem czy rozumieć się idealnie po jednym małym geście?",
+                "Co byś wolał/a: Zawsze mieć pewność, co drugie myśli czy zawsze mieć element romantycznej niespodzianki?"
+            ],
+            challenges: [
+                "Wyzwanie Oczu (60s): Patrzcie sobie prosto w oczy przez 60 sekund bez słów i bez odwracania wzroku. Oddychajcie powoli.",
+                "Wyzwanie Głębokiego Uścisku (45s): Przytulcie się wyjątkowo mocno przez 45 sekund, opierając głowę na ramieniu partnera.",
+                "Wyzwanie Masażu (60s): Daj partnerowi/partnerce odprężający masaż karku lub dłoni, mówiąc w międzyczasie dwa szczere komplementy.",
+                "Wyzwanie Szeptu (30s): Zbliż się do ucha partnera i odszeptaj trzy najpiękniejsze słowa, jakie dzisiaj przychodzą Ci do serca.",
+                "Wyzwanie Pocałunku (30s): Złóż czuły pocałunek na czołu, obu policzkach i dłoni partnera/partnerki.",
+                "Wyzwanie Wdzięczności (60s): Trzymając się za obie dłonie, wymieńcie naprzemiennie po 3 rzeczy, za które dziękujecie sobie nawzajem.",
+                "Wyzwanie Bicia Serca (45s): Połóż dłoń na klatce piersiowej partnera/partnerki, poczuj rytm jego/jej serca i wyrównajcie oddech.",
+                "Wyzwanie Komplementów (30s): Wymień bez zatrzymania 5 cech zewnętrznych i wewnętrznych, które najbardziej uwielbiasz w partnerze.",
+                "Wyzwanie Wolnego Tańca (60s): Wstańcie i zatańczcie bez muzyki, w cichym rytmie własnych serc i bliskości.",
+                "Wyzwanie Czułego Spojrzenia (45s): Weź twarz partnera w dłonie i powiedz mu/jej, jak bardzo jest dla Ciebie ważny/a."
+            ]
+        };
+
+        // Working Decks copied for gameplay
+        let decks = JSON.parse(JSON.stringify(questionDatabase));
+
+        
+        window.onload = function() {
+            initParticleCanvas();
+            loadProgressFromStorage();
+            updatePartnerUI();
+            updateDeckCountText();
+            renderSpreadCards();
+        };
+
+        // Canvas Ambient Particle System (Hearts & Stars)
+        function initParticleCanvas() {
+            const canvas = document.getElementById('particleCanvas');
+            const ctx = canvas.getContext('2d');
+            let width = canvas.width = window.innerWidth;
+            let height = canvas.height = window.innerHeight;
+
+            window.addEventListener('resize', () => {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+            });
+
+            const particles = [];
+            const particleCount = 35;
+
+            class Particle {
+                constructor() {
+                    this.reset();
+                }
+
+                reset() {
+                    this.x = Math.random() * width;
+                    this.y = height + Math.random() * 100;
+                    this.size = Math.random() * 12 + 6;
+                    this.speedY = Math.random() * 0.8 + 0.3;
+                    this.speedX = (Math.random() - 0.5) * 0.5;
+                    this.opacity = Math.random() * 0.5 + 0.2;
+                    this.type = Math.random() > 0.4 ? 'heart' : 'star';
+                    this.rotation = Math.random() * Math.PI * 2;
+                    this.rotSpeed = (Math.random() - 0.5) * 0.02;
+                }
+
+                update() {
+                    this.y -= this.speedY;
+                    this.x += this.speedX;
+                    this.rotation += this.rotSpeed;
+
+                    if (this.y < -20) {
+                        this.reset();
+                    }
+                }
+
+                draw() {
+                    ctx.save();
+                    ctx.translate(this.x, this.y);
+                    ctx.rotate(this.rotation);
+                    ctx.globalAlpha = this.opacity;
+
+                    if (this.type === 'heart') {
+                        ctx.fillStyle = '#E0A96D';
+                        ctx.beginPath();
+                        const topCurveHeight = this.size * 0.3;
+                        ctx.moveTo(0, topCurveHeight);
+                        ctx.bezierCurveTo(0, 0, -this.size / 2, 0, -this.size / 2, topCurveHeight);
+                        ctx.bezierCurveTo(-this.size / 2, (this.size + topCurveHeight) / 2, 0, this.size, 0, this.size);
+                        ctx.bezierCurveTo(0, this.size, this.size / 2, (this.size + topCurveHeight) / 2, this.size / 2, topCurveHeight);
+                        ctx.bezierCurveTo(this.size / 2, 0, 0, 0, 0, topCurveHeight);
+                        ctx.closePath();
+                        ctx.fill();
+                    } else {
+                        ctx.fillStyle = '#FFF0D4';
+                        ctx.beginPath();
+                        ctx.arc(0, 0, this.size / 4, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+
+                    ctx.restore();
+                }
+            }
+
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+
+            function animateParticles() {
+                ctx.clearRect(0, 0, width, height);
+                particles.forEach(p => {
+                    p.update();
+                    p.draw();
+                });
+                requestAnimationFrame(animateParticles);
+            }
+
+            animateParticles();
+        }
+
+
+        function initAudioContext() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // Web Audio API Synthesizer - Romantic Ambient Tone
+        function toggleAmbientMusic() {
+            initAudioContext();
+            const btn = document.getElementById('audioToggleBtn');
+            const icon = document.getElementById('audioIcon');
+
+            if (isAmbientPlaying) {
+                // Stop Ambient
+                if (ambientGain) {
+                    ambientGain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 1);
+                    setTimeout(() => {
+                        if (ambientOsc1) ambientOsc1.stop();
+                        if (ambientOsc2) ambientOsc2.stop();
+                        isAmbientPlaying = false;
+                    }, 1000);
+                }
+                btn.classList.remove('bg-rosegold/30', 'text-white');
+                icon.className = "fa-solid fa-volume-xmark text-sm md:text-base";
+                showToast("Muzyka w tle wyłączona");
+            } else {
+                // Start Ambient synth pad (Soft F# chord: F#3 & C#4)
+                ambientGain = audioCtx.createGain();
+                ambientGain.gain.setValueAtTime(0.001, audioCtx.currentTime);
+                ambientGain.gain.exponentialRampToValueAtTime(0.08, audioCtx.currentTime + 2);
+
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(320, audioCtx.currentTime);
+
+                ambientOsc1 = audioCtx.createOscillator();
+                ambientOsc1.type = 'sine';
+                ambientOsc1.frequency.setValueAtTime(185.00, audioCtx.currentTime); // F#3
+
+                ambientOsc2 = audioCtx.createOscillator();
+                ambientOsc2.type = 'triangle';
+                ambientOsc2.frequency.setValueAtTime(277.18, audioCtx.currentTime); // C#4
+
+                ambientOsc1.connect(filter);
+                ambientOsc2.connect(filter);
+                filter.connect(ambientGain);
+                ambientGain.connect(audioCtx.destination);
+
+                ambientOsc1.start();
+                ambientOsc2.start();
+
+                isAmbientPlaying = true;
+                btn.classList.add('bg-rosegold/30', 'text-white');
+                icon.className = "fa-solid fa-volume-high text-sm md:text-base text-rose-300 animate-pulse";
+                showToast("Włączono relaksujące tło dźwiękowe");
+            }
+        }
+
+        // SFX Playback
+        function playSoundSFX(type) {
+            initAudioContext();
+            if (!audioCtx) return;
+
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            if (type === 'flip') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.exponentialRampToValueAtTime(440, now + 0.15);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+            } else if (type === 'success') {
+                // Chime Triad
+                playChimeNote(523.25, now, 0.3); // C5
+                playChimeNote(659.25, now + 0.1, 0.4); // E5
+                playChimeNote(783.99, now + 0.2, 0.5); // G5
+                return;
+            } else if (type === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, now);
+                gain.gain.setValueAtTime(0.05, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+            } else if (type === 'bell') {
+                playChimeNote(880, now, 1.2); // A5 Bell
+                return;
+            }
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(now + 0.2);
+        }
+
+        function playChimeNote(freq, time, duration) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, time);
+            gain.gain.setValueAtTime(0.12, time);
+            gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(time);
+            osc.stop(time + duration);
+        }
+
+
+        function selectCategory(cat) {
+            playSoundSFX('click');
+            currentCategory = cat;
+
+            // Update Tabs UI
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = "tab-btn shrink-0 px-4 py-2.5 rounded-xl border text-xs md:text-sm font-semibold transition-all duration-300 flex items-center space-x-2 bg-white/5 border-white/10 text-rosegold-light/70 hover:bg-white/10";
+            });
+
+            const activeTab = document.getElementById(`tab-${cat}`);
+            if (activeTab) {
+                activeTab.className = "tab-btn active shrink-0 px-4 py-2.5 rounded-xl border text-xs md:text-sm font-semibold transition-all duration-300 flex items-center space-x-2 bg-rosegold/20 border-rosegold text-white shadow-lg shadow-rosegold/10";
+            }
+
+            // Update Card Cover UI Badges
+            updateCategoryCoverBadges(cat);
+            updateDeckCountText();
+
+            // Reset Card View
+            if (drawMode === 'spread') {
+                document.getElementById('singleCardWrapper').classList.add('hidden');
+                document.getElementById('spreadContainer').classList.remove('hidden');
+                renderSpreadCards();
+            } else {
+                drawNextQuestionCard();
+            }
+        }
+
+        function updateCategoryCoverBadges(cat) {
+            const coverTag = document.getElementById('cardCoverCategoryTag');
+            const coverTitle = document.getElementById('cardCoverTitle');
+            const coverIcon = document.getElementById('cardCoverIcon');
+
+            if (cat === 'lvl1') {
+                coverTag.textContent = "Poziom 1: Lekkie & Urocze";
+                coverTitle.textContent = "Poznajmy się na nowo";
+                coverIcon.className = "fa-solid fa-feather text-amber-300";
+            } else if (cat === 'lvl2') {
+                coverTag.textContent = "Poziom 2: Głębokie Wody";
+                coverTitle.textContent = "Wrażliwość & Emocje";
+                coverIcon.className = "fa-solid fa-water text-cyan-300";
+            } else if (cat === 'lvl3') {
+                coverTag.textContent = "Poziom 3: Iskra & Zmysły";
+                coverTitle.textContent = "Romantyzm & Bliskość";
+                coverIcon.className = "fa-solid fa-fire-flame-curved text-rose-400";
+            } else if (cat === 'wyr') {
+                coverTag.textContent = "Co byś wolał/a?";
+                coverTitle.textContent = "Romantyczne Dylematy";
+                coverIcon.className = "fa-solid fa-scale-balanced text-purple-300";
+            } else if (cat === 'challenges') {
+                coverTag.textContent = "Ćwiczenia Bliskości";
+                coverTitle.textContent = "Wyzwania z Minutnikiem";
+                coverIcon.className = "fa-solid fa-stopwatch text-emerald-300";
+            }
+        }
+
+        function setDrawMode(mode) {
+            playSoundSFX('click');
+            drawMode = mode;
+            const spreadBtn = document.getElementById('modeSpreadBtn');
+            const singleBtn = document.getElementById('modeSingleBtn');
+
+            if (mode === 'spread') {
+                spreadBtn.className = "px-2.5 py-1 rounded-lg border border-rosegold/40 bg-rosegold/20 text-white font-medium";
+                singleBtn.className = "px-2.5 py-1 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-rosegold-light/70 font-medium";
+                document.getElementById('singleCardWrapper').classList.add('hidden');
+                document.getElementById('spreadContainer').classList.remove('hidden');
+                renderSpreadCards();
+            } else {
+                singleBtn.className = "px-2.5 py-1 rounded-lg border border-rosegold/40 bg-rosegold/20 text-white font-medium";
+                spreadBtn.className = "px-2.5 py-1 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-rosegold-light/70 font-medium";
+                document.getElementById('spreadContainer').classList.add('hidden');
+                document.getElementById('singleCardWrapper').classList.remove('hidden');
+                drawNextQuestionCard();
+            }
+        }
+
+        function renderSpreadCards() {
+            // Refreshes the 3 card spread options
+            const slots = document.querySelectorAll('.spread-card-slot');
+            slots.forEach(s => {
+                s.style.opacity = '1';
+                s.style.pointerEvents = 'auto';
+            });
+        }
+
+        function revealSpreadCard(index) {
+            playSoundSFX('flip');
+            document.getElementById('spreadContainer').classList.add('hidden');
+            document.getElementById('singleCardWrapper').classList.remove('hidden');
+            drawNextQuestionCard();
+        }
+
+        function drawNextQuestionCard() {
+            playSoundSFX('flip');
+            const cardDeck = decks[currentCategory];
+
+            if (!cardDeck || cardDeck.length === 0) {
+                // Deck exhausted - reshuffle from base
+                decks[currentCategory] = [...questionDatabase[currentCategory]];
+                showToast("Talia została odświeżona!");
+            }
+
+            const currentList = decks[currentCategory];
+            const randomIndex = Math.floor(Math.random() * currentList.length);
+            const questionText = currentList[randomIndex];
+
+            // Remove drawn card
+            currentList.splice(randomIndex, 1);
+            updateDeckCountText();
+
+            // Set content to card back
+            document.getElementById('questionText').textContent = `"${questionText}"`;
+            
+            // Revealed Category Badge
+            const badge = document.getElementById('revealedCategoryBadge');
+            badge.textContent = getCategoryNiceName(currentCategory);
+
+            // Turn Indicator on Card
+            const activeName = currentTurnPartner === 'A' ? partnerA : partnerB;
+            document.getElementById('cardActiveTurnBadge').innerHTML = `<i class="fa-solid fa-user-sparkles"></i> Odpowiada: ${activeName}`;
+
+            // Check if challenge timer trigger needed
+            const timerBtn = document.getElementById('challengeTimerTrigger');
+            if (currentCategory === 'challenges' || questionText.includes('sekund') || questionText.includes('s)')) {
+                timerBtn.classList.remove('hidden');
+                // Extract time if present
+                if (questionText.includes('60s') || questionText.includes('60 sekund')) timerTotalSeconds = 60;
+                else if (questionText.includes('45s') || questionText.includes('45 sekund')) timerTotalSeconds = 45;
+                else if (questionText.includes('30s') || questionText.includes('30 sekund')) timerTotalSeconds = 30;
+                else timerTotalSeconds = 60;
+
+                timerRemainingSeconds = timerTotalSeconds;
+                document.getElementById('timerTaskDesc').textContent = `"${questionText}"`;
+                updateTimerDisplay();
+            } else {
+                timerBtn.classList.add('hidden');
+            }
+
+            // Perform 3D Flip
+            const cardEl = document.getElementById('main3DCard');
+            cardEl.classList.add('rotate-y-180');
+            isCardFlipped = true;
+        }
+
+        function flipCardToBack() {
+            if (!isCardFlipped) {
+                drawNextQuestionCard();
+            }
+        }
+
+        function completeCardAction() {
+            playSoundSFX('success');
+            
+            // Increment Score
+            closenessScore++;
+            updateClosenessGauge();
+
+            // Switch partner turn automatically
+            swapPartnerTurn(false);
+
+            // Check if new card or back to spread
+            if (drawMode === 'spread') {
+                const cardEl = document.getElementById('main3DCard');
+                cardEl.classList.remove('rotate-y-180');
+                isCardFlipped = false;
+                setTimeout(() => {
+                    document.getElementById('singleCardWrapper').classList.add('hidden');
+                    document.getElementById('spreadContainer').classList.remove('hidden');
+                    renderSpreadCards();
+                }, 400);
+            } else {
+                drawNextQuestionCard();
+            }
+
+            showToast("Brawo! Zbliżenie zwiększone ♥");
+        }
+
+        function swapPartnerTurn(playSound = true) {
+            if (playSound) playSoundSFX('click');
+            currentTurnPartner = currentTurnPartner === 'A' ? 'B' : 'A';
+            updatePartnerUI();
+
+            const activeName = currentTurnPartner === 'A' ? partnerA : partnerB;
+            const badge = document.getElementById('cardActiveTurnBadge');
+            if (badge) {
+                badge.innerHTML = `<i class="fa-solid fa-user-sparkles"></i> Odpowiada: ${activeName}`;
+            }
+        }
+
+        function updatePartnerUI() {
+            const activeName = currentTurnPartner === 'A' ? partnerA : partnerB;
+            document.getElementById('activePartnerText').textContent = activeName;
+            
+            const avatar = document.getElementById('partnerAvatar');
+            if (currentTurnPartner === 'A') {
+                avatar.className = "w-11 h-11 rounded-full bg-gradient-to-r from-rose-500 to-rosegold flex items-center justify-center text-white text-lg font-bold shadow-lg shadow-rose-500/30 transition-all duration-500";
+            } else {
+                avatar.className = "w-11 h-11 rounded-full bg-gradient-to-r from-amber-400 to-rose-500 flex items-center justify-center text-burgundy-dark text-lg font-bold shadow-lg shadow-amber-400/30 transition-all duration-500";
+            }
+        }
+
+        function updateClosenessGauge() {
+            const percent = Math.min(100, Math.round((closenessScore / maxClosenessScore) * 100));
+            document.getElementById('closenessPercent').textContent = `${percent}%`;
+            document.getElementById('closenessBar').style.width = `${percent}%`;
+        }
+
+        function updateDeckCountText() {
+            const count = decks[currentCategory] ? decks[currentCategory].length : 0;
+            document.getElementById('deckCountText').textContent = `Pozostało w talii: ${count}`;
+        }
+
+        function getCategoryNiceName(cat) {
+            switch(cat) {
+                case 'lvl1': return "Poziom 1";
+                case 'lvl2': return "Poziom 2";
+                case 'lvl3': return "Poziom 3";
+                case 'wyr': return "Co byś wolał/a?";
+                case 'challenges': return "Ćwiczenie";
+                default: return "Spleceni Sercom";
+            }
+        }
+
+
+        function saveCardToCapsule() {
+            playSoundSFX('click');
+            const qText = document.getElementById('questionText').textContent.replace(/"/g, '');
+            const activeName = currentTurnPartner === 'A' ? partnerA : partnerB;
+
+            // Prevent duplicate
+            if (savedCapsuleItems.some(i => i.text === qText)) {
+                showToast("To pytanie już jest w Kapsule!");
+                return;
+            }
+
+            const newItem = {
+                id: Date.now(),
+                text: qText,
+                category: getCategoryNiceName(currentCategory),
+                partner: activeName,
+                date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                note: ""
+            };
+
+            savedCapsuleItems.push(newItem);
+            updateCapsuleBadge();
+            showToast("Zapisano pytanie w Kapsule Bliskości! ♥");
+        }
+
+        function updateCapsuleBadge() {
+            document.getElementById('capsuleBadge').textContent = savedCapsuleItems.length;
+            document.getElementById('capsuleCountFooter').textContent = `Zapisano: ${savedCapsuleItems.length} wpisów`;
+        }
+
+        function openCapsuleModal() {
+            playSoundSFX('click');
+            renderCapsuleList();
+            document.getElementById('capsuleModal').classList.remove('hidden');
+        }
+
+        function closeCapsuleModal() {
+            document.getElementById('capsuleModal').classList.add('hidden');
+        }
+
+        function renderCapsuleList() {
+            const container = document.getElementById('capsuleListContainer');
+            container.innerHTML = '';
+
+            if (savedCapsuleItems.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-10 text-rosegold-light/50">
+                        <i class="fa-solid fa-heart-crack text-3xl mb-2"></i>
+                        <p class="text-xs">Wasza Kapsuła jest jeszcze pusta.</p>
+                        <p class="text-[10px] text-rosegold-light/40 mt-1">Podczas gry klikaj przycisk "Zapisz", aby zachować najpiękniejsze pytania.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            savedCapsuleItems.forEach((item, index) => {
+                const itemEl = document.createElement('div');
+                itemEl.className = "glass-panel p-4 rounded-2xl border border-rosegold/30 space-y-2 relative group";
+                itemEl.innerHTML = `
+                    <div class="flex justify-between items-center text-[10px] text-rosegold-light/60">
+                        <span class="px-2 py-0.5 rounded-full bg-rosegold/10 border border-rosegold/30 text-rosegold font-medium">${item.category}</span>
+                        <span>Dla: ${item.partner} (${item.date})</span>
+                    </div>
+                    <p class="font-serif text-sm text-white font-medium">"${item.text}"</p>
+                    
+                    <!-- Note Field -->
+                    <div class="pt-2">
+                        <input type="text" onchange="updateCapsuleNote(${item.id}, this.value)" value="${item.note}" placeholder="Dodaj Wasze przemyślenie lub odpowiedź..." class="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-rosegold-light placeholder-rosegold-light/30 focus:outline-none focus:border-rosegold">
+                    </div>
+
+                    <button onclick="removeCapsuleItem(${item.id})" class="absolute top-3 right-3 text-rose-400/50 hover:text-rose-400 transition-colors">
+                        <i class="fa-solid fa-trash-can text-xs"></i>
+                    </button>
+                `;
+                container.appendChild(itemEl);
+            });
+        }
+
+        function updateCapsuleNote(id, noteVal) {
+            const item = savedCapsuleItems.find(i => i.id === id);
+            if (item) {
+                item.note = noteVal;
+                showToast("Zapisano notatkę!");
+            }
+        }
+
+        function removeCapsuleItem(id) {
+            savedCapsuleItems = savedCapsuleItems.filter(i => i.id !== id);
+            updateCapsuleBadge();
+            renderCapsuleList();
+            showToast("Usunięto wpis");
+        }
+
+        function exportCapsuleSummary() {
+            if (savedCapsuleItems.length === 0) {
+                showToast("Brak wpisów do skopiowania");
+                return;
+            }
+
+            let summaryText = `✨ SPLECENI SERCOM - PODSUMOWANIE WIECZORU (${partnerA} & ${partnerB}) ✨\n\n`;
+            savedCapsuleItems.forEach((item, idx) => {
+                summaryText += `${idx + 1}. [${item.category}] ${item.text}\n`;
+                if (item.note) summaryText += `   Notatka: "${item.note}"\n`;
+                summaryText += `\n`;
+            });
+
+            // Copy to clipboard fallback
+            const tempArea = document.createElement('textarea');
+            tempArea.value = summaryText;
+            document.body.appendChild(tempArea);
+            tempArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempArea);
+
+            showToast("Skopiowano podsumowanie wieczoru do schowka!");
+        }
+
+
+        function openTimerModal() {
+            playSoundSFX('click');
+            document.getElementById('timerModal').classList.remove('hidden');
+        }
+
+        function closeTimerModal() {
+            pauseIntimacyTimer();
+            document.getElementById('timerModal').classList.add('hidden');
+        }
+
+        function toggleIntimacyTimer() {
+            playSoundSFX('click');
+            if (isTimerRunning) {
+                pauseIntimacyTimer();
+            } else {
+                startIntimacyTimer();
+            }
+        }
+
+        function startIntimacyTimer() {
+            isTimerRunning = true;
+            document.getElementById('timerPlayIcon').className = "fa-solid fa-pause";
+            document.getElementById('timerPlayText').textContent = "Pauza";
+
+            timerInterval = setInterval(() => {
+                timerRemainingSeconds--;
+                updateTimerDisplay();
+
+                if (timerRemainingSeconds <= 0) {
+                    pauseIntimacyTimer();
+                    playSoundSFX('bell');
+                    showToast("Czas minął! Wspaniałe ćwiczenie ♥");
+                }
+            }, 1000);
+        }
+
+        function pauseIntimacyTimer() {
+            isTimerRunning = false;
+            clearInterval(timerInterval);
+            document.getElementById('timerPlayIcon').className = "fa-solid fa-play";
+            document.getElementById('timerPlayText').textContent = "Start";
+        }
+
+        function resetIntimacyTimer() {
+            playSoundSFX('click');
+            pauseIntimacyTimer();
+            timerRemainingSeconds = timerTotalSeconds;
+            updateTimerDisplay();
+        }
+
+        function updateTimerDisplay() {
+            const mins = Math.floor(timerRemainingSeconds / 60);
+            const secs = timerRemainingSeconds % 60;
+            const formatted = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            document.getElementById('timerDisplay').textContent = formatted;
+
+            // SVG Circular Progress offset
+            const circle = document.getElementById('timerCircle');
+            const totalCircumference = 490;
+            const progress = timerRemainingSeconds / timerTotalSeconds;
+            const dashoffset = totalCircumference * (1 - progress);
+            circle.style.strokeDashoffset = dashoffset;
+        }
+
+        // Atmosphere Theme Selector
+        function cycleAtmosphereTheme() {
+            playSoundSFX('click');
+            document.body.classList.remove(atmosphereThemes[currentThemeIndex].bodyClass);
+            currentThemeIndex = (currentThemeIndex + 1) % atmosphereThemes.length;
+            const newTheme = atmosphereThemes[currentThemeIndex];
+            document.body.classList.add(newTheme.bodyClass);
+            document.getElementById('atmosphereName').textContent = newTheme.name;
+            showToast(`Zmieniono nastrój: ${newTheme.name.replace('Atmosfera: ', '')}`);
+        }
+
+        // Setup Form
+        function openSetupModal() {
+            playSoundSFX('click');
+            document.getElementById('partnerAInput').value = partnerA;
+            document.getElementById('partnerBInput').value = partnerB;
+            document.getElementById('setupModal').classList.remove('hidden');
+        }
+
+        function saveSetupForm(e) {
+            e.preventDefault();
+            playSoundSFX('success');
+            
+            partnerA = document.getElementById('partnerAInput').value.trim() || "Partner A";
+            partnerB = document.getElementById('partnerBInput').value.trim() || "Partner B";
+            
+            const startSel = document.getElementById('startPartnerSelect').value;
+            if (startSel === 'random') {
+                currentTurnPartner = Math.random() > 0.5 ? 'A' : 'B';
+            } else {
+                currentTurnPartner = startSel;
+            }
+
+            updatePartnerUI();
+            document.getElementById('setupModal').classList.add('hidden');
+            showToast(`Witajcie ${partnerA} & ${partnerB}! Udanej gry.`);
+        }
+
+        function resetGameProgress() {
+            playSoundSFX('click');
+            closenessScore = 0;
+            updateClosenessGauge();
+            decks = JSON.parse(JSON.stringify(questionDatabase));
+            updateDeckCountText();
+            showToast("Resetowano postęp gry i talie kart");
+        }
+
+        function loadProgressFromStorage() {
+            // Initial default names check
+            updatePartnerUI();
+        }
+
+        // Notification Toast Helper
+        function showToast(msg) {
+            const toast = document.getElementById('toastNotification');
+            document.getElementById('toastText').textContent = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 2600);
+        }
+    </script>
+</body>
+</html>
