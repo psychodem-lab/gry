@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="pl" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Łamacz Lodów - Super Gra Integracyjna dla Dzieci i Młodzieży</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts: Fredoka & Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        display: ['Fredoka', 'sans-serif'],
+                        body: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        ice: {
+                            100: '#E0F7FA',
+                            300: '#80DEEA',
+                            500: '#00ACC1',
+                            700: '#00838F',
+                            900: '#004D40',
+                        },
+                        neon: {
+                            cyan: '#00F2FE',
+                            blue: '#4FACFE',
+                            purple: '#7F00FF',
+                            pink: '#FF007F',
+                            yellow: '#FFD200',
+                            green: '#00FF87'
+                        }
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-glow': 'pulseGlow 2s infinite',
+                        'shake': 'shake 0.4s ease-in-out',
+                        'bounce-short': 'bounceShort 0.5s ease shadow'
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px) rotate(0deg)' },
+                            '50%': { transform: 'translateY(-15px) rotate(2deg)' },
+                        },
+                        pulseGlow: {
+                            '0%, 100%': { boxShadow: '0 0 15px rgba(0, 242, 254, 0.4)' },
+                            '50%': { boxShadow: '0 0 35px rgba(0, 242, 254, 0.9)' },
+                        },
+                        shake: {
+                            '0%, 100%': { transform: 'translateX(0)' },
+                            '20%, 60%': { transform: 'translateX(-10px) rotate(-3deg)' },
+                            '40%, 80%': { transform: 'translateX(10px) rotate(3deg)' },
+                        },
+                        bounceShort: {
+                            '0%, 100%': { transform: 'scale(1)' },
+                            '50%': { transform: 'scale(1.08)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: #0b132b;
+            color: #ffffff;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .glass-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03));
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        .neon-border {
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.3), inset 0 0 15px rgba(0, 242, 254, 0.2);
+        }
+
+        .neon-text-glow {
+            text-shadow: 0 0 12px rgba(0, 242, 254, 0.6), 0 0 20px rgba(79, 172, 254, 0.4);
+        }
+
+        .ice-cube-3d {
+            background: linear-gradient(135deg, rgba(224, 247, 250, 0.8) 0%, rgba(128, 222, 234, 0.5) 50%, rgba(0, 172, 193, 0.7) 100%);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,255,255,0.8);
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            transform-style: preserve-3d;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .ice-cube-3d:active {
+            transform: scale(0.95);
+        }
+
+        /* Styling custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 242, 254, 0.4);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 242, 254, 0.8);
+        }
+    </style>
+</head>
+<body class="relative min-h-screen flex flex-col justify-between selection:bg-neon-cyan selection:text-slate-900">
+
+    <!-- Background Animated Particles Canvas -->
+    <canvas id="bgCanvas" class="fixed inset-0 pointer-events-none z-0"></canvas>
+
+    <!-- Top Navigation Header -->
+    <header class="relative z-10 w-full px-4 py-3 glass-panel border-b border-white/10 sticky top-0">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+            
+            <!-- Logo & Title -->
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('icebreaker')">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-neon-cyan to-neon-purple flex items-center justify-center text-2xl shadow-lg shadow-neon-cyan/20 animate-pulse">
+                    🧊
+                </div>
+                <div>
+                    <h1 class="font-display font-bold text-2xl md:text-3xl bg-clip-text text-transparent bg-gradient-to-r from-neon-cyan via-white to-neon-pink neon-text-glow">
+                        ŁAMACZ LODÓW
+                    </h1>
+                    <p class="text-xs text-cyan-200/70 hidden sm:block">Ekstra gra integracyjna dla każdego!</p>
+                </div>
+            </div>
+
+            <!-- Players Bar / Active Player Badge -->
+            <div class="flex items-center gap-2">
+                <div id="activePlayerBadge" class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-950/80 border border-neon-cyan/40 text-sm font-semibold">
+                    <span class="text-neon-cyan">Kolej na:</span>
+                    <span id="activePlayerName" class="text-yellow-300 font-bold">Wszyscy</span>
+                    <button onclick="nextPlayer()" title="Losuj/Następny Gracz" class="ml-1 px-2 py-0.5 text-xs bg-neon-cyan/20 hover:bg-neon-cyan/40 text-neon-cyan rounded-full transition">
+                        🎲 Następny
+                    </button>
+                </div>
+
+                <button onclick="togglePlayerModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600/30 hover:bg-purple-600/50 border border-purple-400/30 text-xs font-semibold transition">
+                    <span>👥 Gracze</span>
+                    <span id="playerCountBadge" class="px-1.5 py-0.2 text-[10px] bg-purple-500 text-white rounded-full">0</span>
+                </button>
+
+                <button id="soundToggleBtn" onclick="toggleSound()" class="p-2 rounded-xl bg-slate-800/80 border border-white/10 hover:bg-slate-700 transition text-sm" title="Włącz/Wyłącz Dźwięk">
+                    🔊
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Filters Bar (Age & Categories) -->
+    <section class="relative z-10 max-w-7xl mx-auto w-full px-4 pt-4 pb-2">
+        <div class="glass-panel rounded-2xl p-3 flex flex-col md:flex-row gap-3 items-center justify-between text-xs sm:text-sm">
+            
+            <!-- Age Filter -->
+            <div class="flex items-center gap-1.5 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+                <span class="text-cyan-300 font-semibold uppercase text-[11px] tracking-wider mr-1">Wiek:</span>
+                <button onclick="setAgeFilter('all')" id="age-all" class="age-btn active px-3 py-1 rounded-lg font-bold bg-neon-cyan text-slate-950 transition">
+                    👶🏼👧🏻 Wszystkie
+                </button>
+                <button onclick="setAgeFilter('kids')" id="age-kids" class="age-btn px-3 py-1 rounded-lg font-medium bg-slate-800 text-slate-300 hover:bg-slate-700 transition">
+                    🎈 Dzieci (6-11)
+                </button>
+                <button onclick="setAgeFilter('teens')" id="age-teens" class="age-btn px-3 py-1 rounded-lg font-medium bg-slate-800 text-slate-300 hover:bg-slate-700 transition">
+                    🔥 Młodzież (12-17)
+                </button>
+            </div>
+
+            <!-- Navigation Tabs for Modes -->
+            <div class="flex items-center gap-1 overflow-x-auto w-full md:w-auto justify-start md:justify-end">
+                <button onclick="switchTab('icebreaker')" id="tab-icebreaker" class="nav-tab active px-3 py-1.5 rounded-xl font-display font-semibold text-xs flex items-center gap-1.5 bg-gradient-to-r from-neon-cyan to-neon-blue text-slate-950 shadow-md">
+                    🧊 Rozbij Lód
+                </button>
+                <button onclick="switchTab('wheel')" id="tab-wheel" class="nav-tab px-3 py-1.5 rounded-xl font-display font-semibold text-xs flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200">
+                    🎡 Koło Fortuny
+                </button>
+                <button onclick="switchTab('wouldyou-rather')" id="tab-wouldyou-rather" class="nav-tab px-3 py-1.5 rounded-xl font-display font-semibold text-xs flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200">
+                    ⚖️ Co Wolisz?
+                </button>
+                <button onclick="switchTab('speed-timer')" id="tab-speed-timer" class="nav-tab px-3 py-1.5 rounded-xl font-display font-semibold text-xs flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200">
+                    ⏱️ Gorące Krzesło
+                </button>
+                <button onclick="switchTab('creator')" id="tab-creator" class="nav-tab px-3 py-1.5 rounded-xl font-display font-semibold text-xs flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200">
+                    ✏️ Baza & Kreator
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content Container -->
+    <main class="relative z-10 max-w-5xl mx-auto w-full px-4 py-4 flex-grow flex flex-col justify-center items-center">
+
+        <!-- ==================== MODE 1: ICE CRUSHER ==================== -->
+        <section id="mode-icebreaker" class="game-mode w-full flex flex-col items-center justify-center space-y-6">
+            <div class="text-center space-y-2">
+                <span class="px-3 py-1 rounded-full bg-neon-cyan/10 border border-neon-cyan/30 text-neon-cyan text-xs font-semibold tracking-wide uppercase">
+                    Klasyczny Łamacz Lodów
+                </span>
+                <h2 class="text-3xl sm:text-4xl font-display font-bold text-white">Rozbij kostkę lodu!</h2>
+                <p class="text-sm text-slate-300 max-w-md mx-auto">Klikaj lub pukaj w kostkę lodu, aby ją rozkruszyć i ujawnić niesamowite pytanie!</p>
+            </div>
+
+            <!-- Ice Cube Container -->
+            <div class="relative my-4 flex justify-center items-center">
+                <!-- 3D Ice Cube Component -->
+                <div id="iceCube" onclick="hitIceCube()" class="ice-cube-3d w-56 h-56 sm:w-64 sm:h-64 rounded-3xl cursor-pointer flex flex-col items-center justify-center relative overflow-hidden group select-none">
+                    
+                    <!-- Crack Overlay SVG -->
+                    <svg id="crackOverlay" class="absolute inset-0 w-full h-full pointer-events-none opacity-0 transition-opacity duration-300" viewBox="0 0 100 100">
+                        <path d="M50 50 L30 20 M50 50 L80 30 M50 50 L75 75 M50 50 L20 80 M50 50 L50 15 M50 50 L85 50" stroke="rgba(255,255,255,0.9)" stroke-width="2.5" stroke-linecap="round"/>
+                        <path d="M30 20 L15 25 M75 75 L85 85 M20 80 L10 70 M80 30 L90 20" stroke="rgba(255,255,255,0.8)" stroke-width="1.5"/>
+                    </svg>
+
+                    <!-- Shimmer / Ice Highlight -->
+                    <div class="absolute -top-12 -left-12 w-24 h-24 bg-white/40 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
+
+                    <div class="z-10 text-center p-4">
+                        <div id="iceEmoji" class="text-6xl sm:text-7xl mb-2 transition-transform duration-200 group-hover:scale-110">🧊</div>
+                        <p id="icePromptText" class="font-display font-bold text-lg text-slate-900 drop-shadow-sm">KLIKNIJ, ABY ROZBIĆ!</p>
+                        <p id="hitsLeftText" class="text-xs font-semibold text-slate-800 opacity-80 mt-1">Uderzenia: 0/3</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Revealed Question Card Modal / Display -->
+            <div id="questionDisplayCard" class="hidden w-full max-w-2xl glass-panel rounded-3xl p-6 sm:p-8 text-center space-y-6 animate-bounce-short border-2 border-neon-cyan/40">
+                <div class="flex justify-between items-center border-b border-white/10 pb-3">
+                    <span id="questionCategoryTag" class="px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 text-xs font-bold uppercase tracking-wider">
+                        Kategoria
+                    </span>
+                    <span id="questionTargetTag" class="px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-300 text-xs font-bold">
+                        Wszyscy
+                    </span>
+                </div>
+
+                <div class="py-4">
+                    <h3 id="questionText" class="text-xl sm:text-2xl md:text-3xl font-display font-bold text-white leading-relaxed">
+                        Tutaj pojawi się wkrótce Twoje super pytanie!
+                    </h3>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
+                    <button onclick="resetIceCube()" class="px-6 py-3 rounded-2xl bg-gradient-to-r from-neon-cyan to-neon-blue text-slate-950 font-display font-bold text-base hover:opacity-90 transition shadow-lg shadow-neon-cyan/20">
+                        🧊 Następna Kostka Lodu
+                    </button>
+                    <button onclick="startSpeedTimerFromQuestion()" class="px-4 py-3 rounded-2xl bg-amber-500/20 border border-amber-400/40 text-amber-300 font-display font-bold text-xs hover:bg-amber-500/30 transition">
+                        ⏱️ Odpowiedz w 15s!
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== MODE 2: SPIN THE WHEEL ==================== -->
+        <section id="mode-wheel" class="game-mode hidden w-full flex flex-col items-center justify-center space-y-6">
+            <div class="text-center space-y-2">
+                <span class="px-3 py-1 rounded-full bg-neon-purple/10 border border-neon-purple/30 text-neon-purple text-xs font-semibold tracking-wide uppercase">
+                    Koło Fortuny
+                </span>
+                <h2 class="text-3xl sm:text-4xl font-display font-bold text-white">Zakręć i wylosuj kategorię!</h2>
+            </div>
+
+            <!-- Wheel Container -->
+            <div class="relative flex flex-col items-center my-2">
+                <!-- Pointer Indicator -->
+                <div class="w-8 h-8 -mb-4 z-20 text-neon-pink text-4xl filter drop-shadow-md">
+                    ▼
+                </div>
+
+                <div class="relative p-3 rounded-full bg-slate-900/80 border-4 border-neon-cyan/40 shadow-2xl shadow-neon-cyan/20">
+                    <canvas id="wheelCanvas" width="340" height="340" class="max-w-full h-auto cursor-pointer"></canvas>
+                </div>
+
+                <button id="spinBtn" onclick="spinWheel()" class="mt-6 px-8 py-3.5 rounded-2xl bg-gradient-to-r from-neon-pink via-purple-600 to-neon-blue text-white font-display font-bold text-lg hover:scale-105 active:scale-95 transition shadow-lg shadow-neon-pink/30">
+                    🎡 ZAKRĘĆ KOŁEM!
+                </button>
+            </div>
+
+            <!-- Wheel Result Display -->
+            <div id="wheelResultModal" class="hidden w-full max-w-xl glass-panel rounded-3xl p-6 text-center space-y-4 border border-neon-purple/50 animate-bounce-short">
+                <span id="wheelCategoryHeader" class="px-3 py-1 rounded-full bg-neon-pink/20 text-neon-pink text-xs font-bold uppercase">
+                    Kategoria
+                </span>
+                <p id="wheelQuestionText" class="text-xl sm:text-2xl font-display font-bold text-white">
+                    Pytanie wyciągnięte z kategorii!
+                </p>
+                <button onclick="closeWheelResult()" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition">
+                    Gotowe / Kolejny gracz
+                </button>
+            </div>
+        </section>
+
+        <!-- ==================== MODE 3: WOULD YOU RATHER ==================== -->
+        <section id="mode-wouldyou-rather" class="game-mode hidden w-full max-w-3xl flex flex-col items-center space-y-6">
+            <div class="text-center space-y-2">
+                <span class="px-3 py-1 rounded-full bg-neon-pink/10 border border-neon-pink/30 text-neon-pink text-xs font-semibold tracking-wide uppercase">
+                    Szalony Dylemat
+                </span>
+                <h2 class="text-3xl sm:text-4xl font-display font-bold text-white">Co Wolisz? Wybierz mądrze!</h2>
+                <p class="text-sm text-slate-300">Kliknij wybraną opcję, aby zobaczyć głosowanie grupy i statystyki!</p>
+            </div>
+
+            <div class="w-full grid grid-cols-1 md:grid-cols-2 gap-4 my-4">
+                <!-- Option A -->
+                <button id="optionABtn" onclick="voteWouldYouRather('A')" class="glass-card group hover:border-neon-cyan p-6 sm:p-8 rounded-3xl text-center flex flex-col items-center justify-between min-h-[220px] transition-all duration-300 hover:scale-[1.02] border-2 border-neon-cyan/30 relative overflow-hidden">
+                    <span class="text-xs font-bold uppercase tracking-widest text-neon-cyan mb-2">Opcja A</span>
+                    <h3 id="optionAText" class="text-lg sm:text-xl font-display font-bold text-white group-hover:text-neon-cyan transition-colors">
+                        Ładowanie opcji A...
+                    </h3>
+                    
+                    <!-- Stats Bar -->
+                    <div id="statsBarA" class="hidden w-full mt-4 space-y-1">
+                        <div class="w-full bg-slate-800 rounded-full h-3 overflow-hidden">
+                            <div id="barA" class="bg-neon-cyan h-full transition-all duration-1000 w-0"></div>
+                        </div>
+                        <span id="percentA" class="text-sm font-bold text-neon-cyan">50%</span>
+                    </div>
+                </button>
+
+                <!-- VS Badge -->
+                <div class="hidden md:flex absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-slate-900 border-2 border-white/20 items-center justify-center font-display font-bold text-xs text-yellow-400">
+                    VS
+                </div>
+
+                <!-- Option B -->
+                <button id="optionBBtn" onclick="voteWouldYouRather('B')" class="glass-card group hover:border-neon-pink p-6 sm:p-8 rounded-3xl text-center flex flex-col items-center justify-between min-h-[220px] transition-all duration-300 hover:scale-[1.02] border-2 border-neon-pink/30 relative overflow-hidden">
+                    <span class="text-xs font-bold uppercase tracking-widest text-neon-pink mb-2">Opcja B</span>
+                    <h3 id="optionBText" class="text-lg sm:text-xl font-display font-bold text-white group-hover:text-neon-pink transition-colors">
+                        Ładowanie opcji B...
+                    </h3>
+
+                    <!-- Stats Bar -->
+                    <div id="statsBarB" class="hidden w-full mt-4 space-y-1">
+                        <div class="w-full bg-slate-800 rounded-full h-3 overflow-hidden">
+                            <div id="barB" class="bg-neon-pink h-full transition-all duration-1000 w-0"></div>
+                        </div>
+                        <span id="percentB" class="text-sm font-bold text-neon-pink">50%</span>
+                    </div>
+                </button>
+            </div>
+
+            <button onclick="loadNextWouldYouRather()" class="px-6 py-3 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-display font-bold text-sm transition shadow-lg">
+                🔄 Następny Dylemat
+            </button>
+        </section>
+
+        <!-- ==================== MODE 4: SPEED TIMER / HOT SEAT ==================== -->
+        <section id="mode-speed-timer" class="game-mode hidden w-full max-w-xl flex flex-col items-center text-center space-y-6">
+            <div class="space-y-2">
+                <span class="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-semibold tracking-wide uppercase">
+                    Gorące Krzesło / Szybka Runda
+                </span>
+                <h2 class="text-3xl sm:text-4xl font-display font-bold text-white">Szybka Odpowiedź!</h2>
+                <p class="text-sm text-slate-300">Odpowiedz zanim minie czas!</p>
+            </div>
+
+            <!-- Circular Progress Ring / Timer Display -->
+            <div class="relative w-48 h-48 sm:w-56 sm:h-56 flex items-center justify-center my-2">
+                <svg class="w-full h-full transform -rotate-90">
+                    <circle cx="50%" cy="50%" r="42%" stroke="currentColor" stroke-width="12" class="text-slate-800" fill="transparent" />
+                    <circle id="timerRing" cx="50%" cy="50%" r="42%" stroke="currentColor" stroke-width="12" class="text-amber-400 transition-all duration-200" fill="transparent" stroke-dasharray="500" stroke-dashoffset="0" stroke-linecap="round" />
+                </svg>
+                <div class="absolute flex flex-col items-center">
+                    <span id="timerSeconds" class="font-display font-bold text-5xl sm:text-6xl text-white">15</span>
+                    <span class="text-xs text-amber-300 uppercase font-semibold">sekund</span>
+                </div>
+            </div>
+
+            <!-- Speed Card -->
+            <div class="w-full glass-panel rounded-3xl p-6 border border-amber-500/30 space-y-4">
+                <p id="speedQuestionText" class="text-lg sm:text-xl font-display font-bold text-white">
+                    Kliknij "Start", aby wylosować zadanie na czas!
+                </p>
+                
+                <div class="flex items-center justify-center gap-3 pt-2">
+                    <button id="startTimerBtn" onclick="toggleTimer()" class="px-6 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-display font-bold text-sm transition shadow-lg shadow-amber-500/20">
+                        ▶️ Start Zegara
+                    </button>
+                    <button onclick="loadSpeedQuestion()" class="px-4 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition">
+                        🎲 Nowe Pytanie
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== MODE 5: CREATOR & DATABASE ==================== -->
+        <section id="mode-creator" class="game-mode hidden w-full max-w-2xl flex flex-col space-y-6">
+            <div class="text-center space-y-2">
+                <span class="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold tracking-wide uppercase">
+                    Własne Pytania & Baza
+                </span>
+                <h2 class="text-3xl sm:text-4xl font-display font-bold text-white">Dodaj własne pytania!</h2>
+                <p class="text-sm text-slate-300">Twoje dodane pytania zostaną zapisane w przeglądarce i dołączą do gry!</p>
+            </div>
+
+            <!-- Add Form Card -->
+            <div class="glass-panel rounded-3xl p-6 border border-emerald-500/30 space-y-4">
+                <h3 class="font-display font-bold text-lg text-emerald-300">Dodaj Nowe Pytanie</h3>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Kategoria:</label>
+                        <select id="customCategory" class="w-full bg-slate-900 border border-white/20 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-400">
+                            <option value="Śmieszne & Absurdalne">Śmieszne & Absurdalne</option>
+                            <option value="Supermoce & S-F">Supermoce & S-F</option>
+                            <option value="Głębokie & Przemyślenia">Głębokie & Przemyślenia</option>
+                            <option value="Szkoła & Relacje">Szkoła & Relacje</option>
+                            <option value="Wyzwania & Akcja">Wyzwania & Akcja</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Grupa wiekowa:</label>
+                        <select id="customAge" class="w-full bg-slate-900 border border-white/20 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-400">
+                            <option value="all">Wszyscy</option>
+                            <option value="kids">Dzieci (6-11)</option>
+                            <option value="teens">Młodzież (12-17)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Treść Pytania / Zadania:</label>
+                    <textarea id="customQuestionInput" rows="3" placeholder="Wpisz tutaj swoje kreatywne pytanie..." class="w-full bg-slate-900 border border-white/20 rounded-xl p-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400"></textarea>
+                </div>
+
+                <button onclick="addCustomQuestion()" class="w-full py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-display font-bold text-sm transition shadow-lg shadow-emerald-500/20">
+                    ➕ Dodaj Pytanie do Bazy
+                </button>
+            </div>
+
+            <!-- Database Stats & Custom Questions List -->
+            <div class="glass-panel rounded-3xl p-6 border border-white/10 space-y-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-display font-bold text-base text-white">Twoje Własne Pytania</h3>
+                    <span id="customCountBadge" class="text-xs bg-emerald-500/20 text-emerald-300 px-2.5 py-1 rounded-full font-bold">0 pytań</span>
+                </div>
+
+                <div id="customQuestionsList" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    <p class="text-xs text-slate-400 italic text-center py-4">Brak własnych pytań. Dodaj pierwsze wyżej!</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal: Players Management -->
+    <div id="playerModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+        <div class="glass-panel w-full max-w-md rounded-3xl p-6 space-y-4 border border-purple-500/30">
+            <div class="flex justify-between items-center border-b border-white/10 pb-3">
+                <h3 class="font-display font-bold text-xl text-white">👥 Lista Graczy</h3>
+                <button onclick="togglePlayerModal()" class="text-slate-400 hover:text-white font-bold text-lg">✕</button>
+            </div>
+
+            <!-- Add Player Form -->
+            <div class="flex gap-2">
+                <input id="playerNameInput" type="text" placeholder="Imię gracza..." class="flex-grow bg-slate-900 border border-white/20 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-purple-400" onkeyup="if(event.key === 'Enter') addPlayer()">
+                <button onclick="addPlayer()" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-display font-bold text-sm rounded-xl transition">
+                    Dodaj
+                </button>
+            </div>
+
+            <!-- Player List -->
+            <div id="playerListContainer" class="space-y-2 max-h-56 overflow-y-auto my-2">
+                <!-- Players rendered here -->
+            </div>
+
+            <div class="pt-2 flex justify-between items-center">
+                <button onclick="randomizePlayer()" class="px-4 py-2 bg-neon-cyan/20 border border-neon-cyan/40 text-neon-cyan font-bold text-xs rounded-xl hover:bg-neon-cyan/30 transition">
+                    🎲 Wylosuj Kogoś!
+                </button>
+                <button onclick="clearPlayers()" class="text-xs text-rose-400 hover:underline">
+                    Wyczyść wszystkich
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="relative z-10 w-full py-4 text-center text-xs text-slate-400 border-t border-white/10 glass-panel mt-auto">
+        <p>🎮 Łamacz Lodów dla Dzieci i Młodzieży • Ponad 120+ Gotowych Pytań i Wyzwań!</p>
+    </footer>
+
+    <script>
+        /* ==========================================================================
+           1. BAZA PYTAŃ (QUESTION DATABASE - OVER 120 QUESTIONS)
+           ========================================================================== */
+        const DEFAULT_QUESTIONS = [
+            // --- DZIECI (6-11 lat) / Śmieszne & Absurdalne ---
+            { text: "Gdyby zwierzęta potrafiły mówić, które z nich byłoby najbardziej niegrzeczne?", age: "kids", category: "Śmieszne & Absurdalne", mode: "icebreaker" },
+            { text: "Gdybyś mógł zamienić wodę w basenie na dowolny płyn lub jedzenie, co by to było?", age: "kids", category: "Śmieszne & Absurdalne", mode: "icebreaker" },
+            { text: "Wyobraź sobie, że Twoja maskotka ożywa na jeden dzień. Co ze sobą robicie?", age: "kids", category: "Śmieszne & Absurdalne", mode: "icebreaker" },
+            { text: "Jaki jest najbardziej zwariowany pomysł na nowy smaki lodów na świecie?", age: "kids", category: "Śmieszne & Absurdalne", mode: "icebreaker" },
+            { text: "Gdyby kosmonauci znaleźli na Marsie małego kosmitę, jak myślisz, co by jadł?", age: "kids", category: "Śmieszne & Absurdalne", mode: "icebreaker" },
+            { text: "Jaki jest najbardziej absurdalny strój, jaki kiedykolwiek założyłeś?", age: "kids", category: "Śmieszne & Absurdalne", mode: "icebreaker" },
+            { text: "Gdybyś miał wymyślić nowe zwierzę, z połączenia jakich dwóch stworzeń by powstało?", age: "kids", category: "Śmieszne & Absurdalne", mode: "icebreaker" },
+
+            // --- DZIECI / Supermoce & S-F ---
+            { text: "Gdybyś mógł rozmawiać wyłącznie z jednym gatunkiem zwierząt, które byś wybrał?", age: "kids", category: "Supermoce & S-F", mode: "icebreaker" },
+            { text: "Masz szansę stać się niewidzialny na 30 minut. Gdzie idziesz i co robisz?", age: "kids", category: "Supermoce & S-F", mode: "icebreaker" },
+            { text: "Gdybyś wybudował sekretną bazę pod ziemią, jakie 3 rzeczy musiałyby w niej być?", age: "kids", category: "Supermoce & S-F", mode: "icebreaker" },
+            { text: "Chciałbyś latać jak ptak czy oddychać pod wodą jak ryba?", age: "kids", category: "Supermoce & S-F", mode: "icebreaker" },
+            { text: "Gdybyś zdobył czarodziejską różdżkę, która spełnia tylko jedno życzenie, o co byś poprosił?", age: "kids", category: "Supermoce & S-F", mode: "icebreaker" },
+
+            // --- DZIECI / Szkoła & Relacje & Przemyślenia ---
+            { text: "Jaka jest Twoja ulubiona gra planszowa lub komputerowa i dlaczego?", age: "kids", category: "Szkoła & Relacje", mode: "icebreaker" },
+            { text: "Gdybyś mógł zostać nauczycielem na jeden dzień, jakiego przedmiotu byś uczył?", age: "kids", category: "Szkoła & Relacje", mode: "icebreaker" },
+            { text: "Co sprawia, że od razu poprawia Ci się humor w smętny dzień?", age: "kids", category: "Głębokie & Przemyślenia", mode: "icebreaker" },
+            { text: "Jaka była Twoja ulubiona bajka lub kreskówka, gdy byłeś całkiem mały?", age: "kids", category: "Szkoła & Relacje", mode: "icebreaker" },
+            { text: "Gdybyś mógł ustalić nowe zasady w domu na weekend, jaka byłaby najważniejsza?", age: "kids", category: "Szkoła & Relacje", mode: "icebreaker" },
+
+            // --- NASTOLATKI (12-17 lat) / Śmieszne & Absurdalne ---
+            { text: "Jaki jest najdziwniejszy nawyk lub rytuał, który posiadasz?", age: "teens", category: "Śmieszne & Absurdalne", mode: "icebreaker" },
+            { text: "Jaka była Twoja najbardziej obciachowa sytuacja w szkole lub wśród znajomych?", age: "teens", category: "Śmieszne & Absurdalne", mode: "icebreaker" },
+            { text: "Gdybyś miał nagrać TikToka lub rolkę, która uzyska 10 milionów wyświetleń, o czym by była?", age: "teens", category: "Śmieszne & Absurdalne", mode: "icebreaker" },
+            { text: "Gdybyś musiał jeść tylko jedno jedzenie do końca życia, co by to było?", age: "teens", category: "Śmieszne & Absurdalne", mode: "icebreaker" },
+            { text: "Jaki film lub serial uważasz za całkowicie przereklamowany?", age: "teens", category: "Śmieszne & Absurdalne", mode: "icebreaker" },
+            { text: "Gdybyś obudził się jako osoba przeciwnej płci na 24 godziny, co robisz w pierwszej kolejności?", age: "teens", category: "Śmieszne & Absurdalne", mode: "icebreaker" },
+
+            // --- NASTOLATKI / Supermoce & S-F & Wyobraźnia ---
+            { text: "Gdybyś mógł przenieść się do świata dowolnego filmu/gry na tydzień, gdzie byś trafił?", age: "teens", category: "Supermoce & S-F", mode: "icebreaker" },
+            { text: "Wolisz cofnąć się w czasie do epoki dinozaurów czy polecieć 300 lat w przyszłość?", age: "teens", category: "Supermoce & S-F", mode: "icebreaker" },
+            { text: "Gdybyś wygrał 10 milionów złotych, jaka byłaby pierwsza rzecz, którą byś kupił?", age: "teens", category: "Supermoce & S-F", mode: "icebreaker" },
+            { text: "Gdyby powstał robot wyręczający Cię w obowiązkach, co chciałbyś, aby robił za Ciebie?", age: "teens", category: "Supermoce & S-F", mode: "icebreaker" },
+
+            // --- NASTOLATKI / Głębokie & Przemyślenia ---
+            { text: "Jaka jest jedna umiejętność, której najbardziej chciałbyś się nauczyć w najbliższym roku?", age: "teens", category: "Głębokie & Przemyślenia", mode: "icebreaker" },
+            { text: "Co cenisz najbardziej u swoich prawdziwych przyjaciół?", age: "teens", category: "Głębokie & Przemyślenia", mode: "icebreaker" },
+            { text: "Jaka jest najlepsza rada, jaką kiedykolwiek usłyszałeś od kogoś bliskiego?", age: "teens", category: "Głębokie & Przemyślenia", mode: "icebreaker" },
+            { text: "Gdybyś mógł zadać jedno pytanie osobie z przyszłości za 50 lat, o co byś zapytał?", age: "teens", category: "Głębokie & Przemyślenia", mode: "icebreaker" },
+            { text: "Czym według Ciebie różni się bycie dojrzałym od bycia nudnym dorosłym?", age: "teens", category: "Głębokie & Przemyślenia", mode: "icebreaker" },
+
+            // --- CO WOLISZ? (WOULD YOU RATHER) ---
+            { optionA: "Mieć opcję latania", optionB: "Mieć opcję czytania w myślach", age: "all", category: "Co Wolisz", mode: "wouldyou-rather" },
+            { optionA: "Żyć bez smartfona przez rok", optionB: "Żyć bez słodyczy i fastfoodów przez rok", age: "all", category: "Co Wolisz", mode: "wouldyou-rather" },
+            { optionA: "Mieć darmowe bilety na wszystkie koncerty", optionB: "Mieć darmowe jedzenie w każdej restauracji", age: "all", category: "Co Wolisz", mode: "wouldyou-rather" },
+            { optionA: "Być niewidzialnym", optionB: "Potrafić teleportować się w dowolne miejsce", age: "all", category: "Co Wolisz", mode: "wouldyou-rather" },
+            { optionA: "Zawsze musieć mówić tylko prawdę", optionB: "Nigdy więcej nie móc się odezwać", age: "all", category: "Co Wolisz", mode: "wouldyou-rather" },
+            { optionA: "Podróżować w kosmos", optionB: "Zadać pytanie stworzeniom z głębi oceanu", age: "all", category: "Co Wolisz", mode: "wouldyou-rather" },
+            { optionA: "Mieć super moc słyszenia wszystkiego", optionB: "Mieć super moc widzenia przez ściany", age: "all", category: "Co Wolisz", mode: "wouldyou-rather" },
+            { optionA: "Zawsze grać w grę z 500 ms opóźnienia (lag)", optionB: "Oglądać filmy tylko w rozdzielczości 240p", age: "teens", category: "Co Wolisz", mode: "wouldyou-rather" },
+            { optionA: "Mieć osobistego robota sprzątającego", optionB: "Mieć kucharza, który robi Twoje ulubione dania", age: "all", category: "Co Wolisz", mode: "wouldyou-rather" },
+
+            // --- GORĄCE KRZESŁO / SZYBKA RUNDA (SPEED ROUND) ---
+            { text: "Wymień 5 czerwonych owoców lub warzyw w 10 sekund!", age: "all", category: "Wyzwania & Akcja", mode: "speed" },
+            { text: "Zrób śmieszną minę i utrzymaj ją bez uśmiechu przez 8 sekund!", age: "all", category: "Wyzwania & Akcja", mode: "speed" },
+            { text: "Wymień 3 superbohaterów na literę S w 10 sekund!", age: "all", category: "Wyzwania & Akcja", mode: "speed" },
+            { text: "Zaśpiewaj refren ulubionej piosenki używając słowa 'Miau'!", age: "kids", category: "Wyzwania & Akcja", mode: "speed" },
+            { text: "Wymień 4 gry wideo w ciągu 8 sekund!", age: "all", category: "Wyzwania & Akcja", mode: "speed" },
+            { text: "Wymień 5 państw na literę K w 12 sekund!", age: "teens", category: "Wyzwania & Akcja", mode: "speed" },
+            { text: "Powiedz 3 komplementy osobie siedzącej po Twojej prawej stronie!", age: "all", category: "Wyzwania & Akcja", mode: "speed" },
+            { text: "Wykonaj 10 szybkich pajacyków i powiedz swoje imię od tyłu!", age: "all", category: "Wyzwania & Akcja", mode: "speed" }
+        ];
+
+        /* Populate database to hit >120 questions programmatically with varied content */
+        const ADDITIONAL_QUESTIONS = [
+            "Jaki jest Twój ulubiony przedmiot w szkole i dlaczego akurat ten?",
+            "Gdybyś mógł stworzyć własną markę ubrań, jak by się nazywała?",
+            "Jaki jest Twój ulubiony sport do oglądania lub uprawiania?",
+            "Gdybyś musiał spędzić tydzień na bezludnej wyspie, jakie 3 przedmioty zabierasz?",
+            "Czy wierzysz w istnienie istot pozaziemskich w kosmosie?",
+            "Jaka była najbardziej szalona przygoda w Twoim życiu?",
+            "Gdybyś mógł spotkać dowolną postać historyczną, kto by to był?",
+            "Jaki zapach wywołuje w Tobie miłe wspomnienia z dzieciństwa?",
+            "Jaka piosenka zawsze wprawia Cię w dołek, a jaka daje mega energię?",
+            "Gdybyś wydał własną książkę, o czym by opowiadała?",
+            "Wolisz lody waniliowe czy czekoladowe?",
+            "Jaki jest Twój ulubiony superbohater z Marvela lub DC?",
+            "Gdybyś potrafił rozmawiać z drzewami, o co byś je zapytał?",
+            "Jaki jest Twój ulubiony powód, by rano wstać z łóżka?",
+            "Gdybyś założył kanał na YouTube, jaką nosiłby nazwę?",
+            "Co sprawia, że szczerze śmiejesz się do łez?",
+            "Czy wolisz ciepły słoneczny dzień czy burzę z piorunami w domu?",
+            "Gdybyś mógł opanować jeden język obcy w sekundę, jaki byś wybrał?",
+            "Jaki jest Twój ulubiony deser zrobiony przez babcię lub mamę?",
+            "Co myślisz o podróżach w czasie – czy są możliwe?",
+            "Gdybyś miał zwierzaka domowego - jakiego niespotykanego zwierzaka chciałbyś mieć?",
+            "Jaka jest Twoja ulubiona pora roku i dlaczego?",
+            "Gdybyś mógł zamienić się na jeden dzień głosem ze słynnym wokalistą, kogo wybierasz?",
+            "Jaka gra komputerowa sprawiła Ci najwięcej radości w życiu?",
+            "Co jest ważniejsze: być mądrym czy być życzliwym dla innych?",
+            "Gdybyś musiał przebrać się za postać z bajki na imprezę, kim byś był?",
+            "Jaki jest Twój ulubiony owoc egzotyczny?",
+            "Czy wolisz góry czy morze na wakacje?",
+            "Jaki był Twój ulubiony prezent, jaki kiedykolwiek dostałeś?",
+            "Gdybyś wymyślił nową dyscyplinę olimpijską, co by to było?",
+            "Jaki film możesz oglądać bez końca i nigdy Ci się nie znudzi?",
+            "Gdybyś opisał swój dzisiejszy dzień jednym słowem, jakie by to było?",
+            "Jaki jest Twój ulubiony napój w upalny dzień?",
+            "Gdybyś wygrał darmowy wyjazd w dowolne miejsce na świecie, gdzie lecisz?",
+            "Jaki utwór muzyczny jest Twoim 'guilty pleasure'?",
+            "Jaka jest najważniejsza lekcja, jakiej nauczyła Cię szkoła?",
+            "Gdybyś miał władać żywiołem (ogień, woda, ziemia, powietrze), co wybierasz?",
+            "Co byś zrobił, gdyby w Twoim pokoju pojawił się portal do innego wymiaru?",
+            "Jaki jest Twój ulubiony gatunek filmowy?",
+            "Czy potrafisz zagrać na jakimś instrumencie muzycznym?",
+            "Gdybyś miał stworzyć nową aplikację na telefon, co by robiła?",
+            "Jaki jest Twój ulubiony styl ubierania się?",
+            "Co najbardziej lubisz robić w wolne niedzielne popołudnie?",
+            "Gdybyś mógł nadać sobie nowe imię, jakie byś wybrał?",
+            "Jaki jest Twój najlepszy sposób na stres?",
+            "Czy wolisz pracować w grupie czy samodzielnie?",
+            "Gdybyś musiał spędzić noc w nawiedzonym zamku za milion złotych, zrobiłbyś to?",
+            "Jaki był Twój ulubiony przedmiot do zabawy, gdy miałeś 5 lat?",
+            "Gdybyś mógł zostać prezydentem na jeden dzień, jaką ustawę byś uchwalił?",
+            "Co najbardziej cenisz w swojej rodzinie?",
+            "Czy wolisz jeść pizzę z ananasem czy bez ananasa?",
+            "Jaki jest Twój ulubiony superzłoczyńca?",
+            "Gdybyś wybudował własny dom, jaki niezwykły pokój by w nim powstał?",
+            "Jaka jest Twoja ulubiona przekąska podczas oglądania filmu?",
+            "Gdybyś mógł nauczyć swojego psa/kota jednej sztuczki, co by to było?",
+            "Jaki jest Twój ulubiony cytat lub powiedzenie?",
+            "Co najbardziej motywuje Cię do działania?",
+            "Gdybyś mógł spędzić dzień z dowolnym YouTuberem, kto by to był?",
+            "Jaki jest Twój ulubiony rodzaj tańca?",
+            "Czy wolisz poranki czy późne wieczory?",
+            "Gdybyś miał własny park rozrywki, jak by się nazywał?",
+            "Co jest według Ciebie największym wynalazkiem ludzkości?",
+            "Jaka jest Twoja ulubiona postać z komiksów?",
+            "Czy potrafisz gotować lub piec cokolwiek pysznego?",
+            "Gdybyś mógł mieć skrzydła jak ptak, jakiego koloru byłyby pióra?",
+            "Jaki jest Twój ulubiony zapach w przyrodzie?",
+            "Co sprawia, że czujesz się naprawdę dumny z siebie?",
+            "Gdybyś napisał piosenkę, o czym byłby jej refren?",
+            "Jaki jest Twój ulubiony motyw dekoracyjny w pokoju?",
+            "Czy wolisz spędzać czas w cichym lesie czy w tętniącym życiem mieście?",
+            "Gdybyś mógł bez karnie złamać jedną zasadę w szkole, co by to było?",
+            "Jaki jest Twój ulubiony kawał lub żart?",
+            "Co według Ciebie jest kluczem do prawdziwego szczęścia?"
+        ];
+
+        // Hydrate default array to achieve rich >120 collection
+        ADDITIONAL_QUESTIONS.forEach((qText, idx) => {
+            DEFAULT_QUESTIONS.push({
+                text: qText,
+                age: idx % 2 === 0 ? "all" : (idx % 3 === 0 ? "kids" : "teens"),
+                category: ["Śmieszne & Absurdalne", "Supermoce & S-F", "Głębokie & Przemyślenia", "Szkoła & Relacje"][idx % 4],
+                mode: "icebreaker"
+            });
+        });
+
+        /* ==========================================================================
+           2. AUDIO SYNTHESIZER ENGINE (WEB AUDIO API)
+           ========================================================================== */
+        const SoundEngine = {
+            ctx: null,
+            enabled: true,
+
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) this.ctx = new AudioCtx();
+                }
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            },
+
+            playClick() {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+                
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(150, this.ctx.currentTime + 0.05);
+                
+                gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.05);
+                
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.05);
+            },
+
+            playIceCrack() {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+
+                // Noise buffer for crackling sound
+                const bufferSize = this.ctx.sampleRate * 0.15;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'highpass';
+                filter.frequency.setValueAtTime(1000, this.ctx.currentTime);
+
+                const gain = this.ctx.createGain();
+                gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
+
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.ctx.destination);
+                noise.start();
+            },
+
+            playWheelTick() {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(800, this.ctx.currentTime);
+                
+                gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.03);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.03);
+            },
+
+            playWin() {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                notes.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime + idx * 0.08);
+
+                    gain.gain.setValueAtTime(0, this.ctx.currentTime + idx * 0.08);
+                    gain.gain.linearRampToValueAtTime(0.3, this.ctx.currentTime + idx * 0.08 + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + idx * 0.08 + 0.3);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(this.ctx.currentTime + idx * 0.08);
+                    osc.stop(this.ctx.currentTime + idx * 0.08 + 0.3);
+                });
+            },
+
+            playBuzzer() {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+
+                gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.4);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.4);
+            }
+        };
+
+        function toggleSound() {
+            SoundEngine.enabled = !SoundEngine.enabled;
+            document.getElementById('soundToggleBtn').textContent = SoundEngine.enabled ? '🔊' : '🔇';
+        }
+
+        /* ==========================================================================
+           3. GAME STATE MANAGEMENT
+           ========================================================================== */
+        let state = {
+            currentAgeFilter: 'all',
+            players: JSON.parse(localStorage.getItem('icebreaker_players') || '[]'),
+            activePlayerIndex: 0,
+            customQuestions: JSON.parse(localStorage.getItem('icebreaker_custom') || '[]'),
+            iceHits: 0,
+            wheelSpinning: false,
+            timerInterval: null,
+            timerSecondsLeft: 15
+        };
+
+        /* Initialize Game on Load */
+        window.addEventListener('load', () => {
+            initBackgroundParticles();
+            initWheelCanvas();
+            renderPlayers();
+            renderCustomQuestionsList();
+            loadWouldYouRatherQuestion();
+        });
+
+        /* Filter age Handler */
+        function setAgeFilter(age) {
+            SoundEngine.playClick();
+            state.currentAgeFilter = age;
+            document.querySelectorAll('.age-btn').forEach(btn => {
+                btn.classList.remove('active', 'bg-neon-cyan', 'text-slate-950', 'font-bold');
+                btn.classList.add('bg-slate-800', 'text-slate-300');
+            });
+            const activeBtn = document.getElementById(`age-${age}`);
+            if (activeBtn) {
+                activeBtn.classList.add('active', 'bg-neon-cyan', 'text-slate-950', 'font-bold');
+                activeBtn.classList.remove('bg-slate-800', 'text-slate-300');
+            }
+        }
+
+        /* Get All Available Questions based on Filter */
+        function getFilteredQuestions(mode = 'icebreaker') {
+            const all = [...DEFAULT_QUESTIONS, ...state.customQuestions];
+            return all.filter(q => {
+                const matchesAge = state.currentAgeFilter === 'all' || q.age === 'all' || q.age === state.currentAgeFilter;
+                const matchesMode = mode === 'all' || q.mode === mode;
+                return matchesAge && matchesMode;
+            });
+        }
+
+        /* Switch Nav Tabs */
+        function switchTab(tabId) {
+            SoundEngine.playClick();
+            document.querySelectorAll('.game-mode').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-tab').forEach(el => {
+                el.classList.remove('bg-gradient-to-r', 'from-neon-cyan', 'to-neon-blue', 'text-slate-950', 'shadow-md');
+                el.classList.add('bg-slate-800', 'text-slate-200');
+            });
+
+            const selectedMode = document.getElementById(`mode-${tabId}`);
+            if (selectedMode) selectedMode.classList.remove('hidden');
+
+            const selectedTab = document.getElementById(`tab-${tabId}`);
+            if (selectedTab) {
+                selectedTab.classList.add('bg-gradient-to-r', 'from-neon-cyan', 'to-neon-blue', 'text-slate-950', 'shadow-md');
+                selectedTab.classList.remove('bg-slate-800', 'text-slate-200');
+            }
+        }
+
+        /* ==========================================================================
+           4. MODE 1: ICE CUBE CRUSHER LOGIC
+           ========================================================================== */
+        function hitIceCube() {
+            if (state.iceHits >= 3) return;
+
+            state.iceHits++;
+            SoundEngine.playIceCrack();
+
+            const cube = document.getElementById('iceCube');
+            const crackSvg = document.getElementById('crackOverlay');
+            const hitsText = document.getElementById('hitsLeftText');
+
+            // Shake animation
+            cube.classList.add('animate-shake');
+            setTimeout(() => cube.classList.remove('animate-shake'), 400);
+
+            // Progressive crack visuals
+            crackSvg.style.opacity = (state.iceHits * 0.33).toString();
+            hitsText.textContent = `Uderzenia: ${state.iceHits}/3`;
+
+            if (state.iceHits === 3) {
+                // Ice Shattered!
+                SoundEngine.playWin();
+                if (window.confetti) {
+                    confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+                }
+                
+                setTimeout(() => {
+                    revealIceQuestion();
+                }, 300);
+            }
+        }
+
+        function revealIceQuestion() {
+            const questions = getFilteredQuestions('icebreaker');
+            if (questions.length === 0) return;
+
+            const randomQ = questions[Math.floor(Math.random() * questions.length)];
+
+            document.getElementById('questionCategoryTag').textContent = randomQ.category || 'Ogólne';
+            document.getElementById('questionTargetTag').textContent = 
+                randomQ.age === 'kids' ? '🎈 Dzieci' : (randomQ.age === 'teens' ? '🔥 Młodzież' : '👶🏼👧🏻 Wszyscy');
+            
+            document.getElementById('questionText').textContent = randomQ.text;
+
+            document.getElementById('questionDisplayCard').classList.remove('hidden');
+        }
+
+        function resetIceCube() {
+            SoundEngine.playClick();
+            state.iceHits = 0;
+            document.getElementById('crackOverlay').style.opacity = '0';
+            document.getElementById('hitsLeftText').textContent = 'Uderzenia: 0/3';
+            document.getElementById('questionDisplayCard').classList.add('hidden');
+        }
+
+        /* ==========================================================================
+           5. MODE 2: SPIN THE WHEEL LOGIC (CANVAS)
+           ========================================================================== */
+        const wheelCategories = [
+            { name: "Śmieszne", color: "#FF007F" },
+            { name: "Supermoce", color: "#00F2FE" },
+            { name: "Wyjaśnij", color: "#7F00FF" },
+            { name: "Wyzwanie", color: "#FFD200" },
+            { name: "Sekrety", color: "#00FF87" },
+            { name: "Co Wolisz", color: "#FF4500" }
+        ];
+
+        let wheelAngle = 0;
+
+        function initWheelCanvas() {
+            drawWheel(0);
+        }
+
+        function drawWheel(angle) {
+            const canvas = document.getElementById('wheelCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const numSlices = wheelCategories.length;
+            const sliceAngle = (2 * Math.PI) / numSlices;
+            const radius = canvas.width / 2;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.save();
+            ctx.translate(radius, radius);
+            ctx.rotate(angle);
+
+            for (let i = 0; i < numSlices; i++) {
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.arc(0, 0, radius - 10, i * sliceAngle, (i + 1) * sliceAngle);
+                ctx.closePath();
+                ctx.fillStyle = wheelCategories[i].color;
+                ctx.fill();
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = '#0f172a';
+                ctx.stroke();
+
+                // Draw Text Labels
+                ctx.save();
+                ctx.rotate(i * sliceAngle + sliceAngle / 2);
+                ctx.textAlign = "right";
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 16px Fredoka, sans-serif";
+                ctx.shadowColor = "rgba(0,0,0,0.8)";
+                ctx.shadowBlur = 4;
+                ctx.fillText(wheelCategories[i].name, radius - 25, 6);
+                ctx.restore();
+            }
+
+            ctx.restore();
+        }
+
+        function spinWheel() {
+            if (state.wheelSpinning) return;
+            state.wheelSpinning = true;
+            SoundEngine.playClick();
+
+            document.getElementById('wheelResultModal').classList.add('hidden');
+
+            const spinRounds = 5 + Math.random() * 4;
+            const totalRotation = spinRounds * 2 * Math.PI;
+            const startAngle = wheelAngle;
+            const startTime = performance.now();
+            const duration = 4000; // 4 seconds
+
+            let lastTickAngle = 0;
+
+            function animateSpin(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                // Ease out cubic
+                const easeOut = 1 - Math.pow(1 - progress, 3);
+                wheelAngle = startAngle + totalRotation * easeOut;
+
+                drawWheel(wheelAngle);
+
+                // Play tick audio on segment pass
+                if (wheelAngle - lastTickAngle > (Math.PI / 3)) {
+                    SoundEngine.playWheelTick();
+                    lastTickAngle = wheelAngle;
+                }
+
+                if (progress < 1) {
+                    requestAnimationFrame(animateSpin);
+                } else {
+                    state.wheelSpinning = false;
+                    SoundEngine.playWin();
+                    showWheelResult();
+                }
+            }
+
+            requestAnimationFrame(animateSpin);
+        }
+
+        function showWheelResult() {
+            const numSlices = wheelCategories.length;
+            const sliceAngle = (2 * Math.PI) / numSlices;
+            // Normalize angle
+            const normalizedAngle = (wheelAngle + Math.PI / 2) % (2 * Math.PI);
+            const selectedIndex = Math.floor((2 * Math.PI - normalizedAngle) / sliceAngle) % numSlices;
+            
+            const category = wheelCategories[selectedIndex < 0 ? selectedIndex + numSlices : selectedIndex];
+
+            const questions = getFilteredQuestions('all');
+            const randomQ = questions[Math.floor(Math.random() * questions.length)] || { text: "Wymyśl śmieszny taniec!" };
+
+            document.getElementById('wheelCategoryHeader').textContent = category.name;
+            document.getElementById('wheelQuestionText').textContent = randomQ.text;
+            document.getElementById('wheelResultModal').classList.remove('hidden');
+
+            if (window.confetti) {
+                confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
+            }
+        }
+
+        function closeWheelResult() {
+            SoundEngine.playClick();
+            document.getElementById('wheelResultModal').classList.add('hidden');
+        }
+
+        /* ==========================================================================
+           6. MODE 3: WOULD YOU RATHER LOGIC
+           ========================================================================== */
+        let currentWouldYouRather = null;
+
+        function loadWouldYouRatherQuestion() {
+            const list = DEFAULT_QUESTIONS.filter(q => q.mode === 'wouldyou-rather');
+            currentWouldYouRather = list[Math.floor(Math.random() * list.length)];
+
+            document.getElementById('optionAText').textContent = currentWouldYouRather.optionA;
+            document.getElementById('optionBText').textContent = currentWouldYouRather.optionB;
+
+            document.getElementById('statsBarA').classList.add('hidden');
+            document.getElementById('statsBarB').classList.add('hidden');
+            document.getElementById('barA').style.width = '0%';
+            document.getElementById('barB').style.width = '0%';
+        }
+
+        function voteWouldYouRather(choice) {
+            SoundEngine.playWin();
+
+            // Generate realistic random statistics
+            const percentA = Math.floor(Math.random() * 40) + 30; // 30% to 70%
+            const percentB = 100 - percentA;
+
+            document.getElementById('statsBarA').classList.remove('hidden');
+            document.getElementById('statsBarB').classList.remove('hidden');
+
+            setTimeout(() => {
+                document.getElementById('barA').style.width = `${percentA}%`;
+                document.getElementById('barB').style.width = `${percentB}%`;
+                document.getElementById('percentA').textContent = `${percentA}% Graczy`;
+                document.getElementById('percentB').textContent = `${percentB}% Graczy`;
+            }, 100);
+
+            if (window.confetti) {
+                confetti({ particleCount: 40, spread: 50, origin: { y: 0.7 } });
+            }
+        }
+
+        function loadNextWouldYouRather() {
+            SoundEngine.playClick();
+            loadWouldYouRatherQuestion();
+        }
+
+        /* ==========================================================================
+           7. MODE 4: SPEED TIMER / HOT SEAT
+           ========================================================================== */
+        function loadSpeedQuestion() {
+            SoundEngine.playClick();
+            const list = DEFAULT_QUESTIONS.filter(q => q.mode === 'speed' || q.mode === 'icebreaker');
+            const randomQ = list[Math.floor(Math.random() * list.length)];
+            document.getElementById('speedQuestionText').textContent = randomQ.text;
+            resetTimer(15);
+        }
+
+        function startSpeedTimerFromQuestion() {
+            switchTab('speed-timer');
+            const qText = document.getElementById('questionText').textContent;
+            document.getElementById('speedQuestionText').textContent = qText;
+            resetTimer(15);
+        }
+
+        function toggleTimer() {
+            if (state.timerInterval) {
+                // Pause Timer
+                clearInterval(state.timerInterval);
+                state.timerInterval = null;
+                document.getElementById('startTimerBtn').textContent = "▶️ Wznowienie";
+            } else {
+                // Start Timer
+                SoundEngine.playClick();
+                document.getElementById('startTimerBtn').textContent = "⏸️ Pauza";
+                state.timerInterval = setInterval(() => {
+                    state.timerSecondsLeft--;
+                    updateTimerUI();
+
+                    if (state.timerSecondsLeft > 0 && state.timerSecondsLeft <= 5) {
+                        SoundEngine.playWheelTick();
+                    }
+
+                    if (state.timerSecondsLeft <= 0) {
+                        clearInterval(state.timerInterval);
+                        state.timerInterval = null;
+                        SoundEngine.playBuzzer();
+                        document.getElementById('startTimerBtn').textContent = "▶️ Start Zegara";
+                    }
+                }, 1000);
+            }
+        }
+
+        function resetTimer(seconds = 15) {
+            if (state.timerInterval) {
+                clearInterval(state.timerInterval);
+                state.timerInterval = null;
+            }
+            state.timerSecondsLeft = seconds;
+            document.getElementById('startTimerBtn').textContent = "▶️ Start Zegara";
+            updateTimerUI();
+        }
+
+        function updateTimerUI() {
+            document.getElementById('timerSeconds').textContent = state.timerSecondsLeft;
+            const ring = document.getElementById('timerRing');
+            const total = 15;
+            const offset = 500 - (state.timerSecondsLeft / total) * 500;
+            ring.style.strokeDashoffset = offset;
+        }
+
+        /* ==========================================================================
+           8. MODE 5: CUSTOM CREATOR & PLAYER MANAGEMENT
+           ========================================================================== */
+        function addCustomQuestion() {
+            const input = document.getElementById('customQuestionInput');
+            const category = document.getElementById('customCategory').value;
+            const age = document.getElementById('customAge').value;
+
+            if (!input.value.trim()) return;
+
+            const newQ = {
+                text: input.value.trim(),
+                category: category,
+                age: age,
+                mode: "icebreaker"
+            };
+
+            state.customQuestions.push(newQ);
+            localStorage.setItem('icebreaker_custom', JSON.stringify(state.customQuestions));
+
+            input.value = '';
+            SoundEngine.playWin();
+            renderCustomQuestionsList();
+        }
+
+        function renderCustomQuestionsList() {
+            const container = document.getElementById('customQuestionsList');
+            document.getElementById('customCountBadge').textContent = `${state.customQuestions.length} pytań`;
+
+            if (state.customQuestions.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-4">Brak własnych pytań. Dodaj pierwsze wyżej!</p>`;
+                return;
+            }
+
+            container.innerHTML = state.customQuestions.map((q, idx) => `
+                <div class="flex justify-between items-center bg-slate-900/60 p-2.5 rounded-xl border border-white/5 text-xs">
+                    <div class="truncate mr-2">
+                        <span class="text-emerald-400 font-bold">[${q.category}]</span>
+                        <span class="text-white">${q.text}</span>
+                    </div>
+                    <button onclick="deleteCustomQuestion(${idx})" class="text-rose-400 hover:text-rose-300 font-bold px-2">✕</button>
+                </div>
+            `).join('');
+        }
+
+        function deleteCustomQuestion(index) {
+            SoundEngine.playClick();
+            state.customQuestions.splice(index, 1);
+            localStorage.setItem('icebreaker_custom', JSON.stringify(state.customQuestions));
+            renderCustomQuestionsList();
+        }
+
+        /* Player Modal Functions */
+        function togglePlayerModal() {
+            SoundEngine.playClick();
+            const modal = document.getElementById('playerModal');
+            modal.classList.toggle('hidden');
+        }
+
+        function addPlayer() {
+            const input = document.getElementById('playerNameInput');
+            const name = input.value.trim();
+            if (!name) return;
+
+            state.players.push({ name: name, score: 0 });
+            localStorage.setItem('icebreaker_players', JSON.stringify(state.players));
+            input.value = '';
+            SoundEngine.playClick();
+            renderPlayers();
+        }
+
+        function renderPlayers() {
+            const container = document.getElementById('playerListContainer');
+            document.getElementById('playerCountBadge').textContent = state.players.length;
+
+            if (state.players.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-3">Brak wpisanych graczy.</p>`;
+                document.getElementById('activePlayerBadge').classList.add('hidden');
+                return;
+            }
+
+            document.getElementById('activePlayerBadge').classList.remove('hidden');
+            const activePlayer = state.players[state.activePlayerIndex] || state.players[0];
+            document.getElementById('activePlayerName').textContent = activePlayer.name;
+
+            container.innerHTML = state.players.map((p, idx) => `
+                <div class="flex justify-between items-center p-2 rounded-xl ${idx === state.activePlayerIndex ? 'bg-neon-cyan/20 border border-neon-cyan/50' : 'bg-slate-900/50'} text-xs">
+                    <span class="font-bold text-white">${p.name}</span>
+                    <button onclick="removePlayer(${idx})" class="text-rose-400 hover:text-rose-300">Usuń</button>
+                </div>
+            `).join('');
+        }
+
+        function removePlayer(index) {
+            SoundEngine.playClick();
+            state.players.splice(index, 1);
+            if (state.activePlayerIndex >= state.players.length) state.activePlayerIndex = 0;
+            localStorage.setItem('icebreaker_players', JSON.stringify(state.players));
+            renderPlayers();
+        }
+
+        function randomizePlayer() {
+            if (state.players.length === 0) return;
+            SoundEngine.playWin();
+            state.activePlayerIndex = Math.floor(Math.random() * state.players.length);
+            renderPlayers();
+        }
+
+        function nextPlayer() {
+            if (state.players.length === 0) return;
+            SoundEngine.playClick();
+            state.activePlayerIndex = (state.activePlayerIndex + 1) % state.players.length;
+            renderPlayers();
+        }
+
+        function clearPlayers() {
+            SoundEngine.playClick();
+            state.players = [];
+            localStorage.removeItem('icebreaker_players');
+            renderPlayers();
+        }
+
+        /* ==========================================================================
+           9. BACKGROUND PARTICLES CANVAS
+           ========================================================================== */
+        function initBackgroundParticles() {
+            const canvas = document.getElementById('bgCanvas');
+            const ctx = canvas.getContext('2d');
+
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            const particles = Array.from({ length: 40 }, () => ({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                radius: Math.random() * 3 + 1,
+                speedY: Math.random() * 0.5 + 0.1,
+                opacity: Math.random() * 0.5 + 0.2
+            }));
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                particles.forEach(p => {
+                    p.y -= p.speedY;
+                    if (p.y < 0) p.y = canvas.height;
+
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(0, 242, 254, ${p.opacity})`;
+                    ctx.shadowBlur = 8;
+                    ctx.shadowColor = '#00f2fe';
+                    ctx.fill();
+                });
+
+                requestAnimationFrame(animate);
+            }
+            animate();
+        }
+    </script>
+</body>
+</html>
