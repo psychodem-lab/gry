@@ -109,6 +109,7 @@ article:active{transform:scale(.99)}
             'https://www.polsatnews.pl/rss/wszystkie.xml': 'Polsat News',
             'https://wykop.pl/rss': 'Wykop',
             'https://zerkaj.pl/feed.rss': 'Zerkaj',
+            'https://news.google.com/rss?hl=pl&gl=PL&ceid=PL:pl': 'Google News',
             'https://news.google.com/rss/search?q=kalendarz+swiat+polska&hl=pl&gl=PL&ceid=PL:pl': 'Google News',
             'https://www.polsatsport.pl/rss/wszystkie.xml': 'Polsat Sport',
             'https://www.rynekzdrowia.pl/Kanal/all.xml': 'Rynek Zdrowia',
@@ -126,7 +127,9 @@ article:active{transform:scale(.99)}
                 'https://news.google.com/rss/search?q=%C5%9bwieta+nietypowe+dzisiaj+kalendarz&hl=pl&gl=PL&ceid=PL:pl',
                 'https://news.google.com/rss/search?q=imieniny+dzisiaj+kalendarz&hl=pl&gl=PL&ceid=PL:pl',
                 'https://news.google.com/rss/search?q=wydarzenia+historyczne+dnia+kalendarz&hl=pl&gl=PL&ceid=PL:pl',
-                'https://news.google.com/rss/search?q=%C5%9bwieta+pa%C5%84stwowe+i+ko%C5%bccielne&hl=pl&gl=PL&ceid=PL:pl'
+                'https://news.google.com/rss/search?q=%C5%9bwieta+pa%C5%84stwowe+i+ko%C5%bccielne&hl=pl&gl=PL&ceid=PL:pl',
+                'https://pap-mediaroom.pl/kalendarium/rss.xml',
+                'https://news.google.com/rss?hl=pl&gl=PL&ceid=PL:pl'
             ],
             polska: [
                 'https://pap-mediaroom.pl/kategoria/zdrowie-i-styl-zycia/rss.xml', 
@@ -797,12 +800,25 @@ article:active{transform:scale(.99)}
 
                 loader.style.display = 'none';
 
-                if (combinedItems.length === 0 && sourceKey !== 'kalendarz') {
-                    feedContainer.innerHTML = '<p class="text-muted">Nie udało się wczytać żadnych artykułów. Spróbuj ponownie za chwilę (limit API).</p>';
+                if (combinedItems.length === 0) {
+                    if (sourceKey !== 'kalendarz') {
+                        feedContainer.innerHTML = '<p class="text-muted">Nie udało się wczytać żadnych artykułów. Spróbuj ponownie za chwilę (limit API).</p>';
+                        return;
+                    }
+                    // Kalendarz: pokaż widget + info, nie kasuj dobrego cache pustym wynikiem
+                    if (feedCache[sourceKey]?.length) {
+                        currentItems = feedCache[sourceKey];
+                        await renderArticles(currentItems, feedContainer, false, true);
+                    } else {
+                        currentItems = [];
+                        await renderArticles([], feedContainer, false, true);
+                        feedContainer.insertAdjacentHTML('beforeend', '<p class="text-muted">Artykuły kalendarza chwilowo niedostępne (limit API). Widget powyżej działa normalnie.</p>');
+                    }
                     return;
                 }
 
                 // Zapisz surowe (nieprzetłumaczone) artykuły — tłumaczenie dopiero przy renderze
+                // Nie nadpisuj dobrego cache pustym wynikiem
                 feedCache[sourceKey] = combinedItems;
                 saveDiskCache(sourceKey, combinedItems);
                 currentItems = combinedItems;
