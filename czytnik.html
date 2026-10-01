@@ -70,6 +70,7 @@ article:active{transform:scale(.99)}
             <nav>
                 <button onclick="loadFeed('kalendarz')" id="btn-kalendarz" class="active">Kalendarz</button>
                 <button onclick="loadFeed('polska')" id="btn-polska">Polska</button>
+                <button onclick="loadFeed('wykop')" id="btn-wykop">Wykop</button>
                 <button onclick="loadFeed('sciencedaily')" id="btn-sciencedaily">ScienceDaily</button>
                 <button onclick="loadFeed('cnn')" id="btn-cnn">Świat</button>
                 <button onclick="loadFeed('psychologia')" id="btn-psychologia">Psychologia</button>
@@ -106,6 +107,8 @@ article:active{transform:scale(.99)}
             'https://feeds.skynews.com/feeds/rss/world.xml': 'Sky News World',
             'https://feeds.feedburner.com/euronews/en/news': 'Euronews',
             'https://www.polsatnews.pl/rss/wszystkie.xml': 'Polsat News',
+            'https://wykop.pl/rss': 'Wykop',
+            'https://zerkaj.pl/feed.rss': 'Zerkaj',
             'https://news.google.com/rss/search?q=kalendarz+swiat+polska&hl=pl&gl=PL&ceid=PL:pl': 'Google News',
             'https://www.polsatsport.pl/rss/wszystkie.xml': 'Polsat Sport',
             'https://www.rynekzdrowia.pl/Kanal/all.xml': 'Rynek Zdrowia',
@@ -136,6 +139,10 @@ article:active{transform:scale(.99)}
                 'https://news.google.com/rss/search?q=kalendarz+swiat+polska&hl=pl&gl=PL&ceid=PL:pl',
                 'https://www.polsatsport.pl/rss/wszystkie.xml',
                 'https://www.rynekzdrowia.pl/Kanal/all.xml'
+            ],
+            wykop: [
+                'https://wykop.pl/rss',
+                'https://zerkaj.pl/feed.rss'
             ],
             sciencedaily: [
                 
