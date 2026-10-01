@@ -330,15 +330,20 @@ article:active{transform:scale(.99)}
             return null;
         }
 
-        async function fetchTabRaw(sourceKey) {
+        async function fetchTabRaw(sourceKey, onBatch) {
             const urls = feeds[sourceKey] || [];
-            // Równolegle — zakładka czeka na najwolniejsze źródło, nie na sumę wszystkich
-            const results = await Promise.all(urls.map(u => fetchFeed(u)));
+            // Równolegle + progresywnie: każdy feed dokłada się do listy w chwili spłynięcia,
+            // onBatch dostaje posortowaną kopię całości (do malowania bez czekania na maruderów)
             let combined = [];
-            for (const items of results) {
-                if (items) combined = combined.concat(items);
-            }
-            return dedupeItems(combined);
+            const jobs = urls.map(u => fetchFeed(u).then(items => {
+                if (!items || !items.length) return;
+                combined = dedupeItems(combined.concat(items));
+                if (onBatch && sourceKey === currentSourceKey && combined.length) {
+                    onBatch(combined.slice());
+                }
+            }).catch(() => {}));
+            await Promise.all(jobs);
+            return combined;
         }
 
         // --- AUTOMATYCZNE TŁUMACZENIE NA JĘZYK POLSKI (leniwie: tylko widoczne artykuły) ---
@@ -356,9 +361,13 @@ article:active{transform:scale(.99)}
             return text;
         }
 
+        // Źródła już po polsku — nie tłumacz (oszczędza ~20 requestów na batch i nie muli)
+        const polishSources = new Set(['PAP', 'Polsat News', 'Polsat Sport', 'Rynek Zdrowia', 'Wykop', 'Zerkaj']);
+
         // Tłumaczy 1 artykuł raz (flaga _pl), żeby nie dublować requestów przy scrollu
         async function translateItem(item) {
             if (item._pl) return item;
+            if (item.sourceName && polishSources.has(item.sourceName)) { item._pl = true; return item; }
             // Zachowaj oryginał — potrzebny do wykrywania duplikatów PL vs EN przy odświeżaniu
             if (item._orig === undefined) item._orig = item.title;
             try {
@@ -913,26 +922,56 @@ article:active{transform:scale(.99)}
             feedContainer.innerHTML = '';
             displayedCount = 0;
             currentItems = [];
+            let painted = false;
+
+            // Malowanie progresywne: pierwszy feed maluje listę od razu,
+            // kolejne dopisują się w miarę spływania (góra = przerys, dół = pigułka)
+            const paint = (merged) => {
+                if (sourceKey !== currentSourceKey || !merged.length) return;
+                currentItems = merged;
+                if (!painted) {
+                    painted = true;
+                    loader.style.display = 'none';
+                    renderArticles(currentItems, feedContainer, false, false).catch(() => {});
+                } else if (window.scrollY < 200) {
+                    renderArticles(currentItems, feedContainer, false, false).catch(() => {});
+                } else if (currentItems.length > displayedCount) {
+                    showNewPill(currentItems.length - displayedCount);
+                }
+            };
 
             try {
-                const combinedItems = await fetchTabRaw(sourceKey);
+                const combinedItems = await fetchTabRaw(sourceKey, paint);
+                if (sourceKey !== currentSourceKey) return;
 
                 loader.style.display = 'none';
 
-                if (combinedItems.length === 0) {
+                if (!combinedItems.length && !painted) {
                     feedContainer.innerHTML = '<p class="text-muted">Nie udało się wczytać żadnych artykułów. Spróbuj ponownie za chwilę (limit API).</p>';
                     return;
                 }
 
                 // Zapisz surowe (nieprzetłumaczone) artykuły — tłumaczenie dopiero przy renderze
                 // Nie nadpisuj dobrego cache pustym wynikiem
-                feedCache[sourceKey] = combinedItems;
-                saveDiskCache(sourceKey, combinedItems);
+                if (combinedItems.length) {
+                    feedCache[sourceKey] = combinedItems;
+                    saveDiskCache(sourceKey, combinedItems);
+                }
                 currentItems = combinedItems;
-                await renderArticles(currentItems, feedContainer, false, sourceKey === 'kalendarz');
+                if (!painted) {
+                    await renderArticles(currentItems, feedContainer, false, false);
+                } else if (window.scrollY < 200) {
+                    hideNewPill();
+                    await renderArticles(currentItems, feedContainer, false, false);
+                } else if (currentItems.length > displayedCount) {
+                    showNewPill(currentItems.length - displayedCount);
+                } else {
+                    hideNewPill();
+                }
 
             } catch (error) {
                 loader.style.display = 'none';
+                if (painted) return;
                 feedContainer.innerHTML = `
                     <div class="error-msg">
                         <p><strong>Wystąpił nieoczekiwany problem:</strong> ${error.message}</p>
