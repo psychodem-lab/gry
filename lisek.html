@@ -1,4 +1,3 @@
-html
 <!DOCTYPE html>
 <html lang="pl">
 <head>
@@ -11,67 +10,22 @@ html
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <!-- Font Awesome icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap');
-        
-        * {
-            user-select: none;
-            -webkit-user-select: none;
-            touch-action: manipulation;
-        }
-
-        body {
-            font-family: 'Outfit', sans-serif;
-            background-color: #1a202c;
-            overflow: hidden;
-            margin: 0;
-            padding: 0;
-        }
-
-        canvas {
-            display: block;
-            width: 100vw;
-            height: 100vh;
-        }
-
-        .touch-zone {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: 50%;
-            z-index: 10;
-        }
-
-        #left-touch {
-            left: 0;
-        }
-
-        #right-touch {
-            right: 0;
-        }
-
-        /* Glassmorphism UI */
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .glass-btn {
-            background: rgba(255, 255, 255, 0.25);
-            backdrop-filter: blur(8px);
-            transition: all 0.2s ease;
-        }
-
-        .glass-btn:hover {
-            background: rgba(255, 255, 255, 0.4);
-            transform: translateY(-2px);
-        }
-
-        .glass-btn:active {
-            transform: translateY(1px);
-        }
+<style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
+        * { user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+        body { font-family: 'Outfit', sans-serif; background-color: #2b3a3c; overflow: hidden; margin: 0; padding: 0; }
+        canvas { display: block; width: 100vw; height: 100vh; }
+        .touch-zone { position: absolute; top: 0; bottom: 0; width: 50%; z-index: 10; }
+        #left-touch { left: 0; }
+        #right-touch { right: 0; }
+        .glass-panel { background: rgba(34, 48, 46, 0.82); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.12); }
+        .glass-btn { background: rgba(255,255,255,0.12); transition: background .2s ease, transform .2s ease; }
+        .glass-btn:hover { background: rgba(255,255,255,0.24); transform: translateY(-2px); }
+        .glass-btn:active { transform: translateY(1px); }
+        .hud-pause { width: 34px; height: 34px; border: 2.5px solid #fff; border-radius: 10px; display: grid; place-items: center; background: transparent; color: #fff; }
+        .hud-pause:active { background: rgba(255,255,255,.2); }
+        .hud-stat { display: flex; align-items: center; gap: 10px; font-weight: 300; font-size: 1.4rem; letter-spacing: .02em; text-shadow: 0 1px 8px rgba(0,0,0,.25); }
+        @media (max-width: 640px) { .hud-stat { font-size: 1.1rem; gap: 6px; } }
     </style>
 </head>
 <body class="w-full h-screen overflow-hidden flex justify-center items-center select-none">
@@ -92,32 +46,22 @@ html
             </div>
         </div>
 
-        <!-- Top Navigation / HUD Bar -->
-        <div id="hud" class="absolute top-0 left-0 w-full p-4 md:p-6 flex justify-between items-center pointer-events-none z-20">
-            <!-- Pause Button & Collectibles -->
-            <div class="flex items-center space-x-4 md:space-x-6 pointer-events-auto">
-                <button id="pause-btn" class="glass-btn text-white w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center text-lg font-bold shadow-lg">
-                    <i class="fa-solid fa-pause"></i>
+        <!-- HUD -->
+        <div id="hud" class="absolute top-0 left-0 w-full px-5 py-4 md:px-8 md:py-6 flex justify-between items-center pointer-events-none z-20 text-white">
+            <div class="flex items-center gap-5 md:gap-10 pointer-events-auto">
+                <button id="pause-btn" aria-label="Pauza" class="hud-pause">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="#fff"><rect x="2" y="1" width="3.2" height="12" rx="1"/><rect x="8.8" y="1" width="3.2" height="12" rx="1"/></svg>
                 </button>
-
-                <!-- Diamond Counter -->
-                <div class="glass-panel text-white px-3 py-1.5 md:px-5 md:py-2 rounded-2xl flex items-center gap-2 shadow-lg">
-                    <div class="w-4 h-4 bg-amber-400 rotate-45 rounded-sm border border-amber-200"></div>
-                    <span id="diamond-count" class="font-bold text-sm md:text-xl tracking-wider">0/0</span>
+                <div class="hud-stat">
+                    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"><path d="M11 2.5 19.5 11 11 19.5 2.5 11Z"/></svg>
+                    <span id="diamond-count">0/0</span>
                 </div>
-
-                <!-- Triangle Counter -->
-                <div class="glass-panel text-white px-3 py-1.5 md:px-5 md:py-2 rounded-2xl flex items-center gap-2 shadow-lg">
-                    <div class="w-0 h-0 border-l-[7px] border-l-transparent border-r-[7px] border-r-transparent border-b-[14px] border-b-cyan-300"></div>
-                    <span id="triangle-count" class="font-bold text-sm md:text-xl tracking-wider">0/0</span>
+                <div class="hud-stat">
+                    <svg width="24" height="22" viewBox="0 0 24 22" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"><path d="M12 3 21.5 19.5H2.5Z"/></svg>
+                    <span id="triangle-count">0/0</span>
                 </div>
             </div>
-
-            <!-- Timer / Speed display -->
-            <div class="glass-panel text-white px-4 py-2 md:px-6 md:py-2 rounded-2xl flex items-center gap-3 shadow-lg">
-                <i class="fa-regular fa-clock text-amber-300 text-sm md:text-base"></i>
-                <span id="timer-text" class="font-extrabold text-base md:text-2xl tracking-widest text-white">0.0s</span>
-            </div>
+            <span id="timer-text" class="hud-stat">0.0</span>
         </div>
 
         <!-- Start / Level Select Screen -->
@@ -129,7 +73,7 @@ html
                 <h1 class="text-4xl md:text-6xl font-black tracking-tight mb-2 text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-orange-400 to-rose-400">
                     FAST ORIGAMI FOX
                 </h1>
-                <p class="text-slate-300 text-sm md:text-base mb-8">Pędź przez trójwymiarowe, górzyste krainy, zbieraj kryształy i pobiij rekordy prędkości!</p>
+                <p class="text-slate-300 text-sm md:text-base mb-8">Pędź przez trójwymiarowe, górzyste krainy, zbieraj kryształy i pobij rekordy prędkości!</p>
 
                 <!-- Biome / Level Selection Grid -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
@@ -151,8 +95,9 @@ html
                 </div>
 
                 <div class="text-xs text-slate-400 space-y-1">
-                    <p><i class="fa-solid fa-keyboard mr-1"></i> <strong>Klawiatura:</strong> [Strzałka w lewo / Spacja] = Skok | [Strzałka w prawo / D] = Przyspieszenie</p>
+                    <p><i class="fa-solid fa-keyboard mr-1"></i> <strong>Klawiatura:</strong> [Strzałka w górę / Spacja / W] = Skok | [Strzałka w prawo / D] = Przyspieszenie</p>
                     <p><i class="fa-solid fa-mobile-screen mr-1"></i> <strong>Dotyk:</strong> Lewa strona ekranu = Skok | Prawa strona = Przyspieszenie</p>
+                    <p><i class="fa-solid fa-triangle-exclamation mr-1"></i> <strong>Uwaga:</strong> przeskakuj dziury, urwiska i przeszkody — upadek lub uderzenie to +3 s kary i powrót do punktu kontrolnego. Wskakuj na płaskowyże po bonusy.</p>
                 </div>
             </div>
         </div>
@@ -194,11 +139,13 @@ html
                 </div>
 
                 <!-- Star Rating -->
-                <div id="star-container" class="flex justify-center gap-3 text-3xl mb-8 text-amber-400">
+                <div id="star-container" class="flex justify-center gap-3 text-3xl mb-4 text-amber-400">
                     <i class="fa-solid fa-star"></i>
                     <i class="fa-solid fa-star"></i>
                     <i class="fa-solid fa-star"></i>
                 </div>
+
+                <p id="win-deaths" class="text-xs text-slate-400 mb-8">Bez upadku — czysty przejazd!</p>
 
                 <div class="flex gap-3">
                     <button id="win-restart-btn" class="flex-1 py-3 glass-btn text-white font-bold rounded-xl transition">
@@ -260,38 +207,62 @@ html
             }
         }
 
-        /* --- BIOMES / LEVELS CONFIGURATION --- */
-        const BIOMES = [
-            {
-                name: "Zimowy Las",
-                skyTop: "#8fa3ad",
-                skyBottom: "#d3e0e6",
-                snowColor: "#f0f4f8",
-                hillColors: ["#a3b899", "#6e8b74", "#4a6352"],
-                polyTrees: "#32483d",
-                fogColor: "rgba(240, 244, 248, 0.4)",
-                accentColor: "#38bdf8"
-            },
-            {
-                name: "Złoty Zachód",
-                skyTop: "#d97706",
-                skyBottom: "#fef3c7",
-                snowColor: "#fef3c7",
-                hillColors: ["#d97706", "#b45309", "#78350f"],
-                polyTrees: "#451a03",
-                fogColor: "rgba(254, 243, 199, 0.3)",
-                accentColor: "#fbbf24"
-            },
-            {
-                name: "Nocna Zorza",
-                skyTop: "#0f172a",
-                skyBottom: "#1e1b4b",
-                snowColor: "#e0e7ff",
-                hillColors: ["#4338ca", "#312e81", "#1e1b4b"],
-                polyTrees: "#1e1b4b",
-                fogColor: "rgba(99, 102, 241, 0.2)",
-                accentColor: "#c084fc"
+        function playDeathSound() {
+            if (audioInitialized && coinSynth) {
+                coinSynth.triggerAttackRelease("A2", "8n");
             }
+        }
+
+        // Zgon: +3 s kary i powrót PRZED punkt kontrolny (rozbieg do skoku),
+        // żeby lis nie ginął co klatkę w tym samym miejscu.
+        // 3 zgony pod rząd w tym samym miejscu = pętla: przenieś lisa ZA zabójcze
+        // miejsce (gra nigdy nie staje, nawet gdy gracz w ogóle nie skacze).
+        function die(cause, ref) {
+            deaths++;
+            gameTime += 3;
+            if (lastDeathX !== null && Math.abs(fox.x - lastDeathX) < 80) stuckCount++;
+            else stuckCount = 1;
+            lastDeathX = fox.x;
+            playDeathSound();
+            createParticles(fox.x, fox.y, '#f87171', 14);
+            let rx = findRespawnX(checkpoint.x);
+            if (stuckCount >= 3) {
+                stuckCount = 0;
+                if (cause === 'hole' && holes.length) {
+                    const ahead = holes.filter(h => h.x1 + 60 >= fox.x).sort((a, b) => a.x0 - b.x0);
+                    const h = ahead[0] || holes[holes.length - 1];
+                    rx = h.x1 + 120;
+                } else if ((cause === 'obstacle' || cause === 'plateau') && ref) {
+                    rx = (ref.x1 !== undefined ? ref.x1 : ref.x + ref.w) + 120;
+                }
+                let guard = 0;
+                while (guard++ < 25 && !isSafeSpot(rx)) rx += 20;
+            }
+            fox.x = rx;
+            fox.y = getTerrainHeight(fox.x) - fox.size;
+            fox.vx = fox.baseSpeed;
+            fox.vy = 0;
+            fox.grounded = true;
+            fox.angle = getTerrainSlope(fox.x);
+            if (isSafeSpot(fox.x)) {
+                checkpoint.x = fox.x;
+                checkpoint.y = fox.y;
+            }
+            jumpBuffer = 0;
+            graceT = 1.2; // chwila nietykalności na przeszkody
+            cameraX = fox.x - canvas.width * 0.3;
+            cameraY = fox.y - canvas.height * 0.55;
+            updateHUD();
+        }
+
+        /* --- BIOMES / LEVELS CONFIGURATION --- */
+const BIOMES = [
+            { name: "Zimowy Las", skyTop: "#6c7a8c", skyBottom: "#a9a9bb", far: "#76889a", bush: "#4b6a5d", mid: "#6f9479", grass: "#8fb08c",
+              canopy: ["#4f908d", "#3d6f68"], trunk: "#3e4644", snowColor: "#f1f5fc", edge: "#c6d4ee", accentColor: "#38bdf8" },
+            { name: "Złoty Zachód", skyTop: "#b46a4c", skyBottom: "#f1c89c", far: "#c48a66", bush: "#8a4f36", mid: "#c8924a", grass: "#dcab5c",
+              canopy: ["#c4623a", "#a24a2e"], trunk: "#4a2e24", snowColor: "#fff4e2", edge: "#f0d2a4", accentColor: "#fbbf24" },
+            { name: "Nocna Zorza", skyTop: "#141a3a", skyBottom: "#3b3f7c", far: "#2e3672", bush: "#242a5c", mid: "#37508c", grass: "#4a64a2",
+              canopy: ["#2f6f8f", "#3b5f9f"], trunk: "#1a1f3a", snowColor: "#dfe6ff", edge: "#a9b8f0", accentColor: "#c084fc" }
         ];
 
         /* --- GAME ENGINE VARIABLES --- */
@@ -318,16 +289,24 @@ html
             gravity: 0.48,
             grounded: false,
             angle: 0,
-            size: 26,
+            size: 22,
             tailAngle: 0,
             animFrame: 0
         };
 
         // Inputs
         const keys = {
-            jump: false,
             accelerate: false
         };
+        // Responsywny skok: bufor wejścia + coyote time (w sekundach)
+        const JUMP_BUFFER = 0.12; // skok zadziała mimo wciśnięcia chwilę przed lądowaniem
+        const COYOTE_TIME = 0.10; // skok zadziała chwilę po zbiegnięciu z krawędzi
+        let jumpBuffer = 0;
+        let coyote = 0;
+
+        function pressJump() {
+            jumpBuffer = JUMP_BUFFER;
+        }
 
         // Camera offset
         let cameraX = 0;
@@ -343,14 +322,83 @@ html
         let finishLineX = 8000;
         let particles = [];
 
-        function getTerrainHeight(x) {
-            // Smooth multi-frequency sine wave terrain
-            const wave1 = Math.sin(x * 0.001) * 120;
-            const wave2 = Math.sin(x * 0.003 + 1) * 60;
-            const wave3 = Math.sin(x * 0.008) * 20;
-            
-            const baseLevel = canvas.height * 0.65;
-            return baseLevel + wave1 + wave2 + wave3;
+        // Przeszkody terenowe do przeskoczenia: dziury, urwiska, przeszkody
+        let holes = [];      // {x0, x1} — brak podłoża
+        let cliffs = [];     // {x, drop} — za punktem x teren opada o drop
+        let obstacles = [];  // {x, w, h, gy, type} — kolizja = zgon
+        let plateaus = [];   // {x0, x1, h} — górki do wskakiwania (wierzch = teren - h)
+        let checkpoint = { x: 150, y: 0 }; // ostatnie bezpieczne miejsce
+        let deaths = 0;
+        let graceT = 0; // nietykalność na przeszkody po zgonie (s)
+        let lastDeathX = null; // wykrywanie pętli: zgony w tym samym miejscu
+        let stuckCount = 0;
+
+function rawTerrainHeight(x) {
+            // Łagodny zjazd w dół z falami
+            return canvas.height * 0.62 + x * 0.1 + Math.sin(x * 0.0013) * 70 + Math.sin(x * 0.0034 + 1) * 32 + Math.sin(x * 0.009) * 10;
+        }
+
+function baseTerrainHeight(x) {
+            // Wyrównanie terenu wokół dziur: obie krawędzie na tej samej wysokości,
+            // żeby przeskok był czytelny, a warstwa "łączyła się" ze sobą
+            let y = rawTerrainHeight(x);
+            for (let i = 0; i < holes.length; i++) {
+                const h = holes[i], m = 150;
+                if (x > h.x0 - m && x < h.x1 + m) {
+                    const t = Math.min(Math.min(x - (h.x0 - m), (h.x1 + m) - x) / m, 1);
+                    const s = t * t * (3 - 2 * t); // smoothstep
+                    y = y + (rawTerrainHeight(h.x0) - y) * s;
+                }
+            }
+            return y;
+        }
+
+function getTerrainHeight(x) {
+            let y = baseTerrainHeight(x);
+            for (let i = 0; i < cliffs.length; i++) {
+                if (x >= cliffs[i].x) y += cliffs[i].drop;
+            }
+            return y;
+        }
+
+        function isHole(x) {
+            for (let i = 0; i < holes.length; i++) {
+                if (x > holes[i].x0 && x < holes[i].x1) return true;
+            }
+            return false;
+        }
+
+        function isSolidGround(x) {
+            return !isHole(x);
+        }
+
+        // Bezpieczne miejsce na checkpoint/respawn: lity grunt z dala od przeszkód i górek
+        function isSafeSpot(x) {
+            if (isHole(x)) return false;
+            for (const o of obstacles) {
+                if (x > o.x - 90 && x < o.x + o.w + 90) return false;
+            }
+            for (const p of plateaus) {
+                if (x > p.x0 - 100 && x < p.x1 + 100) return false;
+            }
+            return true;
+        }
+
+        // Punkt odrodzenia: ~140 px przed checkpointem (rozbieg do skoku),
+        // cofany aż do bezpiecznego miejsca (okolice startu zawsze bezpieczne)
+        function findRespawnX(fromX) {
+            let rx = fromX - 140;
+            let guard = 0;
+            while (guard++ < 100 && rx > 170 && !isSafeSpot(rx)) rx -= 20;
+            return Math.max(160, rx);
+        }
+
+        // Płaskowyż pod danym x (z marginesem m) albo null
+        function plateauAt(x, m = 0) {
+            for (const p of plateaus) {
+                if (x >= p.x0 - m && x <= p.x1 + m) return p;
+            }
+            return null;
         }
 
         function getTerrainSlope(x) {
@@ -371,13 +419,21 @@ html
         /* --- LEVEL INITIALIZATION --- */
         function initLevel(biomeIdx = 0) {
             currentBiomeIndex = biomeIdx;
-            const biome = BIOMES[currentBiomeIndex];
 
             fox.x = 150;
             fox.y = getTerrainHeight(fox.x) - fox.size;
             fox.vx = fox.baseSpeed;
             fox.vy = 0;
             fox.grounded = true;
+            fox.angle = 0;
+
+            // FIX: reset kamery i inputów — bez tego restart zaczynał się od starej pozycji kamery
+            cameraX = fox.x - canvas.width * 0.3;
+            cameraY = fox.y - canvas.height * 0.55;
+            keys.accelerate = false;
+            jumpBuffer = 0;
+            coyote = 0;
+            lastTimestamp = 0;
 
             collectedDiamonds = 0;
             collectedTriangles = 0;
@@ -389,6 +445,60 @@ html
 
             finishLineX = 7500 + biomeIdx * 1500;
 
+            // --- Generowanie dziur, urwisk i przeszkód ---
+            holes = [];
+            cliffs = [];
+            obstacles = [];
+            plateaus = [];
+            deaths = 0;
+            lastDeathX = null;
+            stuckCount = 0;
+            graceT = 0;
+
+            const farX = finishLineX - 400;
+            const clearOf = (x, margin) => {
+                for (const h of holes) if (x > h.x0 - margin && x < h.x1 + margin) return false;
+                for (const c of cliffs) if (Math.abs(x - c.x) < margin) return false;
+                return true;
+            };
+
+            // Deterministyczne plansze: ten sam seed na krainę = zawsze ten sam układ
+            const __realRandom = Math.random;
+            Math.random = mulberry32(123456 + biomeIdx * 789);
+            try {
+            // Urwiska: nagły uskok terenu w dół
+            const cliffCount = 2 + (biomeIdx > 0 ? 1 : 0);
+            let cliffX = 1400 + Math.random() * 500;
+            for (let i = 0; i < cliffCount && cliffX < farX - 800; i++) {
+                cliffs.push({ x: cliffX, drop: 90 + Math.random() * 60 });
+                cliffX += 1100 + Math.random() * 900;
+            }
+
+            // Dziury w terenie do przeskoczenia (szersze na późniejszych krainach)
+            const holeCount = 3 + biomeIdx;
+            let holeX = 1100 + Math.random() * 400;
+            for (let i = 0; i < holeCount && holeX < farX - 500; i++) {
+                const w = 110 + biomeIdx * 20 + Math.random() * 70;
+                if (clearOf(holeX, 300) && clearOf(holeX + w, 300)) {
+                    holes.push({ x0: holeX, x1: holeX + w });
+                    holeX += w + 900 + Math.random() * 800;
+                } else {
+                    holeX += 500;
+                }
+            }
+
+            // Przeszkody na ziemi — jeden typ na krainę: sople / kłody / kolce
+            const otype = ['spike', 'log', 'thorn'][biomeIdx];
+            for (let x = 900; x < farX; x += 420 + Math.random() * 480) {
+                if (!clearOf(x, 130)) continue;
+                const w = otype === 'log' ? 64 + Math.random() * 20 : 30 + Math.random() * 16;
+                const h = otype === 'log' ? 26 + Math.random() * 8 : 36 + Math.random() * 22;
+                if (!clearOf(x + w / 2, w / 2 + 90)) continue;
+                obstacles.push({ x: x, w: w, h: h, gy: getTerrainHeight(x + w / 2), type: otype });
+            }
+
+            checkpoint = { x: fox.x, y: fox.y };
+
             // Generate Collectibles along terrain
             diamonds = [];
             triangles = [];
@@ -398,8 +508,9 @@ html
                 // Group of diamonds or high arches
                 const count = Math.floor(Math.random() * 3) + 1;
                 const inAir = Math.random() > 0.5;
-                
+
                 for (let i = 0; i < count; i++) {
+                    if (!inAir && isHole(x + i * 40)) continue; // naziemne omijają dziury
                     diamonds.push({
                         x: x + i * 40,
                         y: inAir ? groundY - 120 - Math.sin(i * 0.5) * 40 : groundY - 35,
@@ -419,6 +530,65 @@ html
                 }
             }
 
+            // Łuki diamentów nad dziurami — nagroda za udany skok
+            holes.forEach(h => {
+                const mid = (h.x0 + h.x1) / 2;
+                const edgeY = Math.min(getTerrainHeight(h.x0 - 6), getTerrainHeight(h.x1 + 6));
+                for (let i = -1; i <= 1; i++) {
+                    diamonds.push({
+                        x: mid + i * 44,
+                        y: edgeY - 95 - (1 - Math.abs(i)) * 35,
+                        collected: false,
+                        size: 14
+                    });
+                }
+            });
+
+            // Płaskowyże do wskakiwania (60–105 px nad terenem — w zasięgu skoku ~160 px)
+            const platCount = 3 + (biomeIdx > 0 ? 1 : 0);
+            let platX = 900 + Math.random() * 400;
+            let platPlaced = 0, platGuard = 0;
+            while (platPlaced < platCount && platGuard++ < 40 && platX < farX - 600) {
+                const w = 150 + Math.random() * 110;
+                const h = 60 + Math.random() * 45;
+                if (clearOf(platX, 160) && clearOf(platX + w, 160)) {
+                    let ok = true;
+                    for (const o of obstacles) if (platX < o.x + o.w + 100 && platX + w > o.x - 100) { ok = false; break; }
+                    for (const q of plateaus) if (platX < q.x1 + 300 && platX + w > q.x0 - 300) { ok = false; break; }
+                    if (ok) {
+                        plateaus.push({ x0: platX, x1: platX + w, h: h });
+                        // Trójkąt bonusowy nad co drugim płaskowyżem
+                        if (plateaus.length % 2 === 0) {
+                            const cx = platX + w / 2;
+                            triangles.push({
+                                x: cx,
+                                y: getTerrainHeight(cx) - h - 120,
+                                collected: false,
+                                size: 18
+                            });
+                        }
+                        platPlaced++;
+                        platX += w + 600 + Math.random() * 600;
+                    } else {
+                        platX += 250;
+                    }
+                } else {
+                    platX += 250;
+                }
+            }
+
+            // Naziemne diamenty w obrębie płaskowyżu wjeżdżają na jego wierzch
+            diamonds.forEach(d => {
+                const p = plateauAt(d.x);
+                if (p && d.y > getTerrainHeight(d.x) - 50) {
+                    d.y = getTerrainHeight(d.x) - p.h - 35;
+                }
+            });
+
+            } finally {
+                Math.random = __realRandom;
+            }
+
             totalDiamonds = diamonds.length;
             totalTriangles = triangles.length;
 
@@ -433,7 +603,7 @@ html
         function updateHUD() {
             document.getElementById('diamond-count').innerText = `${collectedDiamonds}/${totalDiamonds}`;
             document.getElementById('triangle-count').innerText = `${collectedTriangles}/${totalTriangles}`;
-            document.getElementById('timer-text').innerText = `${gameTime.toFixed(1)}s`;
+            document.getElementById('timer-text').innerText = gameTime.toFixed(1);
         }
 
         /* --- EVENT LISTENERS (TOUCH & KEYBOARD) --- */
@@ -445,7 +615,7 @@ html
             const handleTouchLeft = (e) => {
                 e.preventDefault();
                 initAudio();
-                keys.jump = true;
+                pressJump();
             };
 
             const handleTouchRightStart = (e) => {
@@ -455,28 +625,33 @@ html
             };
 
             const handleTouchRightEnd = (e) => {
-                e.preventDefault();
+                if (e) e.preventDefault();
                 keys.accelerate = false;
             };
 
-            leftZone.addEventListener('touchstart', handleTouchLeft);
+            leftZone.addEventListener('touchstart', handleTouchLeft, { passive: false });
             leftZone.addEventListener('mousedown', handleTouchLeft);
 
-            rightZone.addEventListener('touchstart', handleTouchRightStart);
+            rightZone.addEventListener('touchstart', handleTouchRightStart, { passive: false });
             rightZone.addEventListener('touchend', handleTouchRightEnd);
+            rightZone.addEventListener('touchcancel', handleTouchRightEnd);
             rightZone.addEventListener('mousedown', handleTouchRightStart);
             rightZone.addEventListener('mouseup', handleTouchRightEnd);
+            rightZone.addEventListener('mouseleave', handleTouchRightEnd);
+            // FIX: puszczenie przycisku myszy poza strefą nie zawiesza już przyspieszenia
+            window.addEventListener('mouseup', () => { keys.accelerate = false; });
 
             // Keyboard Controls
             window.addEventListener('keydown', (e) => {
                 initAudio();
                 if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
-                    keys.jump = true;
+                    if (!e.repeat) pressJump();
+                    e.preventDefault();
                 }
                 if (e.code === 'ArrowRight' || e.code === 'KeyD') {
                     keys.accelerate = true;
                 }
-                if (e.code === 'KeyP' || e.code === 'Escape') {
+                if ((e.code === 'KeyP' || e.code === 'Escape') && !e.repeat) {
                     togglePause();
                 }
             });
@@ -498,11 +673,14 @@ html
             document.getElementById('menu-btn').addEventListener('click', () => {
                 document.getElementById('pause-modal').classList.add('hidden');
                 document.getElementById('menu-modal').classList.remove('hidden');
+                isPaused = true;
             });
         }
 
         function togglePause() {
             if (isLevelWon) return;
+            // Nie pauzuj na ekranie wyboru krainy
+            if (!document.getElementById('menu-modal').classList.contains('hidden')) return;
             isPaused = !isPaused;
             document.getElementById('pause-modal').classList.toggle('hidden', !isPaused);
         }
@@ -555,6 +733,7 @@ html
             if (isPaused || isGameOver || isLevelWon) return;
 
             gameTime += dt;
+            if (graceT > 0) graceT -= dt;
             updateHUD();
 
             // Acceleration mechanics
@@ -567,20 +746,41 @@ html
 
             // Apply Horizontal movement
             fox.x += fox.vx;
+            if (fox.grounded) fox.vx = Math.max(3, fox.vx + Math.sin(fox.angle) * 0.08); // zjazd przyspiesza, podjazd zwalnia
 
             // Gravity
             fox.vy += fox.gravity;
             fox.y += fox.vy;
 
-            // Terrain collision check
+            // Terrain collision check (nad dziurą nie ma podłoża)
+            const solid = isSolidGround(fox.x);
             const groundY = getTerrainHeight(fox.x);
             const slope = getTerrainSlope(fox.x);
 
-            if (fox.y >= groundY - fox.size) {
-                fox.y = groundY - fox.size;
+            // Płaskowyż: lądowanie na wierzchu (one-way z góry).
+            // Ściana i spód to mur — dotknięcie = zgon (nie da się przejść pod spodem).
+            let supportY = groundY;
+            let landedP = null;
+            if (solid && fox.vy >= 0) {
+                const p = plateauAt(fox.x, 6);
+                if (p) {
+                    const top = getTerrainHeight(fox.x) - p.h;
+                    if (fox.y >= top - fox.size && fox.y <= top + 24) { supportY = top; landedP = p; }
+                }
+            }
+
+            if (solid && fox.y >= supportY - fox.size) {
+                fox.y = supportY - fox.size;
                 fox.vy = 0;
                 fox.grounded = true;
-                fox.angle = slope;
+                fox.angle += (slope - fox.angle) * 0.35;
+
+                // Punkt kontrolny: tylko bezpieczne miejsce (poza dziurą i z dala
+                // od przeszkód), żeby odrodzenie nie zabijało od razu (pętla zgonów)
+                if (isSafeSpot(fox.x)) {
+                    checkpoint.x = fox.x;
+                    checkpoint.y = fox.y;
+                }
 
                 // Dust particles when sprinting fast on ground
                 if (fox.vx > 9 && Math.random() < 0.4) {
@@ -589,18 +789,36 @@ html
             } else {
                 fox.grounded = false;
                 // Gradual rotation in air towards jump direction
-                fox.angle = Math.atan2(fox.vy, fox.vx) * 0.5;
+                fox.angle += (Math.atan2(fox.vy, fox.vx) * 0.6 - fox.angle) * 0.15;
             }
 
-            // Jump command
-            if (keys.jump) {
-                if (fox.grounded) {
-                    fox.vy = fox.jumpForce;
-                    fox.grounded = false;
-                    playJumpSound();
-                    createParticles(fox.x, fox.y + fox.size, '#ffffff', 8);
+            // Mur górki: dotknięcie ściany lub spodu = zgon (liczy się tylko wierzch)
+            if (graceT <= 0 && !landedP) {
+                const p = plateauAt(fox.x);
+                if (p) {
+                    const cx = Math.max(p.x0, Math.min(fox.x, p.x1));
+                    const top = getTerrainHeight(cx) - p.h;
+                    const gy = getTerrainHeight(cx);
+                    const ny = Math.max(top, Math.min(fox.y, gy));
+                    if (Math.hypot(fox.x - cx, fox.y - ny) < fox.size * 0.8) die('plateau', p);
                 }
-                keys.jump = false; // Reset instant jump trigger
+            }
+
+            // Skok z buforem i coyote time: wybacza wciśnięcie chwilę przed
+            // lądowaniem oraz chwilę po zbiegnięciu z krawędzi
+            if (fox.grounded) {
+                coyote = COYOTE_TIME;
+            } else {
+                coyote -= dt;
+            }
+            jumpBuffer -= dt;
+            if (jumpBuffer > 0 && (fox.grounded || coyote > 0)) {
+                fox.vy = fox.jumpForce;
+                fox.grounded = false;
+                coyote = 0;
+                jumpBuffer = 0;
+                playJumpSound();
+                createParticles(fox.x, fox.y + fox.size, '#ffffff', 8);
             }
 
             // Camera Tracking Smoothness
@@ -630,6 +848,22 @@ html
                 }
             });
 
+            // Kolizja z przeszkodami (wybaczający hitbox, pomijana w czasie nietykalności)
+            if (graceT <= 0) for (const o of obstacles) {
+                if (o.x > fox.x + 60 || o.x + o.w < fox.x - 60) continue;
+                const nx = Math.max(o.x + 6, Math.min(fox.x, o.x + o.w - 6));
+                const ny = Math.max(o.gy - o.h + 6, Math.min(fox.y, o.gy));
+                if (Math.hypot(fox.x - nx, fox.y - ny) < fox.size * 0.8) {
+                    die('obstacle', o);
+                    break;
+                }
+            }
+
+            // Upadek w dziurę (lis poniżej linii krawędzi, bez podłoża)
+            if (!isSolidGround(fox.x) && fox.y > groundY + 140) {
+                die('hole');
+            }
+
             // Finish Line check
             if (fox.x >= finishLineX && !isLevelWon) {
                 isLevelWon = true;
@@ -646,6 +880,9 @@ html
             document.getElementById('win-time').innerText = `${gameTime.toFixed(1)}s`;
             document.getElementById('win-diamonds').innerText = `${collectedDiamonds}/${totalDiamonds}`;
             document.getElementById('win-triangles').innerText = `${collectedTriangles}/${totalTriangles}`;
+            document.getElementById('win-deaths').innerText = deaths === 0
+                ? 'Bez upadku — czysty przejazd!'
+                : `Zgony: ${deaths} (kara +${deaths * 3}s wliczona w czas)`;
 
             // Calculate Star Rating
             const diamondRatio = totalDiamonds > 0 ? collectedDiamonds / totalDiamonds : 1;
@@ -664,212 +901,261 @@ html
             document.getElementById('win-modal').classList.remove('hidden');
         }
 
-        function drawBackground() {
-            const biome = BIOMES[currentBiomeIndex];
-
-            // Sky Gradient
-            const skyGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-            skyGrad.addColorStop(0, biome.skyTop);
-            skyGrad.addColorStop(1, biome.skyBottom);
-            ctx.fillStyle = skyGrad;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Parallax Low-Poly Mountain / Hill Layers
-            const layers = [
-                { speed: 0.1, color: biome.hillColors[2], heightOffset: 150, scale: 0.0005 },
-                { speed: 0.3, color: biome.hillColors[1], heightOffset: 80, scale: 0.001 },
-                { speed: 0.6, color: biome.hillColors[0], heightOffset: 30, scale: 0.002 }
-            ];
-
-            layers.forEach(layer => {
-                ctx.fillStyle = layer.color;
-                ctx.beginPath();
-                ctx.moveTo(0, canvas.height);
-
-                const step = 60;
-                for (let x = 0; x <= canvas.width + step; x += step) {
-                    const worldX = x + cameraX * layer.speed;
-                    const y = canvas.height * 0.5 - Math.sin(worldX * layer.scale) * layer.heightOffset - (cameraY * layer.speed * 0.2);
-                    ctx.lineTo(x, y);
+/* --- LOW-POLY RENDERING --- */
+        const hash = n => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
+        // Determinystyczny generator: ten sam seed = ten sam układ planszy
+        function mulberry32(a) {
+            return function() {
+                a |= 0; a = (a + 0x6D2B79F5) | 0;
+                let t = Math.imul(a ^ (a >>> 15), 1 | a);
+                t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+                return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+            };
+        }
+        const rgbCache = {};
+        const rgb = h => rgbCache[h] || (rgbCache[h] = [1, 3, 5].map(i => parseInt(h.substr(i, 2), 16)));
+        const c255 = v => Math.max(0, Math.min(255, v)) | 0;
+        function facet(hex, seed, amt) {
+            const c = rgb(hex), d = (hash(seed) - 0.5) * 2 * amt;
+            return `rgb(${c255(c[0] + d)},${c255(c[1] + d)},${c255(c[2] + d * 0.8)})`;
+        }
+        function tri(ax, ay, bx, by, cx, cy, fill) {
+            ctx.fillStyle = fill; ctx.strokeStyle = fill; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.lineTo(cx, cy); ctx.closePath(); ctx.fill(); ctx.stroke();
+        }
+        function ridgeY(x, f, a, s) {
+            return Math.sin(x * f + s) * a + Math.sin(x * f * 2.3 + s * 2) * a * 0.45 + Math.sin(x * f * 5.1 + s * 3) * a * 0.15;
+        }
+        // Powierzchnia złożona z trójkątnych faset o lekko różnych odcieniach
+        // gapFn(wx) === true rozrywa powierzchnię (dziury w terenie)
+        // cuts = dokładne współrzędne x, na których odcinki mają się kończyć
+        // (krawędzie dziur — wypełnienie dochodzi równo do brzegu warstwy)
+        function drawFacets(getY, par, color, depth, step, seed, jit, gapFn, cuts) {
+            const off = cameraX * par, i0 = Math.floor(off / step) - 1, n = Math.ceil(canvas.width / step) + 3, H = canvas.height + 20;
+            const xs = [];
+            for (let k = 0; k <= n; k++) xs.push((i0 + k) * step);
+            const cutSet = new Set();
+            if (cuts) for (const cx of cuts) {
+                if (cx >= (i0 - 1) * step && cx <= (i0 + n + 1) * step) { xs.push(cx); cutSet.add(cx); }
+            }
+            xs.sort((a, b) => a - b);
+            const runs = [];
+            let cur = [];
+            for (const wx of xs) {
+                if (gapFn && gapFn(wx)) { if (cur.length) { runs.push(cur); cur = []; } continue; }
+                cur.push({ x: wx - off, y: getY(wx), i: Math.round(wx / step) });
+                if (cutSet.has(wx)) { runs.push(cur); cur = []; }
+            }
+            if (cur.length) runs.push(cur);
+            for (const p of runs) {
+                if (p.length < 2) continue;
+                const m = p.length - 1;
+                ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(p[0].x, H);
+                for (const q of p) ctx.lineTo(q.x, q.y);
+                ctx.lineTo(p[m].x, H); ctx.closePath(); ctx.fill();
+                for (let k = 0; k < m; k++) {
+                    const a = p[k], b = p[k + 1], s = a.i * 7 + seed;
+                    const my = (a.y + b.y) / 2 + depth * (0.5 + hash(s) * 0.6), mx = a.x + step * (0.3 + hash(s + 1) * 0.4);
+                    const ay = a.y + depth * 1.9, by = b.y + depth * 1.9;
+                    tri(a.x, a.y, b.x, b.y, mx, my, facet(color, s + 2, jit));
+                    tri(a.x, a.y, mx, my, a.x, ay, facet(color, s + 3, jit));
+                    tri(b.x, b.y, mx, my, b.x, by, facet(color, s + 4, jit));
+                    tri(mx, my, a.x, ay, b.x, by, facet(color, s + 5, jit));
                 }
+            }
+        }
+        function drawTrees(b) {
+            const par = 0.45, sp = 520, off = cameraX * par, i0 = Math.floor(off / sp) - 1, n = Math.ceil(canvas.width / sp) + 3;
+            for (let k = 0; k < n; k++) {
+                const i = i0 + k, h1 = hash(i * 3.1), h2 = hash(i * 7.7), tx = i * sp + h1 * 160 - off, w = 60 + h2 * 50;
+                ctx.fillStyle = b.trunk; ctx.fillRect(tx - w / 2, -40, w, canvas.height);
+                ctx.fillStyle = "rgba(0,0,0,0.2)"; ctx.fillRect(tx, -40, w / 2, canvas.height);
+                const cx = tx + (h2 - 0.5) * 60, cy = 30 + h1 * 80, r = 150 + h2 * 90, col = b.canopy[Math.abs(i) % 2], m = 9, pts = [];
+                for (let j = 0; j < m; j++) {
+                    const ang = j / m * Math.PI * 2 + h1, rr = r * (0.72 + hash(i * 9 + j) * 0.4);
+                    pts.push([cx + Math.cos(ang) * rr, cy + Math.sin(ang) * rr * 0.78]);
+                }
+                for (let j = 0; j < m; j++) { const p = pts[j], q = pts[(j + 1) % m]; tri(cx, cy, p[0], p[1], q[0], q[1], facet(col, i * 31 + j, 22)); }
+            }
+        }
+        function drawBackground() {
+            const b = BIOMES[currentBiomeIndex], H = canvas.height;
+            const g = ctx.createLinearGradient(0, 0, 0, H);
+            g.addColorStop(0, b.skyTop); g.addColorStop(0.7, b.skyBottom);
+            ctx.fillStyle = g; ctx.fillRect(0, 0, canvas.width, H);
+            drawFacets(x => H * 0.40 + ridgeY(x, 0.0016, 45, 1), 0.2, b.far, 90, 80, 11, 10);
+            drawTrees(b);
+            drawFacets(x => H * 0.44 + ridgeY(x, 0.0028, 26, 5), 0.55, b.bush, 70, 70, 23, 12);
+            drawFacets(x => H * 0.47 + ridgeY(x, 0.0019, 40, 9), 0.75, b.mid, 110, 90, 37, 12);
+        }
+        function drawTerrain() {
+            const b = BIOMES[currentBiomeIndex];
+            const gap = x => isHole(x);
+            const cuts = [];
+            for (const h of holes) cuts.push(h.x0, h.x1);
+            // Cięcie też na uskokach: górna warstwa kończy się na krawędzi,
+            // dolna zaczyna tuż za nią (bez zygzaka obrysu przez ścianę klifu)
+            for (const c of cliffs) cuts.push(c.x - 0.5, c.x + 0.5);
+            drawFacets(wx => getTerrainHeight(wx) - cameraY - 70 - Math.sin(wx * 0.004 + 2) * 30, 1, b.grass, 80, 90, 53, 12, gap, cuts);
+            drawFacets(wx => getTerrainHeight(wx) - cameraY, 1, b.snowColor, 120, 70, 71, 7, gap, cuts);
+            // Znaki ostrzegawcze przed dziurami
+            holes.forEach(h => { drawWarnSign(h.x0 - 110); });
 
-                ctx.lineTo(canvas.width, canvas.height);
-                ctx.closePath();
-                ctx.fill();
+            // Brama mety
+            const gx = finishLineX - cameraX, gy = getTerrainHeight(finishLineX) - cameraY;
+            ctx.fillStyle = "#e8eef8"; ctx.fillRect(gx - 70, gy - 180, 8, 180); ctx.fillRect(gx + 62, gy - 180, 8, 180);
+            tri(gx - 62, gy - 180, gx + 62, gy - 180, gx, gy - 110, b.accentColor);
+            tri(gx - 62, gy - 180, gx, gy - 180, gx, gy - 110, "rgba(255,255,255,0.3)");
+        }
+        // Znak ostrzegawczy "!" przed dziurą
+        function drawWarnSign(x) {
+            const sx = x - cameraX;
+            if (sx < -60 || sx > canvas.width + 60) return;
+            const gy = getTerrainHeight(x) - cameraY;
+            ctx.fillStyle = '#4a2e24';
+            ctx.fillRect(sx - 2, gy - 52, 4, 52);
+            tri(sx, gy - 86, sx + 20, gy - 52, sx - 20, gy - 52, '#fbbf24');
+            tri(sx, gy - 78, sx + 11, gy - 58, sx - 11, gy - 58, '#b45309');
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(sx - 1.5, gy - 72, 3, 12);
+            ctx.fillRect(sx - 1.5, gy - 57, 3, 3);
+        }
+        // Przeszkody: sople (kraina 1) / kłoda (kraina 2) / kolce (kraina 3)
+        function drawObstacles() {
+            obstacles.forEach(o => {
+                const sx = o.x - cameraX;
+                if (sx + o.w < -40 || sx > canvas.width + 40) return;
+                const gy = o.gy - cameraY;
+                if (o.type === 'spike' || o.type === 'thorn') {
+                    const night = o.type === 'thorn'; // fioletowe kolce nocnej krainy
+                    const cDark = night ? '#6d28d9' : '#27c7dc';
+                    const cLight = night ? '#c4b5fd' : '#7ae6f2';
+                    const n = 3, w = o.w / n, h = o.h;
+                    ctx.save();
+                    ctx.shadowColor = night ? "rgba(167,139,250,0.55)" : "rgba(103,232,249,0.55)"; ctx.shadowBlur = 10;
+                    for (let i = 0; i < n; i++) {
+                        const bx = sx + i * w, hh = h * (i === 1 ? 1 : 0.72);
+                        tri(bx, gy, bx + w / 2, gy - hh, bx + w, gy, cDark);
+                        tri(bx, gy, bx + w / 2, gy - hh, bx + w * 0.4, gy, cLight);
+                    }
+                    ctx.restore();
+                } else { // log
+                    const w = o.w, h = o.h;
+                    ctx.fillStyle = '#6b4226';
+                    ctx.beginPath();
+                    ctx.roundRect ? ctx.roundRect(sx, gy - h, w, h, h * 0.45) : ctx.rect(sx, gy - h, w, h);
+                    ctx.fill();
+                    ctx.fillStyle = '#8a5a33';
+                    ctx.fillRect(sx + 4, gy - h + 4, w - 8, h * 0.35);
+                    ctx.fillStyle = '#3f2712';
+                    ctx.beginPath(); ctx.arc(sx + 6, gy - h / 2, h * 0.32, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillStyle = '#c49a6c';
+                    ctx.beginPath(); ctx.arc(sx + 6, gy - h / 2, h * 0.18, 0, Math.PI * 2); ctx.fill();
+                    tri(sx + w * 0.3, gy - h, sx + w * 0.55, gy - h, sx + w * 0.42, gy - h * 0.55, '#4a2e1a');
+                }
             });
         }
-
-        function drawTerrain() {
-            const biome = BIOMES[currentBiomeIndex];
-            const step = 15;
-            const startX = Math.floor(cameraX / step) * step - step;
-            const endX = startX + canvas.width + step * 3;
-
-            // Main Foreground Hill
-            ctx.fillStyle = biome.snowColor;
-            ctx.beginPath();
-            ctx.moveTo(startX - cameraX, canvas.height);
-
-            for (let x = startX; x <= endX; x += step) {
-                const y = getTerrainHeight(x) - cameraY;
-                ctx.lineTo(x - cameraX, y);
-            }
-
-            ctx.lineTo(endX - cameraX, canvas.height);
-            ctx.closePath();
-            ctx.fill();
-
-            // Low-Poly Facet Shading on Terrain Edge
-            ctx.strokeStyle = "rgba(0,0,0,0.06)";
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            for (let x = startX; x <= endX; x += step * 2) {
-                const y = getTerrainHeight(x) - cameraY;
-                ctx.moveTo(x - cameraX, y);
-                ctx.lineTo(x + step - cameraX, y + 8);
-            }
-            ctx.stroke();
-
-            // Finish Line Portal / Arch
-            const finishCamX = finishLineX - cameraX;
-            const finishCamY = getTerrainHeight(finishLineX) - cameraY;
-
-            ctx.save();
-            ctx.translate(finishCamX, finishCamY);
-            // Low-poly Arch
-            ctx.fillStyle = biome.accentColor;
-            ctx.fillRect(-10, -120, 20, 120);
-            ctx.fillStyle = "#ffffff";
-            ctx.beginPath();
-            ctx.arc(0, -120, 30, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.restore();
+        // Płaskowyże: cała biała śnieżna góra z lekką fakturą faset
+        function drawPlateaus() {
+            const b = BIOMES[currentBiomeIndex];
+            plateaus.forEach((p, pi) => {
+                const sx0 = p.x0 - cameraX, sx1 = p.x1 - cameraX;
+                if (sx1 < -60 || sx0 > canvas.width + 60) return;
+                const T = x => getTerrainHeight(x) - p.h - cameraY; // wierzch
+                const G = x => getTerrainHeight(x) - cameraY;       // ziemia pod spodem
+                // Biały korpus
+                ctx.fillStyle = b.snowColor;
+                ctx.beginPath();
+                ctx.moveTo(sx0, T(p.x0));
+                for (let x = p.x0; x <= p.x1; x += 24) ctx.lineTo(x - cameraX, T(x));
+                ctx.lineTo(sx1, T(p.x1));
+                ctx.lineTo(sx1, G(p.x1));
+                ctx.lineTo(sx0, G(p.x0));
+                ctx.closePath(); ctx.fill();
+                // Delikatne białe fasety na korpusie
+                const segs = Math.max(1, Math.round((p.x1 - p.x0) / 64));
+                for (let i = 0; i < segs; i++) {
+                    const ax = p.x0 + (p.x1 - p.x0) * i / segs, bx = p.x0 + (p.x1 - p.x0) * (i + 1) / segs;
+                    tri(ax - cameraX, T(ax), bx - cameraX, T(bx), (ax + bx) / 2 - cameraX, (G(ax) + G(bx)) / 2, facet(b.snowColor, pi * 31 + i, 8));
+                }
+            });
         }
-
         function drawFox() {
+            const u = fox.size * 0.95, t = Date.now() * 0.001;
             ctx.save();
+            if (graceT > 0 && Math.floor(Date.now() / 120) % 2 === 0) ctx.globalAlpha = 0.35; // mruganie w czasie nietykalności
             ctx.translate(fox.x - cameraX, fox.y - cameraY);
             ctx.rotate(fox.angle);
-
-            // Speed trail when sprinting
-            if (fox.vx > 10) {
-                ctx.fillStyle = "rgba(249, 115, 22, 0.2)";
-                ctx.beginPath();
-                ctx.moveTo(-fox.size * 1.5, -fox.size * 0.5);
-                ctx.lineTo(-fox.size * 2.5, 0);
-                ctx.lineTo(-fox.size * 1.5, fox.size * 0.5);
-                ctx.fill();
-            }
-
-            // Low-Poly Origami Fox Body Segments
-            // Main Body (Orange gradient triangle)
-            ctx.fillStyle = "#ea580c"; // Darker orange base
-            ctx.beginPath();
-            ctx.moveTo(-fox.size, fox.size * 0.2);
-            ctx.lineTo(fox.size * 0.6, -fox.size * 0.4);
-            ctx.lineTo(0, fox.size * 0.6);
-            ctx.closePath();
-            ctx.fill();
-
-            // Upper Body Facet (Bright Orange)
-            ctx.fillStyle = "#f97316";
-            ctx.beginPath();
-            ctx.moveTo(-fox.size * 0.8, -fox.size * 0.2);
-            ctx.lineTo(fox.size * 0.8, -fox.size * 0.2);
-            ctx.lineTo(0, fox.size * 0.6);
-            ctx.closePath();
-            ctx.fill();
-
-            // Head (Origami Snout)
-            ctx.fillStyle = "#fb923c";
-            ctx.beginPath();
-            ctx.moveTo(fox.size * 0.5, -fox.size * 0.3);
-            ctx.lineTo(fox.size * 1.4, -fox.size * 0.1);
-            ctx.lineTo(fox.size * 0.7, fox.size * 0.3);
-            ctx.closePath();
-            ctx.fill();
-
-            // Ears
-            ctx.fillStyle = "#c2410c";
-            ctx.beginPath();
-            ctx.moveTo(fox.size * 0.4, -fox.size * 0.3);
-            ctx.lineTo(fox.size * 0.6, -fox.size * 0.9);
-            ctx.lineTo(fox.size * 0.8, -fox.size * 0.3);
-            ctx.closePath();
-            ctx.fill();
-
-            // White Origami Chest/Tail Accent
-            ctx.fillStyle = "#f8fafc";
-            // Tail tip
-            const tailAnim = Math.sin(Date.now() * 0.01) * 0.2;
-            ctx.beginPath();
-            ctx.moveTo(-fox.size * 0.9, -fox.size * 0.1);
-            ctx.lineTo(-fox.size * 1.7, -fox.size * 0.6 + tailAnim * 10);
-            ctx.lineTo(-fox.size * 1.2, fox.size * 0.2);
-            ctx.closePath();
-            ctx.fill();
-
+            const P = (pts, fill) => {
+                ctx.fillStyle = fill; ctx.strokeStyle = fill; ctx.lineWidth = 0.6; ctx.beginPath();
+                pts.forEach((p, i) => i ? ctx.lineTo(p[0] * u, p[1] * u) : ctx.moveTo(p[0] * u, p[1] * u));
+                ctx.closePath(); ctx.fill(); ctx.stroke();
+            };
+            const run = t * (9 + fox.vx * 0.8);
+            const swing = ph => fox.grounded ? Math.sin(run + ph) * 0.75 : (ph > 1 ? -0.55 : 0.65);
+            const leg = (hx, hy, ang, col) => {
+                ctx.save(); ctx.translate(hx * u, hy * u); ctx.rotate(ang);
+                P([[-0.12, 0], [0.12, 0], [0, 0.8]], col); ctx.restore();
+            };
+            const sway = Math.sin(t * 6) * 0.12;
+            // ogon
+            P([[-0.9, -0.1], [-1.9, -0.55 + sway], [-1.0, 0.3]], "#e5701f");
+            P([[-1.9, -0.55 + sway], [-2.75, -1.0 + sway * 1.5], [-1.5, -0.3 + sway * 0.5]], "#fdfdfd");
+            // dalsze nogi
+            leg(-0.55, 0.25, swing(Math.PI), "#b8501c"); leg(0.45, 0.3, swing(0), "#b8501c");
+            // korpus
+            P([[-1.0, 0.05], [0.9, -0.45], [0.25, 0.5]], "#d4601a");
+            P([[-1.0, 0.05], [0.9, -0.45], [-0.1, -0.3]], "#f58a38");
+            P([[0.35, 0.0], [0.95, -0.2], [0.8, 0.35]], "#ffffff");
+            // głowa
+            P([[0.75, -0.55], [1.75, -0.12], [0.85, 0.28]], "#f4802f");
+            P([[1.2, -0.35], [1.75, -0.12], [1.0, 0.2]], "#fff1e2");
+            P([[1.75, -0.12], [1.6, -0.02], [1.68, 0.05]], "#3a2a22");
+            P([[0.8, -0.5], [0.95, -1.2], [1.25, -0.4]], "#c9501a");
+            P([[1.1, -0.45], [1.45, -1.05], [1.45, -0.25]], "#e46a22");
+            // bliższe nogi
+            leg(-0.5, 0.3, swing(0.6), "#e0661f"); leg(0.5, 0.35, swing(Math.PI + 0.6), "#e0661f");
             ctx.restore();
         }
-
         function drawCollectibles() {
             const time = Date.now() * 0.003;
-
-            // Draw Diamonds (Gold Gem)
             diamonds.forEach(d => {
                 if (d.collected) return;
-                const x = d.x - cameraX;
-                const y = d.y - cameraY + Math.sin(time + d.x) * 4;
-
-                ctx.save();
-                ctx.translate(x, y);
-                ctx.rotate(Math.PI / 4);
-
-                // Glow
-                ctx.shadowColor = "#fbbf24";
-                ctx.shadowBlur = 10;
-
-                ctx.fillStyle = "#fbbf24";
-                ctx.fillRect(-d.size / 2, -d.size / 2, d.size, d.size);
-
-                // Facet Highlight
-                ctx.fillStyle = "#fef08a";
-                ctx.fillRect(-d.size / 4, -d.size / 4, d.size / 2, d.size / 2);
-
-                ctx.restore();
+                const x = d.x - cameraX, y = d.y - cameraY + Math.sin(time + d.x) * 4, s = d.size * 1.1;
+                ctx.save(); ctx.translate(x, y); ctx.rotate(Math.PI / 4 + Math.sin(time + d.x) * 0.08);
+                ctx.shadowColor = "rgba(255,205,60,0.6)"; ctx.shadowBlur = 16;
+                const g = ctx.createLinearGradient(-s, -s, s, s); g.addColorStop(0, "#ffe35a"); g.addColorStop(1, "#f0b400");
+                ctx.fillStyle = g; ctx.beginPath();
+                ctx.roundRect ? ctx.roundRect(-s, -s, s * 2, s * 2, s * 0.38) : ctx.rect(-s, -s, s * 2, s * 2);
+                ctx.fill(); ctx.shadowBlur = 0;
+                ctx.fillStyle = "rgba(255,255,255,0.28)"; ctx.beginPath();
+                ctx.roundRect ? ctx.roundRect(-s * 0.75, -s * 0.75, s * 1.1, s * 1.1, s * 0.25) : ctx.rect(-s * 0.75, -s * 0.75, s * 1.1, s * 1.1);
+                ctx.fill(); ctx.restore();
             });
-
-            // Draw Triangles (Cyan Special Token)
             triangles.forEach(t => {
                 if (t.collected) return;
-                const x = t.x - cameraX;
-                const y = t.y - cameraY + Math.cos(time + t.x) * 6;
-
-                ctx.save();
-                ctx.translate(x, y);
-                ctx.rotate(Math.sin(time) * 0.3);
-
-                ctx.shadowColor = "#67e8f9";
-                ctx.shadowBlur = 12;
-
-                ctx.fillStyle = "#22d3ee";
-                ctx.beginPath();
-                ctx.moveTo(0, -t.size);
-                ctx.lineTo(t.size, t.size);
-                ctx.lineTo(-t.size, t.size);
-                ctx.closePath();
-                ctx.fill();
-
-                ctx.fillStyle = "#a5f3fc";
-                ctx.beginPath();
-                ctx.moveTo(0, -t.size * 0.5);
-                ctx.lineTo(t.size * 0.5, t.size * 0.5);
-                ctx.lineTo(-t.size * 0.5, t.size * 0.5);
-                ctx.closePath();
-                ctx.fill();
-
+                const x = t.x - cameraX, y = t.y - cameraY + Math.cos(time + t.x) * 6;
+                ctx.save(); ctx.translate(x, y); ctx.rotate(Math.sin(time) * 0.25);
+                ctx.shadowColor = "rgba(103,232,249,0.6)"; ctx.shadowBlur = 14;
+                tri(0, -t.size, t.size, t.size, -t.size, t.size, "#27c7dc");
+                ctx.shadowBlur = 0;
+                tri(0, -t.size, 0, t.size, -t.size, t.size, "#7ae6f2");
                 ctx.restore();
             });
+        }
+        let grainPat = null;
+        function drawOverlay() {
+            const W = canvas.width, H = canvas.height;
+            if (!grainPat) {
+                const c = document.createElement('canvas'); c.width = c.height = 128;
+                const x = c.getContext('2d'), d = x.createImageData(128, 128);
+                for (let i = 0; i < d.data.length; i += 4) { const v = Math.random() * 255; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 255; }
+                x.putImageData(d, 0, 0); grainPat = ctx.createPattern(c, 'repeat');
+            }
+            ctx.save(); ctx.globalAlpha = 0.07; ctx.globalCompositeOperation = 'overlay'; ctx.fillStyle = grainPat; ctx.fillRect(0, 0, W, H); ctx.restore();
+            const g = ctx.createLinearGradient(0, 0, 0, H * 0.35);
+            g.addColorStop(0, 'rgba(10,20,25,0.35)'); g.addColorStop(1, 'rgba(10,20,25,0)');
+            ctx.fillStyle = g; ctx.fillRect(0, 0, W, H * 0.35);
         }
 
         /* --- MAIN GAME LOOP --- */
@@ -884,9 +1170,12 @@ html
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawBackground();
             drawTerrain();
+            drawPlateaus();
             drawCollectibles();
+            drawObstacles();
             drawFox();
             drawParticles();
+            drawOverlay();
 
             requestAnimationFrame(gameLoop);
         }
@@ -895,6 +1184,9 @@ html
         window.onload = function () {
             setupControls();
             initLevel(0);
+            // FIX: po załadowaniu pokaż menu wyboru krainy (initLevel je chowa)
+            document.getElementById('menu-modal').classList.remove('hidden');
+            isPaused = true;
             requestAnimationFrame(gameLoop);
         };
     </script>
