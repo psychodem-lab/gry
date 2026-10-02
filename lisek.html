@@ -76,7 +76,7 @@
                 <p class="text-slate-300 text-sm md:text-base mb-8">Pędź przez trójwymiarowe, górzyste krainy, zbieraj kryształy i pobij rekordy prędkości!</p>
 
                 <!-- Biome / Level Selection Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
                     <button onclick="selectLevel(0)" class="level-card glass-btn p-4 rounded-2xl border border-white/20 text-left hover:border-amber-400 group relative overflow-hidden">
                         <div class="text-xs uppercase font-extrabold text-cyan-300 mb-1">Kraina 1</div>
                         <div class="font-bold text-lg text-white">Zimowy Las</div>
@@ -91,6 +91,12 @@
                         <div class="text-xs uppercase font-extrabold text-purple-300 mb-1">Kraina 3</div>
                         <div class="font-bold text-lg text-white">Nocna Zorza</div>
                         <div class="text-xs text-slate-300 mt-2 flex items-center gap-1"><i class="fa-solid fa-moon"></i> Mistyczna Noc</div>
+                    </button>
+                    <button onclick="selectLevel(3)" class="level-card glass-btn p-4 rounded-2xl border border-white/20 text-left hover:border-amber-400 group relative overflow-hidden">
+                        <div class="text-xs uppercase font-extrabold text-emerald-300 mb-1">Tryb 4</div>
+                        <div class="font-bold text-lg text-white">Endless</div>
+                        <div class="text-xs text-slate-300 mt-2 flex items-center gap-1"><i class="fa-solid fa-infinity"></i> Bez końca — liczy się dystans</div>
+                        <div id="endless-best" class="text-xs text-amber-300 mt-1">Rekord: 0 m</div>
                     </button>
                 </div>
 
@@ -262,7 +268,9 @@ const BIOMES = [
             { name: "Złoty Zachód", skyTop: "#b46a4c", skyBottom: "#f1c89c", far: "#c48a66", bush: "#8a4f36", mid: "#c8924a", grass: "#dcab5c",
               canopy: ["#c4623a", "#a24a2e"], trunk: "#4a2e24", snowColor: "#fff4e2", edge: "#f0d2a4", accentColor: "#fbbf24" },
             { name: "Nocna Zorza", skyTop: "#141a3a", skyBottom: "#3b3f7c", far: "#2e3672", bush: "#242a5c", mid: "#37508c", grass: "#4a64a2",
-              canopy: ["#2f6f8f", "#3b5f9f"], trunk: "#1a1f3a", snowColor: "#dfe6ff", edge: "#a9b8f0", accentColor: "#c084fc" }
+              canopy: ["#2f6f8f", "#3b5f9f"], trunk: "#1a1f3a", snowColor: "#dfe6ff", edge: "#a9b8f0", accentColor: "#c084fc" },
+            { name: "Endless", skyTop: "#4e7d8c", skyBottom: "#cfe0cf", far: "#6f8fa0", bush: "#3f6a5e", mid: "#5d9478", grass: "#7fb489",
+              canopy: ["#3f8a6d", "#2e6b57"], trunk: "#33423c", snowColor: "#f2faf3", edge: "#c4dcee", accentColor: "#34d399" }
         ];
 
         /* --- GAME ENGINE VARIABLES --- */
@@ -327,6 +335,14 @@ const BIOMES = [
         let cliffs = [];     // {x, drop} — za punktem x teren opada o drop
         let obstacles = [];  // {x, w, h, gy, type} — kolizja = zgon
         let plateaus = [];   // {x0, x1, h} — górki do wskakiwania (wierzch = teren - h)
+        // Endless: generowanie świata chunkami w locie
+        let cliffBase = 0;   // suma uskoków sprzątniętych klifów (teren za graczem)
+        let endlessRng = null;
+        let genCliffX = 0, genHoleX = 0, genObsX = 0, genPlatX = 0, genColX = 0, genFrontier = 0;
+        let endlessPlats = 0;
+        let bestDist = 0;    // rekord dystansu (localStorage)
+        let lastBestSave = 0;
+        try { bestDist = parseInt(localStorage.getItem('foxEndlessBest')) || 0; } catch (e) {}
         let checkpoint = { x: 150, y: 0 }; // ostatnie bezpieczne miejsce
         let deaths = 0;
         let graceT = 0; // nietykalność na przeszkody po zgonie (s)
@@ -354,7 +370,7 @@ function baseTerrainHeight(x) {
         }
 
 function getTerrainHeight(x) {
-            let y = baseTerrainHeight(x);
+            let y = baseTerrainHeight(x) + cliffBase;
             for (let i = 0; i < cliffs.length; i++) {
                 if (x >= cliffs[i].x) y += cliffs[i].drop;
             }
@@ -589,6 +605,19 @@ function getTerrainHeight(x) {
                 Math.random = __realRandom;
             }
 
+            // --- Endless: wyczyść układy poziomów, świat generuje się chunkami w locie ---
+            if (biomeIdx === 3) {
+                finishLineX = Infinity;
+                cliffBase = 0;
+                holes = []; cliffs = []; obstacles = []; plateaus = [];
+                diamonds = []; triangles = [];
+                endlessRng = mulberry32(987654);
+                endlessPlats = 0;
+                genCliffX = 1400; genHoleX = 1100; genObsX = 900; genPlatX = 1000; genColX = 600;
+                genFrontier = 2600;
+                extendEndless(genFrontier);
+            }
+
             totalDiamonds = diamonds.length;
             totalTriangles = triangles.length;
 
@@ -600,10 +629,115 @@ function getTerrainHeight(x) {
             document.getElementById('win-modal').classList.add('hidden');
         }
 
+        // Endless: dogeneruj świat do podanego X (deterministycznie, z rosnącą trudnością)
+        function extendEndless(upToX) {
+            const real = Math.random;
+            Math.random = endlessRng;
+            try {
+                // Sprzątnij to, co daleko za graczem (liczniki już zliczone)
+                const cutX = cameraX - 400;
+                diamonds = diamonds.filter(d => d.x > cutX);
+                triangles = triangles.filter(t => t.x > cutX);
+                obstacles = obstacles.filter(o => o.x + o.w > cutX);
+                plateaus = plateaus.filter(p => p.x1 > cutX);
+                for (let i = cliffs.length - 1; i >= 0; i--) {
+                    if (cliffs[i].x < cutX) { cliffBase += cliffs[i].drop; cliffs.splice(i, 1); }
+                }
+                const clearOf = (x, margin) => {
+                    for (const h of holes) if (x > h.x0 - margin && x < h.x1 + margin) return false;
+                    for (const c of cliffs) if (Math.abs(x - c.x) < margin) return false;
+                    return true;
+                };
+                const diff = Math.min(1, upToX / 20000); // 0 → 1 (trudność rośnie z dystansem)
+                while (genCliffX < upToX - 800) {
+                    cliffs.push({ x: genCliffX, drop: 90 + Math.random() * 60 });
+                    genCliffX += 1100 + Math.random() * 900;
+                }
+                while (genHoleX < upToX - 500) {
+                    const w = 110 + Math.random() * 70 + diff * 70;
+                    if (clearOf(genHoleX, 300) && clearOf(genHoleX + w, 300)) {
+                        holes.push({ x0: genHoleX, x1: genHoleX + w });
+                        const mid = genHoleX + w / 2;
+                        const edgeY = getTerrainHeight(genHoleX - 6);
+                        for (let i = -1; i <= 1; i++) {
+                            diamonds.push({ x: mid + i * 44, y: edgeY - 95 - (1 - Math.abs(i)) * 35, collected: false, size: 14 });
+                        }
+                        genHoleX += w + 900 + Math.random() * 800;
+                    } else {
+                        genHoleX += 500;
+                    }
+                }
+                while (genObsX < upToX) {
+                    const otype = ['spike', 'log', 'thorn'][Math.floor(genObsX / 2500) % 3];
+                    if (clearOf(genObsX, 130)) {
+                        const w = otype === 'log' ? 64 + Math.random() * 20 : 30 + Math.random() * 16;
+                        const h = otype === 'log' ? 26 + Math.random() * 8 : 36 + Math.random() * 22;
+                        if (clearOf(genObsX + w / 2, w / 2 + 90)) {
+                            obstacles.push({ x: genObsX, w: w, h: h, gy: getTerrainHeight(genObsX + w / 2), type: otype });
+                        }
+                    }
+                    genObsX += (420 - diff * 100) + Math.random() * 480;
+                }
+                let guard = 0;
+                while (genPlatX < upToX - 600 && guard++ < 40) {
+                    const w = 150 + Math.random() * 110;
+                    const h = 60 + Math.random() * 45;
+                    if (clearOf(genPlatX, 160) && clearOf(genPlatX + w, 160)) {
+                        let ok = true;
+                        for (const o of obstacles) if (genPlatX < o.x + o.w + 100 && genPlatX + w > o.x - 100) { ok = false; break; }
+                        if (ok) {
+                            plateaus.push({ x0: genPlatX, x1: genPlatX + w, h: h });
+                            endlessPlats++;
+                            if (endlessPlats % 2 === 0) {
+                                const cx = genPlatX + w / 2;
+                                triangles.push({ x: cx, y: getTerrainHeight(cx) - h - 120, collected: false, size: 18 });
+                            }
+                            genPlatX += w + 600 + Math.random() * 600;
+                        } else {
+                            genPlatX += 250;
+                        }
+                    } else {
+                        genPlatX += 250;
+                    }
+                }
+                while (genColX < upToX - 300) {
+                    const groundY = getTerrainHeight(genColX);
+                    const count = Math.floor(Math.random() * 3) + 1;
+                    const inAir = Math.random() > 0.5;
+                    for (let i = 0; i < count; i++) {
+                        if (!inAir && isHole(genColX + i * 40)) continue;
+                        diamonds.push({
+                            x: genColX + i * 40,
+                            y: inAir ? groundY - 120 - Math.sin(i * 0.5) * 40 : groundY - 35,
+                            collected: false,
+                            size: 14
+                        });
+                    }
+                    if (Math.random() < 0.35) {
+                        triangles.push({ x: genColX + count * 40 + 60, y: groundY - 160, collected: false, size: 18 });
+                    }
+                    genColX += 180 + Math.random() * 120;
+                }
+                // Naziemne diamenty w obrębie płaskowyżu wjeżdżają na jego wierzch
+                diamonds.forEach(d => {
+                    const p = plateauAt(d.x);
+                    if (p && d.y > getTerrainHeight(d.x) - 50) {
+                        d.y = getTerrainHeight(d.x) - p.h - 35;
+                    }
+                });
+                totalDiamonds = diamonds.length;
+                totalTriangles = triangles.length;
+            } finally {
+                Math.random = real;
+            }
+        }
+
         function updateHUD() {
-            document.getElementById('diamond-count').innerText = `${collectedDiamonds}/${totalDiamonds}`;
-            document.getElementById('triangle-count').innerText = `${collectedTriangles}/${totalTriangles}`;
-            document.getElementById('timer-text').innerText = gameTime.toFixed(1);
+            const endless = currentBiomeIndex === 3;
+            const dist = Math.max(0, Math.floor((fox.x - 150) / 50));
+            document.getElementById('diamond-count').innerText = endless ? `${collectedDiamonds}` : `${collectedDiamonds}/${totalDiamonds}`;
+            document.getElementById('triangle-count').innerText = endless ? `${collectedTriangles}` : `${collectedTriangles}/${totalTriangles}`;
+            document.getElementById('timer-text').innerText = endless ? `${dist} m` : gameTime.toFixed(1);
         }
 
         /* --- EVENT LISTENERS (TOUCH & KEYBOARD) --- */
@@ -673,6 +807,7 @@ function getTerrainHeight(x) {
             document.getElementById('menu-btn').addEventListener('click', () => {
                 document.getElementById('pause-modal').classList.add('hidden');
                 document.getElementById('menu-modal').classList.remove('hidden');
+                document.getElementById('endless-best').innerText = `Rekord: ${bestDist} m`;
                 isPaused = true;
             });
         }
@@ -736,8 +871,25 @@ function getTerrainHeight(x) {
             if (graceT > 0) graceT -= dt;
             updateHUD();
 
+            // Endless: dosuwaj świat przed lisem, śledź rekord, prędkość rośnie z dystansem
+            if (currentBiomeIndex === 3) {
+                if (fox.x + 2200 > genFrontier) {
+                    genFrontier = fox.x + 2500;
+                    extendEndless(genFrontier);
+                }
+                const dist = Math.max(0, Math.floor((fox.x - 150) / 50));
+                if (dist > bestDist) {
+                    bestDist = dist;
+                    if (gameTime - lastBestSave > 1) {
+                        lastBestSave = gameTime;
+                        try { localStorage.setItem('foxEndlessBest', String(bestDist)); } catch (e) {}
+                    }
+                }
+            }
+
             // Acceleration mechanics
-            let targetSpeed = keys.accelerate ? fox.maxSpeed : fox.baseSpeed;
+            const cruise = currentBiomeIndex === 3 ? Math.min(9, 5 + Math.max(0, fox.x - 150) / 4000) : fox.baseSpeed;
+            let targetSpeed = keys.accelerate ? fox.maxSpeed : cruise;
             if (fox.vx < targetSpeed) {
                 fox.vx += fox.acceleration;
             } else if (fox.vx > targetSpeed) {
@@ -1001,11 +1153,13 @@ function getTerrainHeight(x) {
             // Znaki ostrzegawcze przed dziurami
             holes.forEach(h => { drawWarnSign(h.x0 - 110); });
 
-            // Brama mety
+            // Brama mety (nie dotyczy endless)
+            if (isFinite(finishLineX)) {
             const gx = finishLineX - cameraX, gy = getTerrainHeight(finishLineX) - cameraY;
             ctx.fillStyle = "#e8eef8"; ctx.fillRect(gx - 70, gy - 180, 8, 180); ctx.fillRect(gx + 62, gy - 180, 8, 180);
             tri(gx - 62, gy - 180, gx + 62, gy - 180, gx, gy - 110, b.accentColor);
             tri(gx - 62, gy - 180, gx, gy - 180, gx, gy - 110, "rgba(255,255,255,0.3)");
+            }
         }
         // Znak ostrzegawczy "!" przed dziurą
         function drawWarnSign(x) {
@@ -1186,6 +1340,7 @@ function getTerrainHeight(x) {
             initLevel(0);
             // FIX: po załadowaniu pokaż menu wyboru krainy (initLevel je chowa)
             document.getElementById('menu-modal').classList.remove('hidden');
+            document.getElementById('endless-best').innerText = `Rekord: ${bestDist} m`;
             isPaused = true;
             requestAnimationFrame(gameLoop);
         };
