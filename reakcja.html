@@ -121,16 +121,16 @@
 
         <!-- Training Module Tabs (Compact Single Row 4 Columns) -->
         <div class="max-w-5xl mx-auto mt-2.5 grid grid-cols-4 gap-1 px-2">
-            <button onclick="switchModule('schulte')" id="tab-schulte" class="module-tab py-1.5 px-1 rounded-lg text-[11px] font-semibold transition-all bg-red-600 text-white shadow-sm text-center truncate">
+            <button type="button" onclick="switchModule('schulte')" id="tab-schulte" class="module-tab min-h-[44px] flex items-center justify-center px-1 rounded-lg text-[11px] font-semibold transition-all bg-red-600 text-white shadow-sm text-center cursor-pointer">
                 Siatka
             </button>
-            <button onclick="switchModule('reaction')" id="tab-reaction" class="module-tab py-1.5 px-1 rounded-lg text-[11px] font-semibold transition-all bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 text-center truncate">
+            <button type="button" onclick="switchModule('reaction')" id="tab-reaction" class="module-tab min-h-[44px] flex items-center justify-center px-1 rounded-lg text-[11px] font-semibold transition-all bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 text-center cursor-pointer">
                 Reakcja
             </button>
-            <button onclick="switchModule('memory')" id="tab-memory" class="module-tab py-1.5 px-1 rounded-lg text-[11px] font-semibold transition-all bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 text-center truncate">
+            <button type="button" onclick="switchModule('memory')" id="tab-memory" class="module-tab min-h-[44px] flex items-center justify-center px-1 rounded-lg text-[11px] font-semibold transition-all bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 text-center cursor-pointer">
                 Pamięć
             </button>
-            <button onclick="switchModule('peripheral')" id="tab-peripheral" class="module-tab py-1.5 px-1 rounded-lg text-[11px] font-semibold transition-all bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 text-center truncate">
+            <button type="button" onclick="switchModule('peripheral')" id="tab-peripheral" class="module-tab min-h-[44px] flex items-center justify-center px-1 rounded-lg text-[11px] font-semibold transition-all bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 text-center cursor-pointer">
                 Peryferia
             </button>
         </div>
@@ -433,12 +433,12 @@
         function switchModule(moduleId) {
             document.querySelectorAll('.training-module').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.module-tab').forEach(tab => {
-                tab.className = "module-tab py-1.5 px-1 rounded-lg text-[11px] font-semibold transition-all bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 text-center truncate";
+                tab.className = "module-tab min-h-[44px] flex items-center justify-center px-1 rounded-lg text-[11px] font-semibold transition-all bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 text-center cursor-pointer";
             });
 
             document.getElementById(`module-${moduleId}`).classList.remove('hidden');
             const activeTab = document.getElementById(`tab-${moduleId}`);
-            activeTab.className = "module-tab py-1.5 px-1 rounded-lg text-[11px] font-semibold transition-all bg-red-600 text-white shadow-sm text-center truncate";
+            activeTab.className = "module-tab min-h-[44px] flex items-center justify-center px-1 rounded-lg text-[11px] font-semibold transition-all bg-red-600 text-white shadow-sm text-center cursor-pointer";
 
             document.getElementById('global-status').textContent = 'GOTOWY';
         }
@@ -708,7 +708,7 @@
             document.getElementById('mem-level').textContent = `${memoryState.level} cyfry`;
             memoryState.sequence = [];
             memoryState.userSequence = [];
-            document.getElementById('memory-user-input').textContent = '';
+            document.getElementById('memory-user-input').textContent = '⏳';
 
             for (let i = 0; i < memoryState.level; i++) {
                 memoryState.sequence.push(Math.floor(Math.random() * 10));
@@ -730,6 +730,7 @@
                     }, 600); 
                 } else {
                     displayBox.textContent = "?";
+                    document.getElementById('memory-user-input').textContent = '';
                     memoryState.phase = 'input';
                 }
             }
@@ -743,6 +744,7 @@
                 memoryState.userSequence.pop();
             } else if (val === 'ok') {
                 if (memoryState.userSequence.length === 0) return;
+                memoryState.phase = 'locked'; // blokada klików na czas pokazywania wyniku
                 const isCorrect = memoryState.userSequence.length === memoryState.sequence.length &&
                                   memoryState.userSequence.every((v, i) => v === memoryState.sequence[i]);
                 if (isCorrect) {
