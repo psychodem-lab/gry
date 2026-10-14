@@ -49,6 +49,25 @@
         .safe-bottom-padding {
             padding-bottom: max(1rem, env(safe-area-inset-bottom));
         }
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #pdf-report-modal, #pdf-report-modal * {
+                visibility: visible;
+            }
+            #pdf-report-modal {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background: white !important;
+                color: black !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 <body class="min-h-screen bg-slate-100 dark:bg-[#0b0e14] text-slate-900 dark:text-slate-100 flex flex-col justify-between transition-colors duration-200">
@@ -72,12 +91,20 @@
                 </div>
             </div>
 
-            <!-- Session Status & Theme Toggle -->
+            <!-- Session Status, PDF Report Button & Theme Toggle -->
             <div class="flex items-center space-x-3">
                 <div class="hidden sm:block text-right bg-slate-200/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 px-3 py-1.5 rounded-lg">
                     <div class="text-[9px] text-slate-500 uppercase tracking-widest">Status sesji</div>
                     <div id="global-status" class="font-mono text-xs font-bold text-brand-accent">GOTOWY</div>
                 </div>
+
+                <!-- PDF Report Button -->
+                <button onclick="openPdfReportModal()" class="flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-semibold text-xs transition-all shadow-sm" title="Generuj podsumowanie PDF">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <span>Raport PDF</span>
+                </button>
 
                 <!-- Theme Toggle Button -->
                 <button onclick="toggleTheme()" class="p-2.5 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors" title="Przełącz tryb jasny/ciemny">
@@ -250,6 +277,69 @@
     </main>
 
 
+    <!-- ================= PDF REPORT MODAL ================= -->
+    <div id="pdf-report-modal" class="hidden fixed inset-0 z-[200] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-[#121620] border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-xl p-6 sm:p-8 telemetry-shadow space-y-6">
+            
+            <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
+                <div>
+                    <h3 class="text-lg font-extrabold text-slate-900 dark:text-white">RAPORT SESJI TRENINGOWEJ</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Podsumowanie wyników z wszystkich modułów</p>
+                </div>
+                <button onclick="closePdfReportModal()" class="no-print p-2 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <!-- Report Meta Info -->
+            <div class="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
+                <div>
+                    <div class="text-slate-400">Użytkownik:</div>
+                    <div id="report-user-name" class="font-bold text-slate-900 dark:text-white text-sm mt-0.5">-</div>
+                </div>
+                <div>
+                    <div class="text-slate-400">Data i czas:</div>
+                    <div id="report-date-time" class="font-bold text-slate-900 dark:text-white text-sm mt-0.5">-</div>
+                </div>
+            </div>
+
+            <!-- Results Table -->
+            <div class="space-y-3">
+                <div class="text-xs font-semibold uppercase tracking-wider text-slate-400">Wyniki modułów:</div>
+                <div class="divide-y divide-slate-200 dark:divide-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+                    <div class="flex justify-between items-center p-3.5 bg-slate-50/50 dark:bg-slate-900/50 text-xs">
+                        <span class="font-medium text-slate-700 dark:text-slate-300">1. Siatka Schultego (7x7)</span>
+                        <span id="rep-res-schulte" class="font-mono font-bold text-slate-900 dark:text-white">-</span>
+                    </div>
+                    <div class="flex justify-between items-center p-3.5 bg-slate-50/50 dark:bg-slate-900/50 text-xs">
+                        <span class="font-medium text-slate-700 dark:text-slate-300">2. Czas Reakcji F1 (Średnia)</span>
+                        <span id="rep-res-reaction" class="font-mono font-bold text-slate-900 dark:text-white">-</span>
+                    </div>
+                    <div class="flex justify-between items-center p-3.5 bg-slate-50/50 dark:bg-slate-900/50 text-xs">
+                        <span class="font-medium text-slate-700 dark:text-slate-300">3. Pamięć Robocza (Digit Span)</span>
+                        <span id="rep-res-memory" class="font-mono font-bold text-slate-900 dark:text-white">-</span>
+                    </div>
+                    <div class="flex justify-between items-center p-3.5 bg-slate-50/50 dark:bg-slate-900/50 text-xs">
+                        <span class="font-medium text-slate-700 dark:text-slate-300">4. Widzenie Peryferyjne</span>
+                        <span id="rep-res-peripheral" class="font-mono font-bold text-slate-900 dark:text-white">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Action Buttons -->
+            <div class="flex items-center space-x-3 pt-2">
+                <button onclick="triggerPrintPdf()" class="no-print flex-1 bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-4 rounded-xl transition-all shadow-lg shadow-red-600/25 flex items-center justify-center space-x-2 text-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                    <span>DRUKUJ / ZAPISZ PDF</span>
+                </button>
+                <button onclick="closePdfReportModal()" class="no-print px-5 py-3 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 font-bold text-sm text-slate-700 dark:text-slate-300 transition-colors">
+                    Zamknij
+                </button>
+            </div>
+        </div>
+    </div>
+
+
     <!-- ================= FULLSCREEN SCHULTE OVERLAY ================= -->
     <div id="schulte-fullscreen-overlay" class="hidden fixed inset-0 z-[100] bg-slate-950 flex flex-col justify-between p-4 sm:p-6 overflow-hidden">
         <!-- Top bar inside fullscreen -->
@@ -319,6 +409,14 @@
 
     <!-- ================= JAVASCRIPT LOGIC ================= -->
     <script>
+        // Session Results Storage Tracker
+        let sessionResults = {
+            schulte: { time: null, errors: 0 },
+            reaction: { avg: null },
+            memory: { score: 0, level: 3 },
+            peripheral: { score: 0 }
+        };
+
         function toggleTheme() {
             const html = document.documentElement;
             if (html.classList.contains('dark')) {
@@ -331,14 +429,60 @@
         function switchModule(moduleId) {
             document.querySelectorAll('.training-module').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.module-tab').forEach(tab => {
-                tab.className = "module-tab whitespace-nowrap px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700";
+                tab.className = "module-tab py-1.5 px-1 rounded-lg text-[11px] font-semibold transition-all bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 text-center truncate";
             });
 
             document.getElementById(`module-${moduleId}`).classList.remove('hidden');
             const activeTab = document.getElementById(`tab-${moduleId}`);
-            activeTab.className = "module-tab whitespace-nowrap px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all bg-red-600 text-white shadow-md shadow-red-600/20";
+            activeTab.className = "module-tab py-1.5 px-1 rounded-lg text-[11px] font-semibold transition-all bg-red-600 text-white shadow-sm text-center truncate";
 
             document.getElementById('global-status').textContent = 'GOTOWY';
+        }
+
+
+        // ================= PDF REPORT MODAL LOGIC =================
+        function openPdfReportModal() {
+            const userName = document.getElementById('driver-name-input').value.trim() || 'Anonim';
+            document.getElementById('report-user-name').textContent = userName;
+
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('pl-PL', { year: 'numeric', month: '2-digit', day: '2-digit' });
+            const timeStr = now.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            document.getElementById('report-date-time').textContent = `${dateStr}, ${timeStr}`;
+
+            // Format Schulte
+            const schElem = document.getElementById('rep-res-schulte');
+            if (sessionResults.schulte.time !== null) {
+                const diff = sessionResults.schulte.time;
+                const m = Math.floor(diff / 60000);
+                const s = Math.floor((diff % 60000) / 1000);
+                const ms = Math.floor(diff % 1000);
+                schElem.textContent = `${m}:${s < 10 ? '0' : ''}${s}.${ms.toString().padStart(3, '0')} (Błędy: ${sessionResults.schulte.errors})`;
+            } else {
+                schElem.textContent = 'Brak danych';
+            }
+
+            // Format Reaction
+            const reactElem = document.getElementById('rep-res-reaction');
+            reactElem.textContent = sessionResults.reaction.avg !== null ? `${sessionResults.reaction.avg} ms` : 'Brak danych';
+
+            // Format Memory
+            const memElem = document.getElementById('rep-res-memory');
+            memElem.textContent = `Wynik: ${sessionResults.memory.score} pkt (Osiągnięty poziom: ${sessionResults.memory.level})`;
+
+            // Format Peripheral
+            const periElem = document.getElementById('rep-res-peripheral');
+            periElem.textContent = `${sessionResults.peripheral.score} trafień`;
+
+            document.getElementById('pdf-report-modal').classList.remove('hidden');
+        }
+
+        function closePdfReportModal() {
+            document.getElementById('pdf-report-modal').classList.add('hidden');
+        }
+
+        function triggerPrintPdf() {
+            window.print();
         }
 
 
@@ -433,6 +577,10 @@
                 if (schulteState.currentTarget > total) {
                     schulteState.isPlaying = false;
                     clearInterval(schulteState.timerInterval);
+                    const totalTime = performance.now() - schulteState.startTime;
+                    sessionResults.schulte.time = totalTime;
+                    sessionResults.schulte.errors = schulteState.errors;
+
                     document.getElementById('global-status').textContent = 'SIATKA UKOŃCZONA!';
                     setTimeout(() => {
                         exitSchulteFullscreen();
@@ -518,6 +666,7 @@
                 document.getElementById('react-last').textContent = `${reactionTime} ms`;
                 const avg = Math.round(reactionState.times.reduce((a, b) => a + b, 0) / reactionState.times.length);
                 document.getElementById('react-avg').textContent = `${avg} ms`;
+                sessionResults.reaction.avg = avg;
 
                 prompt.textContent = `Wynik: ${reactionTime} ms`;
                 btn.textContent = reactionState.attempts < 5 ? "KOLEJNA PRÓBA" : "ZAKOŃCZONO TEST";
@@ -594,6 +743,9 @@
                 if (isCorrect) {
                     memoryState.score += memoryState.level * 10;
                     memoryState.level++;
+                    sessionResults.memory.score = memoryState.score;
+                    sessionResults.memory.level = memoryState.level - 1;
+
                     document.getElementById('mem-score').textContent = memoryState.score;
                     document.getElementById('memory-user-input').textContent = "PRAWIDŁOWO!";
                     setTimeout(() => {
@@ -690,6 +842,7 @@
 
             target.onclick = () => {
                 peripheralFsState.score++;
+                sessionResults.peripheral.score = peripheralFsState.score;
                 document.getElementById('peri-fs-score').textContent = peripheralFsState.score;
                 target.remove();
             };
@@ -704,7 +857,6 @@
         function stopPeripheralFsGame() {
             peripheralFsState.isRunning = false;
             clearInterval(peripheralFsState.timerInterval);
-            clearInterval(peripheralFsState.spawnInterceptor);
             clearInterval(peripheralFsState.spawnInterval);
             document.querySelectorAll('.peri-fs-target').forEach(e => e.remove());
         }
