@@ -341,23 +341,23 @@
 
 
     <!-- ================= FULLSCREEN SCHULTE OVERLAY ================= -->
-    <div id="schulte-fullscreen-overlay" class="hidden fixed inset-0 z-[100] bg-slate-950 flex flex-col justify-between p-4 sm:p-6 overflow-hidden">
+    <div id="schulte-fullscreen-overlay" class="hidden fixed inset-0 z-[100] bg-slate-100 dark:bg-slate-950 flex flex-col justify-between p-4 sm:p-6 overflow-hidden">
         <!-- Top bar inside fullscreen -->
-        <div class="flex items-center justify-between text-white border-b border-slate-800 pb-3">
+        <div class="flex items-center justify-between text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-800 pb-3">
             <div class="flex items-center space-x-4">
                 <span class="text-xs sm:text-sm font-mono text-brand-accent font-bold uppercase tracking-wider">SIATKA SCHULTEGO</span>
-                <div class="text-xs text-slate-400">Szukaj: <strong id="schulte-fs-target" class="text-brand-accent text-lg font-mono">1</strong></div>
-                <div class="text-xs text-slate-400">Błędy: <strong id="schulte-fs-errors" class="text-red-500 text-sm font-mono">0</strong></div>
+                <div class="text-xs text-slate-500 dark:text-slate-400">Szukaj: <strong id="schulte-fs-target" class="text-brand-accent text-lg font-mono">1</strong></div>
+                <div class="text-xs text-slate-500 dark:text-slate-400">Błędy: <strong id="schulte-fs-errors" class="text-red-500 text-sm font-mono">0</strong></div>
             </div>
-            <div class="text-base sm:text-xl font-mono font-bold text-white">Czas: <span id="schulte-fs-timer" class="text-brand-accent">0:00.000</span></div>
+            <div class="text-base sm:text-xl font-mono font-bold text-slate-900 dark:text-white">Czas: <span id="schulte-fs-timer" class="text-brand-accent">0:00.000</span></div>
             <button onclick="exitSchulteFullscreen()" class="bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30 px-4 py-2 rounded-xl text-xs font-bold transition-all">
                 WYJDŹ Z PEŁNEGO EKRANU
             </button>
         </div>
 
         <!-- Arena -->
-        <div id="schulte-fs-arena" class="relative flex-1 w-full my-4 bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden flex items-center justify-center p-3">
-            <div id="schulte-fs-grid" class="w-full h-full max-w-2xl max-h-[80vh] aspect-square bg-slate-900 grid gap-2"></div>
+        <div id="schulte-fs-arena" class="relative flex-1 w-full my-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden flex items-center justify-center p-3">
+            <div id="schulte-fs-grid" class="w-full h-full max-w-2xl max-h-[80vh] aspect-square bg-white dark:bg-slate-900 grid gap-2"></div>
         </div>
 
         <div class="text-center text-[10px] text-slate-500 uppercase tracking-widest">
@@ -367,29 +367,29 @@
 
 
     <!-- ================= FULLSCREEN PERIPHERAL OVERLAY ================= -->
-    <div id="peripheral-fullscreen-overlay" class="hidden fixed inset-0 z-[100] bg-slate-950 flex flex-col justify-between p-4 sm:p-6 overflow-hidden">
+    <div id="peripheral-fullscreen-overlay" class="hidden fixed inset-0 z-[100] bg-slate-100 dark:bg-slate-950 flex flex-col justify-between p-4 sm:p-6 overflow-hidden">
         <!-- Top bar inside fullscreen -->
-        <div class="flex items-center justify-between text-white border-b border-slate-800 pb-3">
+        <div class="flex items-center justify-between text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-800 pb-3">
             <div class="flex items-center space-x-4">
                 <span class="text-xs sm:text-sm font-mono text-brand-accent font-bold uppercase tracking-wider">MODUŁ PERYFERYJNY</span>
-                <div class="text-xs text-slate-400">Trafienia: <strong id="peri-fs-score" class="text-green-400 text-sm">0</strong></div>
+                <div class="text-xs text-slate-500 dark:text-slate-400">Trafienia: <strong id="peri-fs-score" class="text-green-600 dark:text-green-400 text-sm">0</strong></div>
             </div>
-            <div class="text-base sm:text-xl font-mono font-bold text-white">Czas: <span id="peri-fs-timer" class="text-brand-accent">30s</span></div>
+            <div class="text-base sm:text-xl font-mono font-bold text-slate-900 dark:text-white">Czas: <span id="peri-fs-timer" class="text-brand-accent">30s</span></div>
             <button onclick="exitPeripheralFullscreen()" class="bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30 px-4 py-2 rounded-xl text-xs font-bold transition-all">
                 WYJDŹ Z PEŁNEGO EKRANU
             </button>
         </div>
 
         <!-- Arena -->
-        <div id="peripheral-fs-arena" class="relative flex-1 w-full my-4 bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden flex items-center justify-center">
+        <div id="peripheral-fs-arena" class="relative flex-1 w-full my-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden flex items-center justify-center">
             <!-- Center Focus Point -->
             <div class="w-8 h-8 rounded-full border-2 border-red-500 flex items-center justify-center z-10 animate-pulse pointer-events-none">
                 <div class="w-2 h-2 bg-red-500 rounded-full"></div>
             </div>
             <!-- Start prompt overlay -->
-            <div id="peri-fs-start-modal" class="absolute inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center z-30 space-y-4 p-6 text-center">
-                <div class="text-lg font-bold text-white">Patrz nieprzerwanie w punkt centralny!</div>
-                <p class="text-xs text-slate-400 max-w-md">Liczby będą pojawiać się losowo na obrzeżach ekranu. Zauważaj je i klikaj z pomocą widzenia kątowego, nie odrywając wzroku od środka.</p>
+            <div id="peri-fs-start-modal" class="absolute inset-0 bg-white/90 dark:bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center z-30 space-y-4 p-6 text-center">
+                <div class="text-lg font-bold text-slate-900 dark:text-white">Patrz nieprzerwanie w punkt centralny!</div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 max-w-md">Liczby będą pojawiać się losowo na obrzeżach ekranu. Zauważaj je i klikaj z pomocą widzenia kątowego, nie odrywając wzroku od środka.</p>
                 <button onclick="startPeripheralFsGame()" class="bg-red-600 hover:bg-red-500 text-white font-bold py-3.5 px-8 rounded-xl shadow-lg transition-all text-sm">
                     START SESJI
                 </button>
@@ -558,7 +558,7 @@
             schulteState.numbers.forEach(num => {
                 const btn = document.createElement('button');
                 btn.type = 'button';
-                btn.className = "bg-slate-800 dark:bg-slate-900 border border-slate-700 dark:border-slate-800 rounded-xl font-mono font-bold text-base sm:text-2xl text-white flex items-center justify-center hover:border-red-500 transition-all active:scale-95";
+                btn.className = "bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl font-mono font-bold text-base sm:text-2xl text-slate-900 dark:text-white flex items-center justify-center hover:border-red-500 transition-all active:scale-95";
                 btn.textContent = num;
                 btn.onclick = () => handleSchulteClick(num, btn);
                 grid.appendChild(btn);
@@ -570,8 +570,9 @@
             const total = schulteConfig.rows * schulteConfig.cols;
 
             if (num === schulteState.currentTarget) {
-                btn.classList.add('bg-green-600/30', 'border-green-500', 'text-green-400');
+                btn.textContent = '';
                 btn.style.pointerEvents = 'none';
+                btn.className = "bg-transparent border border-slate-200 dark:border-slate-800 rounded-xl flex items-center justify-center transition-all";
                 schulteState.currentTarget++;
 
                 if (schulteState.currentTarget > total) {
