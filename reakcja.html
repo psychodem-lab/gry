@@ -46,7 +46,6 @@
             background: rgba(156, 163, 175, 0.3);
             border-radius: 3px;
         }
-        /* Zapewnienie bezpiecznego odstępu od nawigacji Androida */
         .safe-bottom-padding {
             padding-bottom: max(1rem, env(safe-area-inset-bottom));
         }
@@ -54,7 +53,6 @@
 </head>
 <body class="min-h-screen bg-slate-100 dark:bg-[#0b0e14] text-slate-900 dark:text-slate-100 flex flex-col justify-between transition-colors duration-200">
 
-    <!-- Top Navigation Header -->
     <header id="main-header" class="w-full border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-[#121620]/80 backdrop-blur-md sticky top-0 z-50 px-4 py-3">
         <div class="max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-4">
             
@@ -110,14 +108,13 @@
         </div>
     </header>
 
-    <!-- Main Content Workspaces -->
     <main id="main-container" class="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6 flex flex-col items-center justify-center">
 
         <!-- ================= MODULE 1: SCHULTE / GRID ================= -->
         <div id="module-schulte" class="training-module w-full flex flex-col items-center space-y-6">
             <div class="w-full max-w-xl text-center space-y-2">
-                <h2 class="text-xl sm:text-2xl font-bold tracking-tight">Siatka Schultego (Grid 49)</h2>
-                <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">Znajduj liczby w kolejności rosnącej. Rozwija pole widzenia, skupienie i błyskawiczny skan wzrokowy.</p>
+                <h2 class="text-xl sm:text-2xl font-bold tracking-tight">Siatka Schultego (Pełny Ekran)</h2>
+                <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">Znajduj liczby w kolejności rosnącej w trybie pełnoekranowym. Rozwija pole widzenia, skupienie i błyskawiczny skan wzrokowy.</p>
             </div>
 
             <div id="schulte-setup" class="w-full max-w-md bg-white dark:bg-[#121620] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 telemetry-shadow space-y-5">
@@ -130,28 +127,12 @@
                     </div>
                 </div>
 
-                <button onclick="startSchulteGame()" class="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-red-600/25">
-                    ROZPOCZNIJ TRENING SCHULTE
+                <button onclick="launchSchulteFullscreen()" class="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-red-600/25 flex items-center justify-center space-x-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+                    </svg>
+                    <span>URUCHOM SIATKĘ PEŁNOEKRANOWĄ</span>
                 </button>
-            </div>
-
-            <div id="schulte-active" class="hidden w-full max-w-2xl flex flex-col items-center space-y-4">
-                <div class="w-full bg-white dark:bg-[#121620] border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex items-center justify-between">
-                    <div>
-                        <div class="text-[10px] uppercase text-slate-500">Szukaj liczby</div>
-                        <div id="schulte-target" class="text-3xl font-black font-mono text-brand-accent">1</div>
-                    </div>
-                    <div class="text-center">
-                        <div class="text-[10px] uppercase text-slate-500">Czas</div>
-                        <div id="schulte-timer" class="text-xl font-mono font-bold">0:00.000</div>
-                    </div>
-                    <div class="text-right">
-                        <div class="text-[10px] uppercase text-slate-500">Błędy</div>
-                        <div id="schulte-errors" class="text-xl font-mono font-bold text-red-500">0</div>
-                    </div>
-                </div>
-
-                <div id="schulte-grid" class="w-full aspect-square bg-white dark:bg-[#121620] border border-slate-200 dark:border-slate-800 rounded-2xl p-3 sm:p-4 grid gap-2 telemetry-shadow"></div>
             </div>
         </div>
 
@@ -255,7 +236,7 @@
         <div id="module-peripheral" class="training-module hidden w-full flex flex-col items-center space-y-6">
             <div class="w-full max-w-xl text-center space-y-2">
                 <h2 class="text-xl sm:text-2xl font-bold tracking-tight">Widzenie Peryferyjne (Landscape Full Screen)</h2>
-                <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">Kliknij poniższy przycisk, aby uruchomić dedykowany tryb pełnoekranowy poziomy przeznaczony do ćwiczenia szerokiego pola widzenia.</p>
+                <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">Kliknij poniższy przycisk, aby uruchomić dedykowany tryb pełnoekranowy przeznaczony do ćwiczenia szerokiego pola widzenia.</p>
             </div>
 
             <button onclick="launchPeripheralFullscreen()" class="bg-gradient-to-r from-red-600 to-brand-accent hover:from-red-500 hover:to-red-600 text-white font-bold py-4 px-8 rounded-2xl shadow-xl transition-all flex items-center space-x-3 active:scale-98">
@@ -268,7 +249,34 @@
 
     </main>
 
-    <!-- FULLSCREEN PERIPHERAL OVERLAY -->
+
+    <!-- ================= FULLSCREEN SCHULTE OVERLAY ================= -->
+    <div id="schulte-fullscreen-overlay" class="hidden fixed inset-0 z-[100] bg-slate-950 flex flex-col justify-between p-4 sm:p-6 overflow-hidden">
+        <!-- Top bar inside fullscreen -->
+        <div class="flex items-center justify-between text-white border-b border-slate-800 pb-3">
+            <div class="flex items-center space-x-4">
+                <span class="text-xs sm:text-sm font-mono text-brand-accent font-bold uppercase tracking-wider">SIATKA SCHULTEGO</span>
+                <div class="text-xs text-slate-400">Szukaj: <strong id="schulte-fs-target" class="text-brand-accent text-lg font-mono">1</strong></div>
+                <div class="text-xs text-slate-400">Błędy: <strong id="schulte-fs-errors" class="text-red-500 text-sm font-mono">0</strong></div>
+            </div>
+            <div class="text-base sm:text-xl font-mono font-bold text-white">Czas: <span id="schulte-fs-timer" class="text-brand-accent">0:00.000</span></div>
+            <button onclick="exitSchulteFullscreen()" class="bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30 px-4 py-2 rounded-xl text-xs font-bold transition-all">
+                WYJDŹ Z PEŁNEGO EKRANU
+            </button>
+        </div>
+
+        <!-- Arena -->
+        <div id="schulte-fs-arena" class="relative flex-1 w-full my-4 bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden flex items-center justify-center p-3">
+            <div id="schulte-fs-grid" class="w-full h-full max-w-2xl max-h-[80vh] aspect-square bg-slate-900 grid gap-2"></div>
+        </div>
+
+        <div class="text-center text-[10px] text-slate-500 uppercase tracking-widest">
+            Aplikacja Treningu Koncentracji i Pola Widzenia
+        </div>
+    </div>
+
+
+    <!-- ================= FULLSCREEN PERIPHERAL OVERLAY ================= -->
     <div id="peripheral-fullscreen-overlay" class="hidden fixed inset-0 z-[100] bg-slate-950 flex flex-col justify-between p-4 sm:p-6 overflow-hidden">
         <!-- Top bar inside fullscreen -->
         <div class="flex items-center justify-between text-white border-b border-slate-800 pb-3">
@@ -311,7 +319,6 @@
 
     <!-- ================= JAVASCRIPT LOGIC ================= -->
     <script>
-        // Global Theme Toggle
         function toggleTheme() {
             const html = document.documentElement;
             if (html.classList.contains('dark')) {
@@ -321,7 +328,6 @@
             }
         }
 
-        // Module Switcher
         function switchModule(moduleId) {
             document.querySelectorAll('.training-module').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.module-tab').forEach(tab => {
@@ -336,7 +342,7 @@
         }
 
 
-        // ================= 1. SCHULTE / GRID LOGIC =================
+        // ================= 1. SCHULTE / GRID LOGIC (FULLSCREEN) =================
         let schulteConfig = { rows: 7, cols: 7 };
         let schulteState = { numbers: [], currentTarget: 1, startTime: null, timerInterval: null, errors: 0, isPlaying: false };
 
@@ -350,10 +356,27 @@
             sel.className = "schulte-btn-sz p-3 rounded-xl border-2 border-red-600 bg-red-600/10 text-center font-bold text-sm";
         }
 
+        function launchSchulteFullscreen() {
+            const overlay = document.getElementById('schulte-fullscreen-overlay');
+            overlay.classList.remove('hidden');
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            }
+            startSchulteGame();
+        }
+
+        function exitSchulteFullscreen() {
+            stopSchulteGame();
+            const overlay = document.getElementById('schulte-fullscreen-overlay');
+            overlay.classList.add('hidden');
+            if (document.exitFullscreen && document.fullscreenElement) {
+                document.exitFullscreen().catch(() => {});
+            }
+            document.getElementById('global-status').textContent = 'GOTOWY';
+        }
+
         function startSchulteGame() {
-            document.getElementById('schulte-setup').classList.add('hidden');
-            document.getElementById('schulte-active').classList.remove('hidden');
-            document.getElementById('global-status').textContent = 'SCHULTE AKTYWNY';
+            document.getElementById('global-status').textContent = 'SIATKA AKTYWNA';
 
             const total = schulteConfig.rows * schulteConfig.cols;
             schulteState.numbers = [...Array(total)].map((_, i) => i + 1);
@@ -365,8 +388,8 @@
             schulteState.currentTarget = 1;
             schulteState.errors = 0;
             schulteState.isPlaying = true;
-            document.getElementById('schulte-target').textContent = '1';
-            document.getElementById('schulte-errors').textContent = '0';
+            document.getElementById('schulte-fs-target').textContent = '1';
+            document.getElementById('schulte-fs-errors').textContent = '0';
 
             renderSchulteGrid();
 
@@ -378,12 +401,12 @@
                 const m = Math.floor(diff / 60000);
                 const s = Math.floor((diff % 60000) / 1000);
                 const ms = Math.floor(diff % 1000);
-                document.getElementById('schulte-timer').textContent = `${m}:${s < 10 ? '0' : ''}${s}.${ms.toString().padStart(3, '0')}`;
+                document.getElementById('schulte-fs-timer').textContent = `${m}:${s < 10 ? '0' : ''}${s}.${ms.toString().padStart(3, '0')}`;
             }, 31);
         }
 
         function renderSchulteGrid() {
-            const grid = document.getElementById('schulte-grid');
+            const grid = document.getElementById('schulte-fs-grid');
             grid.innerHTML = '';
             grid.style.gridTemplateColumns = `repeat(${schulteConfig.cols}, minmax(0, 1fr))`;
             grid.style.gridTemplateRows = `repeat(${schulteConfig.rows}, minmax(0, 1fr))`;
@@ -391,7 +414,7 @@
             schulteState.numbers.forEach(num => {
                 const btn = document.createElement('button');
                 btn.type = 'button';
-                btn.className = "bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl font-mono font-bold text-sm sm:text-lg flex items-center justify-center hover:border-red-500 transition-all active:scale-95";
+                btn.className = "bg-slate-800 dark:bg-slate-900 border border-slate-700 dark:border-slate-800 rounded-xl font-mono font-bold text-base sm:text-2xl text-white flex items-center justify-center hover:border-red-500 transition-all active:scale-95";
                 btn.textContent = num;
                 btn.onclick = () => handleSchulteClick(num, btn);
                 grid.appendChild(btn);
@@ -403,29 +426,31 @@
             const total = schulteConfig.rows * schulteConfig.cols;
 
             if (num === schulteState.currentTarget) {
-                btn.classList.add('bg-green-500/20', 'border-green-500', 'text-green-500');
+                btn.classList.add('bg-green-600/30', 'border-green-500', 'text-green-400');
                 btn.style.pointerEvents = 'none';
                 schulteState.currentTarget++;
 
                 if (schulteState.currentTarget > total) {
                     schulteState.isPlaying = false;
                     clearInterval(schulteState.timerInterval);
-                    document.getElementById('global-status').textContent = 'SCHULTE UKOŃCZONY!';
+                    document.getElementById('global-status').textContent = 'SIATKA UKOŃCZONA!';
                     setTimeout(() => {
-                        alert(`Ukończono! Czas: ${document.getElementById('schulte-timer').textContent}, Błędy: ${schulteState.errors}`);
-                        document.getElementById('schulte-active').classList.add('hidden');
-                        document.getElementById('schulte-setup').classList.remove('hidden');
-                        document.getElementById('global-status').textContent = 'GOTOWY';
-                    }, 100);
+                        exitSchulteFullscreen();
+                    }, 1200);
                 } else {
-                    document.getElementById('schulte-target').textContent = schulteState.currentTarget;
+                    document.getElementById('schulte-fs-target').textContent = schulteState.currentTarget;
                 }
             } else {
                 schulteState.errors++;
-                document.getElementById('schulte-errors').textContent = schulteState.errors;
-                btn.classList.add('bg-red-500/30', 'border-red-500', 'text-red-500');
-                setTimeout(() => btn.classList.remove('bg-red-500/30', 'border-red-500', 'text-red-500'), 200);
+                document.getElementById('schulte-fs-errors').textContent = schulteState.errors;
+                btn.classList.add('bg-red-600/40', 'border-red-500', 'text-red-400');
+                setTimeout(() => btn.classList.remove('bg-red-600/40', 'border-red-500', 'text-red-400'), 200);
             }
+        }
+
+        function stopSchulteGame() {
+            schulteState.isPlaying = false;
+            clearInterval(schulteState.timerInterval);
         }
 
 
@@ -481,7 +506,7 @@
                     document.getElementById(`light-${i}`).style.borderColor = '';
                 }
                 reactionState.step = 'idle';
-                prompt.textContent = "Za wcześnie! Spróbuj ponowne.";
+                prompt.textContent = "Za wcześnie! Spróbuj ponownie.";
                 btn.textContent = "SPRÓBUJ PONOWNIE";
                 btn.className = "w-full h-32 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 border-2 border-slate-300 dark:border-slate-700 rounded-2xl text-xl font-black uppercase tracking-wider transition-all flex items-center justify-center";
 
@@ -543,7 +568,6 @@
                 if (index < memoryState.sequence.length) {
                     displayBox.textContent = memoryState.sequence[index];
                     index++;
-                    // Wyświetlenie cyfry przez 600ms, następnie wyraźny czytelny blank pause przez 350ms
                     setTimeout(() => {
                         displayBox.textContent = "";
                         setTimeout(() => {
@@ -680,6 +704,7 @@
         function stopPeripheralFsGame() {
             peripheralFsState.isRunning = false;
             clearInterval(peripheralFsState.timerInterval);
+            clearInterval(peripheralFsState.spawnInterceptor);
             clearInterval(peripheralFsState.spawnInterval);
             document.querySelectorAll('.peri-fs-target').forEach(e => e.remove());
         }
